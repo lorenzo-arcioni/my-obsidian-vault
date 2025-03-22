@@ -1,0 +1,231 @@
+.
+├── 00_Part 0 - Introduzione e Fondamenti
+│   ├── 02_Dati e Tecnologie
+│   │   ├── Acquisizione, Pulizia e Verifica dei Dati.md
+│   │   ├── Analisi dei Dati e Visualizzazione.md
+│   │   ├── Database e Archiviazione dei Dati.md
+│   │   └── Tecnologie per il Trading Algoritmico.md
+│   ├── 03_Psicologia del Trading
+│   │   ├── Discipline di Trading e Pianificazione.md
+│   │   ├── Errori Comuni e Come Evitarli.md
+│   │   └── Gestione delle Emozioni.md
+│   └── Introduzione all'Algorithmic Trading.md
+├── 01_Part 1 - Data Analysis e Feature Engineering
+│   ├── 02_Data Analysis & Financial Data Structures
+│   │   ├── 01_Essential Types of Financial Data
+│   │   │   ├── Alternative Data.md
+│   │   │   ├── Analytics.md
+│   │   │   ├── Fundamental Data.md
+│   │   │   └── Market Data.md
+│   │   ├── 02_Bars
+│   │   │   ├── Information-Driven Bars.md
+│   │   │   └── Standard Bars.md
+│   │   ├── 03_Dealing with Multi-Product Series
+│   │   │   ├── PCA Weights.md
+│   │   │   ├── Single Future Roll.md
+│   │   │   └── The ETF Trick.md
+│   │   ├── 04_Sampling Features
+│   │   │   ├── Event-Based Sampling.md
+│   │   │   └── Sampling for Reduction.md
+│   │   └── Motivazione.md
+│   ├── 03_Labeling
+│   │   ├── Computing Dynamic Thresholds.md
+│   │   ├── Dropping Unnecessary Labels.md
+│   │   ├── Fixed-Time Horizon Method.md
+│   │   ├── How to Use Meta-Labeling.md
+│   │   ├── Learning Side and Size.md
+│   │   ├── Meta-Labeling.md
+│   │   ├── Motivazione.md
+│   │   ├── The Quantamental Way.md
+│   │   └── The Triple-Barrier Method.md
+│   ├── 04_Sample Weights
+│   │   ├── 05_Bagging Classifiers and Uniqueness
+│   │   │   ├── Implementation of Sequential Bootstrap.md
+│   │   │   └── Sequential Bootstrap.md
+│   │   ├── A Numerical Example & Monte Carlo Experiments.md
+│   │   ├── Average Uniqueness of a Label.md
+│   │   ├── Class Weights.md
+│   │   ├── Motivazione.md
+│   │   ├── Number of Concurrent Labels.md
+│   │   ├── Overlapping Outcomes.md
+│   │   ├── Return Attribution.md
+│   │   └── Time Decay.md
+│   └── 05_Fractionally Differentiated Features
+│       ├── 01_Literature Review e Il Metodo
+│       │   ├── Convergence.md
+│       │   ├── Iterative Estimation.md
+│       │   └── Long Memory.md
+│       ├── 02_Implementation
+│       │   ├── Expanding Window.md
+│       │   └── Fixed-Width Window Fracdiff.md
+│       ├── Motivazione e il Dilemma Stationarity vs. Memory.md
+│       └── Stationarity with Maximum Memory Preservation.md
+├── 02_Part 2 - Modelling e Machine Learning
+│   ├── 06_Ensemble Methods in Finance
+│   │   ├── 01_Bootstrap Aggregation (Bagging)
+│   │   │   ├── Improved Accuracy.md
+│   │   │   ├── Observation Redundancy.md
+│   │   │   └── Variance Reduction.md
+│   │   ├── Bagging vs. Boosting in Finance & Scalability.md
+│   │   ├── Boosting.md
+│   │   ├── Motivazione.md
+│   │   ├── Random Forest.md
+│   │   └── The Three Sources of Errors.md
+│   ├── 07_Cross-Validation in Finance
+│   │   ├── 01_Purged K-Fold CV
+│   │   │   ├── Embargo.md
+│   │   │   ├── Purging the Training Set.md
+│   │   │   └── The Purged K-Fold Class.md
+│   │   ├── Bugs in Sklearn’s Cross-Validation.md
+│   │   ├── Motivazione e Obiettivo della Cross-Validation.md
+│   │   └── Perché il K-Fold CV Fallisce in Finance.md
+│   ├── 08_Feature Importance
+│   │   ├── 01_With Substitution Effects
+│   │   │   ├── Mean Decrease Accuracy.md
+│   │   │   └── Mean Decrease Impurity.md
+│   │   ├── 02_Without Substitution Effects
+│   │   │   ├── Orthogonal Features.md
+│   │   │   └── Single Feature Importance.md
+│   │   ├── 03_Parallelized vs. Stacked Feature Importance.md
+│   │   ├── 04_Experiments with Synthetic Data.md
+│   │   └── Motivazione e Importanza della Feature Importance.md
+│   ├── 09_Hyper-Parameter Tuning with Cross-Validation
+│   │   ├── 01_Randomized Search Cross-Validation
+│   │   │   └── Log-Uniform Distribution.md
+│   │   ├── Grid Search Cross-Validation.md
+│   │   ├── Motivazione.md
+│   │   └── Scoring e Hyper-parameter Tuning.md
+│   ├── 10_Modelli di Pricing e Valutazione
+│   │   ├── 01_Modelli di Pricing delle Opzioni
+│   │   │   ├── Black-Scholes.md
+│   │   │   ├── Modelli a Volatilità Stocastica.md
+│   │   │   └── Modello di Cox-Ross-Rubinstein (CRR).md
+│   │   ├── 02_Pricing di Strumenti Derivati Complessi
+│   │   │   ├── Opzioni Esotiche.md
+│   │   │   ├── Strumenti Strutturati.md
+│   │   │   └── Swap e Futures.md
+│   │   ├── 03_Modelli di Volatilità
+│   │   │   ├── EWMA.md
+│   │   │   └── GARCH.md
+│   │   └── Motivazione.md
+│   └── 11_Strategie di Trading
+│       ├── Arbitraggio Statistico e Pairs Trading.md
+│       ├── Mean Reversion.md
+│       ├── Momentum.md
+│       ├── Motivazione.md
+│       └── Strategie Basate su Machine Learning.md
+├── 03_Part 3 - Backtesting e Performance
+│   ├── 10_Bet Sizing
+│   │   ├── Averaging Active Bets.md
+│   │   ├── Bet Sizing from Predicted Probabilities.md
+│   │   ├── Dynamic Bet Sizes and Limit Prices.md
+│   │   ├── Motivazione.md
+│   │   ├── Size Discretization.md
+│   │   └── Strategy-Independent Bet Sizing Approaches.md
+│   ├── 11_The Dangers of Backtesting
+│   │   ├── Anche un Backtest “flawless” può essere Sbagliato.md
+│   │   ├── Backtesting Is Not a Research Tool.md
+│   │   ├── Mission Impossible: The Flawless Backtest.md
+│   │   ├── Motivazione.md
+│   │   └── Raccomandazioni Generali e Strategy Selection.md
+│   ├── 12_Backtesting through Cross-Validation
+│   │   ├── 01_Combinatorial Purged Cross-Validation
+│   │   │   ├── Backtesting Algorithm.md
+│   │   │   └── Combinatorial Splits.md
+│   │   ├── Addressing Backtest Overfitting.md
+│   │   ├── Motivazione.md
+│   │   ├── The Cross-Validation Method.md
+│   │   └── The Walk-Forward Method & Pitfalls.md
+│   ├── 13_Backtesting on Synthetic Data
+│   │   ├── Experimental Results & Conclusions.md
+│   │   ├── Implementation Aspects.md
+│   │   ├── Motivazione.md
+│   │   ├── Numerical Determination of Optimal Trading Rules.md
+│   │   └── Trading Rules & Framework.md
+│   ├── 14_Backtest Statistics
+│   │   ├── Considerazioni Implementative.md
+│   │   ├── Dettagli su: Time-Weighted Return, Drawdown, Sharpe Ratio, etc..md
+│   │   ├── Motivazione.md
+│   │   └── Tipologie di Statistiche: Performance, Runs, Efficiency, Classification, Attribution.md
+│   ├── 15_Understanding Strategy Risk
+│   │   ├── 01_The Probability of Strategy Failure
+│   │   │   └── Algoritmo e Implementation.md
+│   │   ├── Considerazioni Generali sul Rischio.md
+│   │   ├── Motivazione.md
+│   │   └── Symmetric vs. Asymmetric Payouts.md
+│   └── 16_Risk Management
+│       ├── Gestione del Drawdown e Stop-Loss Dinamici.md
+│       ├── Motivazione.md
+│       ├── Ottimizzazione del Rischio-Rendimento.md
+│       ├── Stress Testing e Scenario Analysis.md
+│       └── Value at Risk (VaR).md
+├── 04_Part 4 - Asset Allocation e Useful Financial Features
+│   ├── 16_Machine Learning Asset Allocation
+│   │   ├── 01_Da Geometric a Hierarchical Relationships
+│   │   │   ├── Quasi-Diagonalization.md
+│   │   │   ├── Recursive Bisection.md
+│   │   │   └── Tree Clustering.md
+│   │   ├── Conclusioni e Ricerca Ulteriore.md
+│   │   ├── Esempi Numerici.md
+│   │   ├── Markowitz’s Curse.md
+│   │   ├── Motivazione e Problemi dell’Asset Allocation Convessa.md
+│   │   └── Out-of-Sample Monte Carlo Simulations.md
+│   ├── 17_Useful Financial Features
+│   │   ├── 00_Structural Breaks
+│   │   │   ├── 01_CUSUM Tests
+│   │   │   │   ├── Brown-Durbin-Evans CUSUM Test.md
+│   │   │   │   └── Chu-Stinchcombe-White CUSUM Test.md
+│   │   │   ├── 02_Explosiveness Tests
+│   │   │   │   ├── Chow-Type Dickey-Fuller Test.md
+│   │   │   │   └── Supremum Augmented Dickey-Fuller.md
+│   │   │   ├── Motivazione.md
+│   │   │   └── Tipologie di Structural Break Tests.md
+│   │   ├── 01_Entropy Features
+│   │   │   ├── 01_Encoding Schemes
+│   │   │   │   ├── Binary.md
+│   │   │   │   ├── Quantile.md
+│   │   │   │   └── Sigma.md
+│   │   │   ├── Applicazioni Finanziarie (Market Efficiency, Portfolio Concentration, Market Microstructure).md
+│   │   │   ├── Entropy of a Gaussian Process & Generalized Mean.md
+│   │   │   ├── Estimators: Plug-in & Lempel-Ziv.md
+│   │   │   ├── Motivazione.md
+│   │   │   └── Shannon’s Entropy.md
+│   │   └── 02_Microstructural Features
+│   │       ├── 01_First Generation - Price Sequences
+│   │       │   ├── High-Low Volatility Estimator.md
+│   │       │   ├── Roll Model.md
+│   │       │   └── Tick Rule.md
+│   │       ├── 02_Second Generation - Strategic Trade Models
+│   │       │   ├── Amihud’s Lambda.md
+│   │       │   ├── Hasbrouck’s Lambda.md
+│   │       │   └── Kyle’s Lambda.md
+│   │       ├── 03_Third Generation - Sequential Trade Models
+│   │       │   ├── Probability of Information-based Trading.md
+│   │       │   └── Volume-Synchronized Probability of Informed Trading.md
+│   │       ├── 04_Altre Features dai Dati Microstrutturali
+│   │       │   ├── Cancellation Rates (Limit Orders, Market Orders).md
+│   │       │   ├── Distribution of Order Sizes.md
+│   │       │   ├── Options Markets.md
+│   │       │   ├── Serial Correlation of Signed Order Flow.md
+│   │       │   └── Time-Weighted Average Price Execution Algorithms.md
+│   │       └── Motivazione.md
+│   └── 18_Execution e Market Impact
+│       ├── 01_Algoritmi di Execution
+│       │   ├── Iceberg Orders.md
+│       │   ├── TWAP.md
+│       │   └── VWAP.md
+│       ├── Modelli di Market Impact.md
+│       ├── Motivazione.md
+│       └── Slippage e Costi di Transazione.md
+├── Appendice - Sviluppo, Implementazione e Risorse
+│   ├── 00_Sviluppo e Implementazione
+│   │   ├── Architettura del Software e Design degli Algoritmi.md
+│   │   ├── Best Practices e Coding Standards.md
+│   │   └── Implementazione del Codice (esempi, notebook).md
+│   └── 01_Risorse e Bibliografia
+│       ├── Community, Forum e Blog.md
+│       └── Libri, Articoli, Paper, Corsi e Webinar.md
+├── empty-2.sh
+└── tree.txt
+
+60 directories, 169 files

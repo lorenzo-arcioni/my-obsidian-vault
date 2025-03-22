@@ -1,0 +1,19 @@
+# Aggiornare la struttura
+
+├── 04 – Strumenti Matematici e Modelli Probabilistici
+│   ├── 4.3 Modelli Probabilistici e Strategie di Arbitraggio
+│   │   ├── 4.3.1 Modelli discreti per la descrizione dei mercati finanziari.md
+│   │   │   └── Aggiungere: Modello di Markowitz (Media-Varianza)
+│   │   │   └── Aggiungere: Frontiera Efficiente e Capital Market Line (CML)
+│   │   ├── 4.3.3 Mercati completi e pricing delle opzioni europee.md
+│   │   │   └── Aggiungere: Modelli di Pricing degli Asset
+│
+├── 03 – Decisioni Finanziarie e Struttura dei Tassi
+│   ├── 3.3 Principi di Immunizzazione Finanziaria
+│   │   ├── 3.3.3 Strategie di immunizzazione-ad un’unica uscita e a più uscite.md
+│   │   │   └── Aggiungere: Teoria del Rischio e Gestione del Capitale
+│
+├── 01 – Fondamenti di Finanza e Mercati
+│   ├── 1.2 Mercati Finanziari
+│   │   ├── 1.2.1 Proprietà e funzionamento dei mercati.md
+│   │   │   └── Aggiungere: Teoria dei Giochi e Comportamento di Mercato
