@@ -87,15 +87,29 @@
       margin-bottom: 10px;
       font-size: 14px;
     }
+    /* Bottone per mostrare/nascondere il pannello */
+    #togglePanelButton {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 8px 12px;
+      background: #1976d2;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
-  <!-- SVG per il grafo a schermo intero -->
+  <!-- Bottone per mostrare/nascondere il pannello di controllo -->
+  <button id="togglePanelButton">Nascondi Pannello</button>
   <svg></svg>
   
-  <!-- Pannello di controllo -->
   <div id="control-panel">
     <h3>Parametri Simulazione</h3>
+    <!-- Parametri per la simulazione -->
     <label for="linkDistance">Distanza dei Link:</label>
     <input type="number" id="linkDistance" value="150" min="10" max="500">
 
@@ -114,13 +128,16 @@
     <label for="collisionStrength">Forza di Collisione:</label>
     <input type="number" id="collisionStrength" value="0.7" step="0.1" min="0" max="2">
 
+    <!-- Selezione del tipo di animazione -->
     <label for="animationType">Tipo di Animazione:</label>
     <select id="animationType">
       <option value="none">Nessuna Animazione</option>
       <option value="random">Random Moving</option>
+      <option value="spiral">Spiral Movement</option>
+      <option value="bounce">Bounce Movement</option>
     </select>
 
-    <!-- Contenitore dinamico per i parametri di animazione -->
+    <!-- Contenitore per i parametri specifici dell'animazione selezionata -->
     <div id="animation-params-container"></div>
 
     <button id="restart">Riavvia Simulazione</button>
@@ -128,31 +145,27 @@
     <button id="reset">Reset a Stato Iniziale</button>
   </div>
 
-  <!-- Inclusione di D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script>
-    // Imposta dimensioni a schermo intero
+    // Dimensioni della finestra
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    // Seleziona l'SVG e imposta le dimensioni
+    // Selezione dell'SVG e creazione del gruppo per il grafo
     const svg = d3.select("svg")
                   .attr("width", width)
                   .attr("height", height);
-
-    // Gruppo per il grafo (utile per lo zoom)
     const graphGroup = svg.append("g");
 
-    // Variabili globali
+    // Variabili per la simulazione e animazioni
     let simulation;
-    let originalGraphData;  // conterrà i dati originali caricati
-    let animationFrame;     // riferimento al requestAnimationFrame
+    let originalGraphData;
+    let animationFrame;
     let currentAnimation = "none";
     let isAnimating = false;
-    const nodeRadius = 10;  // Raggio dei nodi per calcoli di contenimento
-    const padding = 20;     // Padding dallo schermo
+    const nodeRadius = 10;
 
-    // Parametri di animazione per ogni tipo
+    // Parametri specifici per ogni tipo di animazione
     const animationParams = {
       none: `
         <div class="animation-params">
@@ -169,20 +182,34 @@
           <label for="randomSmoothness">Fluidità (minore = più fluido):</label>
           <input type="number" id="randomSmoothness" value="0.02" min="0.001" max="0.1" step="0.001">
         </div>
+      `,
+      spiral: `
+        <div class="animation-params">
+          <h4>Parametri Spiral Movement</h4>
+          <label for="spiralSpeed">Velocità Spirale:</label>
+          <input type="number" id="spiralSpeed" value="0.05" step="0.01" min="0.01" max="0.5">
+          <label for="spiralShrink">Fattore Contrazione:</label>
+          <input type="number" id="spiralShrink" value="0.99" step="0.01" min="0.5" max="1">
+        </div>
+      `,
+      bounce: `
+        <div class="animation-params">
+          <h4>Parametri Bounce Movement</h4>
+          <label for="bounceIntensity">Intensità Rimbalzo:</label>
+          <input type="number" id="bounceIntensity" value="2" min="1" max="10">
+        </div>
       `
     };
 
-    // Aggiorna i parametri di animazione in base alla selezione
+    // Funzione per aggiornare i parametri dell'animazione selezionata
     function updateAnimationParams() {
       const animationType = document.getElementById("animationType").value;
       document.getElementById("animation-params-container").innerHTML = animationParams[animationType];
       currentAnimation = animationType;
-
-      // Ferma eventuali animazioni in corso
       stopAnimation();
     }
 
-    // Funzione per fermare l'animazione
+    // Ferma l'animazione corrente (se in esecuzione)
     function stopAnimation() {
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
@@ -191,21 +218,18 @@
       isAnimating = false;
     }
 
-    // Inizializza i parametri dell'animazione al caricamento
     updateAnimationParams();
-
-    // Aggiorna i parametri quando cambia la selezione
     document.getElementById("animationType").addEventListener("change", updateAnimationParams);
 
-    // Funzione per inizializzare (o reinizializzare) la simulazione con i dati forniti
+    // Funzione per avviare la simulazione del grafo
     function startSimulation(graphData) {
-      // Mappa gli edge nel formato D3
+      // Creazione dei link a partire dagli archi definiti nel JSON
       const links = graphData.edges.map(edge => ({
         source: edge.from,
         target: edge.to
       }));
 
-      // Aggiunge eventuali nodi mancanti referenziati dagli edge
+      // Aggiunge eventuali nodi mancanti se definiti solo nei link
       links.forEach(link => {
         if (!graphData.nodes.some(n => n.id === link.source)) {
           graphData.nodes.push({ id: link.source, label: link.source });
@@ -215,10 +239,10 @@
         }
       });
 
-      // Rimuove vecchi elementi dal gruppo
+      // Rimuove elementi esistenti dal gruppo del grafo
       graphGroup.selectAll("*").remove();
 
-      // Crea gli elementi per i link
+      // Aggiunge i link
       const link = graphGroup.append("g")
         .attr("class", "links")
         .selectAll("line")
@@ -226,7 +250,7 @@
         .enter().append("line")
           .attr("class", "link");
 
-      // Crea gli elementi per i nodi
+      // Aggiunge i nodi come cerchi e li abilita al drag
       const node = graphGroup.append("g")
         .attr("class", "nodes")
         .selectAll("circle")
@@ -236,7 +260,7 @@
           .attr("r", nodeRadius)
           .call(drag);
 
-      // Aggiunge le etichette ai nodi
+      // Aggiunge le etichette dei nodi
       const label = graphGroup.append("g")
         .attr("class", "labels")
         .selectAll("text")
@@ -246,7 +270,7 @@
           .attr("text-anchor", "middle")
           .text(d => d.label);
 
-      // Recupera i valori dal pannello di controllo
+      // Legge i parametri della simulazione dal pannello di controllo
       const linkDistance = +document.getElementById("linkDistance").value;
       const chargeStrength = +document.getElementById("chargeStrength").value;
       const alphaDecay = +document.getElementById("alphaDecay").value;
@@ -254,25 +278,20 @@
       const collisionRadius = +document.getElementById("collisionRadius").value;
       const collisionStrength = +document.getElementById("collisionStrength").value;
 
-      // Crea la simulazione con le forze configurabili
+      // Inizializza la simulazione D3 con le forze definite
       simulation = d3.forceSimulation(graphData.nodes)
         .force("link", d3.forceLink(links).id(d => d.id).distance(linkDistance))
         .force("charge", d3.forceManyBody().strength(chargeStrength))
         .force("center", d3.forceCenter(width / 2, height / 2))
         .force("collision", d3.forceCollide().radius(collisionRadius).strength(collisionStrength))
-        .force("x", d3.forceX(width / 2).strength(0.01))  // Forza leggera verso il centro orizzontale
-        .force("y", d3.forceY(height / 2).strength(0.01))  // Forza leggera verso il centro verticale
+        // Le forze x ed y mantengono i nodi centrati; il valore di forza può essere modificato in base alle esigenze
+        .force("x", d3.forceX(width / 2).strength(0.01))
+        .force("y", d3.forceY(height / 2).strength(0.01))
         .alphaDecay(alphaDecay)
         .velocityDecay(velocityDecay);
 
-      // Aggiorna le posizioni ad ogni tick
+      // Aggiornamento della posizione degli elementi ad ogni tick della simulazione
       simulation.on("tick", () => {
-        // Assicura che i nodi rimangano entro i confini dello schermo
-        simulation.nodes().forEach(node => {
-          node.x = Math.max(nodeRadius + padding, Math.min(width - nodeRadius - padding, node.x));
-          node.y = Math.max(nodeRadius + padding, Math.min(height - nodeRadius - padding, node.y));
-        });
-
         link
           .attr("x1", d => d.source.x)
           .attr("y1", d => d.source.y)
@@ -289,7 +308,7 @@
       });
     }
 
-    // Funzione per il drag dei nodi
+    // Funzioni per il drag dei nodi
     const drag = d3.drag()
       .on("start", (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -297,8 +316,8 @@
         d.fy = d.y;
       })
       .on("drag", (event, d) => {
-        d.fx = Math.max(nodeRadius + padding, Math.min(width - nodeRadius - padding, event.x));
-        d.fy = Math.max(nodeRadius + padding, Math.min(height - nodeRadius - padding, event.y));
+        d.fx = event.x;
+        d.fy = event.y;
       })
       .on("end", (event, d) => {
         if (!event.active) simulation.alphaTarget(0);
@@ -306,7 +325,7 @@
         d.fy = null;
       });
 
-    // Abilita lo zoom (rotella del mouse e pan)
+    // Abilita lo zoom sul grafo
     svg.call(d3.zoom()
       .scaleExtent([0.1, 5])
       .on("zoom", (event) => {
@@ -314,17 +333,16 @@
       })
     );
 
-    // Carica il file JSON e salva una copia dei dati originali
+    // Carica i dati del grafo da un file JSON
     fetch("graph.json")
       .then(response => response.json())
       .then(graphData => {
-        // Crea una copia profonda dei dati per il reset
         originalGraphData = JSON.parse(JSON.stringify(graphData));
         startSimulation(graphData);
       })
       .catch(error => console.error("Errore nel caricamento del file JSON:", error));
 
-    // Pulsante per riavviare la simulazione con i parametri nuovi (senza ricreare il grafo)
+    // Pulsante per riavviare la simulazione aggiornando le forze in base ai parametri del pannello
     document.getElementById("restart").addEventListener("click", () => {
       if (simulation) {
         simulation.force("link").distance(+document.getElementById("linkDistance").value);
@@ -337,37 +355,29 @@
       }
     });
 
-    // Pulsante per resettare la simulazione alla situazione iniziale
+    // Pulsante per resettare la simulazione allo stato iniziale
     document.getElementById("reset").addEventListener("click", () => {
       if (originalGraphData) {
-        // Ferma eventuali animazioni in corso
         stopAnimation();
-        
-        // Crea una nuova copia dei dati originali per evitare modifiche in-place
         const resetData = JSON.parse(JSON.stringify(originalGraphData));
         startSimulation(resetData);
       }
     });
 
-    // Funzione per l'animazione random dei nodi (fluida con requestAnimationFrame)
+    // Animazione Random Moving: modifica casualmente la velocità dei nodi
     function animateRandomMovement() {
       if (!simulation || !isAnimating) return;
       
-      // Intensità del movimento casuale
       const intensity = +document.getElementById("randomIntensity").value;
       const smoothness = +document.getElementById("randomSmoothness").value;
       
-      // Assegna velocità casuali iniziali ai nodi se necessario
       simulation.nodes().forEach(node => {
-        // Inizializza le velocità se non esistono
         if (!node.vx) node.vx = (Math.random() - 0.5) * intensity;
         if (!node.vy) node.vy = (Math.random() - 0.5) * intensity;
         
-        // Aggiorna le velocità con leggere variazioni casuali per fluidità
         node.vx += (Math.random() - 0.5) * smoothness * intensity;
         node.vy += (Math.random() - 0.5) * smoothness * intensity;
         
-        // Limita la velocità massima
         const maxSpeed = intensity * 2;
         const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
         if (speed > maxSpeed) {
@@ -375,60 +385,93 @@
           node.vy = (node.vy / speed) * maxSpeed;
         }
         
-        // Muovi il nodo in base alla sua velocità (solo se non è fissato)
         if (!node.fx && !node.fy) {
           node.x += node.vx;
           node.y += node.vy;
-          
-          // Rimbalza dai bordi dello schermo
-          if (node.x < nodeRadius + padding) {
-            node.x = nodeRadius + padding;
-            node.vx = Math.abs(node.vx);
-          } else if (node.x > width - nodeRadius - padding) {
-            node.x = width - nodeRadius - padding;
-            node.vx = -Math.abs(node.vx);
-          }
-          
-          if (node.y < nodeRadius + padding) {
-            node.y = nodeRadius + padding;
-            node.vy = Math.abs(node.vy);
-          } else if (node.y > height - nodeRadius - padding) {
-            node.y = height - nodeRadius - padding;
-            node.vy = -Math.abs(node.vy);
-          }
         }
       });
       
-      // Forza un aggiornamento della visualizzazione
       simulation.alpha(0.3).restart();
-      
-      // Continua l'animazione
       animationFrame = requestAnimationFrame(animateRandomMovement);
     }
 
-    // Pulsante per avviare l'animazione
-    document.getElementById("startAnimation").addEventListener("click", () => {
-      // Ferma eventuali animazioni in corso
-      stopAnimation();
+    // Animazione Spiral Movement: i nodi ruotano attorno al centro seguendo una traiettoria a spirale
+    function animateSpiralMovement() {
+      if (!simulation || !isAnimating) return;
+      const spiralSpeed = +document.getElementById("spiralSpeed").value;
+      const spiralShrink = +document.getElementById("spiralShrink").value;
+      const centerX = width / 2;
+      const centerY = height / 2;
       
-      // Avvia l'animazione appropriata se non è "nessuna"
+      simulation.nodes().forEach(node => {
+        // Inizializza l'angolo e la distanza dal centro se non esistono
+        if (node.angle === undefined) {
+          const dx = node.x - centerX;
+          const dy = node.y - centerY;
+          node.angle = Math.atan2(dy, dx);
+          node.radius = Math.sqrt(dx * dx + dy * dy);
+        }
+        // Incrementa l'angolo e applica il fattore di contrazione alla distanza
+        node.angle += spiralSpeed;
+        node.radius *= spiralShrink;
+        node.x = centerX + node.radius * Math.cos(node.angle);
+        node.y = centerY + node.radius * Math.sin(node.angle);
+      });
+      
+      simulation.alpha(0.3).restart();
+      animationFrame = requestAnimationFrame(animateSpiralMovement);
+    }
+
+    // Animazione Bounce Movement: i nodi si muovono e rimbalzano contro i bordi della finestra
+    function animateBounceMovement() {
+      if (!simulation || !isAnimating) return;
+      const bounceIntensity = +document.getElementById("bounceIntensity").value;
+      
+      simulation.nodes().forEach(node => {
+        // Inizializza le velocità se non esistono
+        if (node.vx === undefined || node.vy === undefined) {
+          node.vx = (Math.random() - 0.5) * bounceIntensity;
+          node.vy = (Math.random() - 0.5) * bounceIntensity;
+        }
+        // Aggiorna la posizione del nodo
+        node.x += node.vx;
+        node.y += node.vy;
+        // Se il nodo raggiunge il bordo, inverte la direzione
+        if (node.x < nodeRadius || node.x > width - nodeRadius) {
+          node.vx *= -1;
+        }
+        if (node.y < nodeRadius || node.y > height - nodeRadius) {
+          node.vy *= -1;
+        }
+      });
+      
+      simulation.alpha(0.3).restart();
+      animationFrame = requestAnimationFrame(animateBounceMovement);
+    }
+
+    // Gestione del pulsante "Avvia Simulazione" per selezionare l'animazione corretta
+    document.getElementById("startAnimation").addEventListener("click", () => {
+      stopAnimation();
+      isAnimating = true;
       if (currentAnimation === "random") {
-        isAnimating = true;
         animationFrame = requestAnimationFrame(animateRandomMovement);
+      } else if (currentAnimation === "spiral") {
+        animationFrame = requestAnimationFrame(animateSpiralMovement);
+      } else if (currentAnimation === "bounce") {
+        animationFrame = requestAnimationFrame(animateBounceMovement);
       }
     });
 
-    // Ferma l'animazione quando la finestra perde il focus
+    // Ferma l'animazione se la finestra perde il focus
     window.addEventListener("blur", stopAnimation);
     
-    // Gestisce il ridimensionamento della finestra
+    // Gestione del ridimensionamento della finestra: aggiorna le forze centrali
     window.addEventListener("resize", () => {
       const newWidth = window.innerWidth;
       const newHeight = window.innerHeight;
       
       svg.attr("width", newWidth).attr("height", newHeight);
       
-      // Aggiorna le forze centrali
       if (simulation) {
         simulation.force("center").x(newWidth / 2).y(newHeight / 2);
         simulation.force("x").x(newWidth / 2);
@@ -436,6 +479,19 @@
         simulation.alpha(0.3).restart();
       }
     });
+
+    // Gestione del bottone per mostrare/nascondere il pannello di controllo
+    document.getElementById("togglePanelButton").addEventListener("click", () => {
+      const panel = document.getElementById("control-panel");
+      if (panel.style.display === "none") {
+        panel.style.display = "block";
+        document.getElementById("togglePanelButton").innerText = "Nascondi Pannello";
+      } else {
+        panel.style.display = "none";
+        document.getElementById("togglePanelButton").innerText = "Mostra Pannello";
+      }
+    });
   </script>
 </body>
 </html>
+
