@@ -48,7 +48,7 @@ Quindi:
 - $p(y_i=1 \mid \mathbf x_i, \mathbf w) = \sigma(\mathbf{x}_i^\top \mathbf w) = \frac{1}{1 + e^{-\mathbf{x}_i^\top \mathbf w}}$
 - $p(y_i=0 \mid \mathbf x_i, \mathbf w) = 1 - \sigma(\mathbf{x}_i^\top \mathbf w) = \frac{e^{-\mathbf{x}_i^\top \mathbf w}}{1 + e^{-\mathbf{x}_i^\top \mathbf w}}$
 
-Quindi, la verosimiglianza del vettore di tutte le osservazioni $\mathbf y$ dati un vettore di pesi $\mathbf w$ e una matrice di features $\mathbf X \in \mathbb R^{n \times (m+1)}$ viene definita come:
+Quindi, la verosimiglianza del vettore di tutte le osservazioni $\mathbf y \in \mathbb R^n$ dati un vettore di pesi $\mathbf w \in \mathbb R^{m+1}$ e una matrice di features $\mathbf X \in \mathbb R^{n \times (m+1)}$ viene definita come:
 
 $$\begin{align*}
 p(\mathbf y \mid \mathbf X, \mathbf w) &= \prod_{i=1}^n \hat{f}_\mathbf w(\mathbf x_i)^{y_i} \left(1 - \hat{f}_\mathbf w(\mathbf x_i)\right)^{1 - y_i}\\ 
@@ -58,7 +58,7 @@ $$
 
 In questo modo, quando (la label del dataset) $y_i = 1$, consideriamo la probabilità predetta dal modello per la classe $1$, mentre quando $y_i = 0$, consideriamo la probabilità predetta dal modello per la classe $0$.
 
-Il nostro obiettivo è quello di trovare il vettore di pesi $\mathbf w$ che massimizza questa funzione di verosimiglianza.
+Il nostro obiettivo è quello di trovare il vettore di pesi $\mathbf w$ che massimizza questa funzione di verosimiglianza (la probabilità che, dati i dati e i pesi, si ottengano le previsioni giuste).
 
 ## **Ottimizzazione del Modello**
 Ora possiamo quindi definire la funzione di verosimiglianza (Likelihood Function) come:
@@ -84,9 +84,89 @@ $$
 \mathcal{LL}(\mathbf{w}) = -\frac{1}{n} \sum_{i=1}^n \left(y_i \ln(\sigma(\mathbf{x}_i^\top \mathbf w)) + (1 - y_i) \ln(1 - \sigma(\mathbf{x}_i^\top \mathbf w))\right).
 $$
 
-Quindi il nostro problema di massimizzazione della funzione di verosimiglianza diventa un problema di minimizzazione della funzione di perdita (grazie al fattore di mediazione negativo).
+Quindi il problema di massimizzazione della funzione di verosimiglianza diventa un problema di minimizzazione della funzione di perdita (grazie al fattore di mediazione negativo).
 
+### Dimostrazione della Convessità della Log-Loss
 
+Per dimostrare che la **log-loss** è una funzione convessa, possiamo verificare che la sua Hessiana (la matrice delle derivate seconde) è **definita positiva**. Seguiamo i passaggi dettagliatamente.
+
+#### 1. Definizione della Log-Loss
+
+Supponiamo di avere la funzione di log-loss:
+
+$$
+\mathcal{LL}(w) = -\frac{1}{n} \sum_{i=1}^{n} \left[ y_i \ln(\sigma(z_i)) + (1 - y_i) \ln(1 - \sigma(z_i)) \right],
+$$
+
+dove:
+
+- $z_i = \mathbf x_i^\top \mathbf w$ rappresenta la combinazione lineare dei pesi $\mathbf w$ e delle feature $\mathbf x_i$.
+- $\sigma(z)$ è la **funzione sigmoide** definita come:
+  
+  $$
+  \sigma(z) = \frac{1}{1 + e^{-z}}.
+  $$
+
+#### 2. Calcolo della derivata prima
+
+Consideriamo la funzione interna:
+
+$$
+f(z_i) = -\left[ y_i \ln(\sigma(z_i)) + (1 - y_i) \ln(1 - \sigma(z_i)) \right].
+$$
+
+Deriviamo rispetto a $z_i$. Utilizzando le proprietà della funzione sigmoide, otteniamo:
+
+$$
+\frac{d}{dz_i} f(z_i) = \sigma(z_i) - y_i.
+$$
+
+Applicando la **chain rule**, la derivata della log-loss rispetto ai pesi $w$ è:
+
+$$
+\nabla_w \mathcal{LL}(w) = \frac{1}{n} \sum_{i=1}^{n} (\sigma(z_i) - y_i) x_i.
+$$
+
+Questa espressione rappresenta il **gradiente** della log-loss.
+
+#### 3. Calcolo della Hessiana (derivata seconda)
+
+Ora calcoliamo la derivata seconda della log-loss. La derivata della sigmoide è:
+
+$$
+\sigma'(z_i) = \sigma(z_i)(1 - \sigma(z_i)).
+$$
+
+Quindi, derivando il gradiente rispetto a $w$, otteniamo la Hessiana:
+
+$$
+\nabla_w^2 LL(w) = \frac{1}{n} \sum_{i=1}^{n} \sigma(z_i)(1 - \sigma(z_i)) x_i x_i^\top.
+$$
+
+#### 4. Proprietà della Hessiana
+
+Per dimostrare la convessità, dobbiamo verificare che la Hessiana è **semidefinita positiva**.
+
+- La quantità $\sigma(z_i)(1 - \sigma(z_i))$ è sempre positiva per ogni $z_i \in \mathbb{R}$, poiché la sigmoide assume valori tra $0$ e $1$ e il prodotto $\sigma(z)(1 - \sigma(z))$ è sempre positivo.
+- Il termine $x_i x_i^\top$ è una matrice **semidefinita positiva** perché, per ogni vettore $v$, vale:
+  
+  $$
+  v^\top (x_i x_i^\top) v = (x_i^\top v)^2 \geq 0.
+  $$
+
+Poiché la somma di matrici **semidefinite positive** è ancora **semidefinita positiva**, la Hessiana $\nabla_w^2 LL(w)$ è **semidefinita positiva**.
+
+#### 5. Conclusione
+
+Abbiamo dimostrato che la Hessiana della log-loss è **semidefinita positiva**, il che implica che la log-loss è **una funzione convessa** rispetto ai pesi $w$. 
+
+In sintesi, la convessità della log-loss segue dal fatto che:
+
+$$
+\nabla_w^2 LL(w) = \frac{1}{n} \sum_{i=1}^{n} \sigma(z_i)(1 - \sigma(z_i)) x_i x_i^\top
+$$
+
+è una matrice **semidefinita positiva**, il che garantisce che la log-loss è **convessa**. 🚀
 
 ## **Estensione Multiclasse: Softmax e Logica Multinomiale**
 

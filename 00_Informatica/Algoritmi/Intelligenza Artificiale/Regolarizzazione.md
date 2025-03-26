@@ -78,6 +78,53 @@ $$
 - **L1**: Applica una spinta costante ($\lambda$ o $-\lambda$) verso zero, indipendentemente dal valore di $\theta$.
 - **L2**: Applica una spinta proporzionale al valore di $\theta$, portando i parametri più grandi a ridursi più rapidamente.
 
+#### Come cambia la normal equation qando si applica regolarizzazione $L_2$?
+
+La funzione di errore da minimizzare diventa:
+$$
+\ell(\mathbf{W}) = \|\mathbf{Y} - \mathbf{X} \mathbf{W}\|_2^2 + \lambda \|\mathbf{W}\|_2^2
+$$
+
+Espandiamo la norma euclidea:
+
+$$
+\ell(\mathbf{W}) = (\mathbf{Y} - \mathbf{X} \mathbf{W})^\top (\mathbf{Y} - \mathbf{X} \mathbf{W}) + \lambda \mathbf{W}^\top \mathbf{W}
+$$
+
+Sviluppiamo il prodotto:
+
+$$
+\ell(\mathbf{W}) = \mathbf{Y}^\top \mathbf{Y} - 2 \mathbf{W}^\top \mathbf{X}^\top \mathbf{Y} + \mathbf{W}^\top \mathbf{X}^\top \mathbf{X} \mathbf{W} + \lambda \mathbf{W}^\top \mathbf{W}
+$$
+
+Ora calcoliamo la derivata rispetto a $\mathbf{W}$:
+
+$$
+\frac{\partial \ell(\mathbf{W})}{\partial \mathbf{W}} = -2 \mathbf{X}^\top \mathbf{Y} + 2 \mathbf{X}^\top \mathbf{X} \mathbf{W} + 2 \lambda \mathbf{W}
+$$
+
+Imponiamo la condizione di ottimalità:
+
+$$
+-2 \mathbf{X}^\top \mathbf{Y} + 2 \mathbf{X}^\top \mathbf{X} \mathbf{W} + 2 \lambda \mathbf{W} = 0
+$$
+
+Semplificando:
+
+$$\begin{align*}
+\mathbf{X}^\top \mathbf{X} \mathbf{W} + \lambda \mathbf{W} &= \mathbf{X}^\top \mathbf{Y}\\
+(\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I}) \mathbf{W} &= \mathbf{X}^\top \mathbf{Y}
+\end{align*}
+$$
+
+Se $\mathbf{X}^\top \mathbf{X} + \lambda I$ è invertibile, la soluzione ottimale è:
+
+$$
+\mathbf{W} = (\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I})^{-1} \mathbf{X}^\top \mathbf{Y}
+$$
+
+Questa è la soluzione **OLS** nel caso multidimensionale con regolarizzazione $L_2$. In [[Dimostrazione di Invertibilità Ridge|questa]] nota, è presente una dimostrazione sul perché la soluzione OLS con regolarizzazione $L_2$ sia ben definita e la matrice $(\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I})$ sia sempre invertibile.
+
 ## **Definizione Formale di Regolarizzazione**
 
 **Definizione 3.2 (Regolarizzazione)**: Qualsiasi modifica intesa a ridurre l'errore di generalizzazione ma non l'errore di training.
@@ -94,9 +141,13 @@ $$
 
 Inoltre, notiamo che qualsiasi $p$-norma non sarà lineare in $\Theta$ poiché contiene almeno il valore assoluto.
 
-Altri regolarizzatori inducono proprietà desiderate sui parametri. In generale, la regolarizzazione ci consente di imporre un certo comportamento atteso nel nostro modello di apprendimento.  
+In generale, la regolarizzazione ci consente di imporre un certo comportamento atteso nel nostro modello di apprendimento.  
 Essa permette di controllare la complessità del modello e, facendo ciò, riduce la necessità di disporre di grandi quantità di dati, poiché impone un determinato comportamento.  
 Si noti che i regolarizzatori non sono sempre definiti come penalizzazioni incluse nelle funzioni di perdita.
+
+> *Se i regolarizzatori riducono l'overfitting, non basterebbe ridurre la complessità del modello invece che introdurre un termine di penalizzazione?*
+>
+> A volte può essere sufficiente ridurre la complessità del modello per evitare l'overfitting, questo approccio può essere funzionale se il problema di apprendimento non richiede un modello molto complesso. Ma se siamo di fronte ad un problema che richiede un modello più complesso, la regolarizzazione è la scelta migliore in quanto permette comunque al modello di catturare pattern complessi senza basarsi troppo sui dati di addestramento.
 
 ## **Altre Forme di Regolarizzazione**
 

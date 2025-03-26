@@ -247,13 +247,13 @@ $$
 Espandiamo la norma euclidea:
 
 $$
-\ell(\mathbf{W}) = \text{Tr} \left( (\mathbf{Y} - \mathbf{X} \mathbf{W})^\top (\mathbf{Y} - \mathbf{X} \mathbf{W}) \right)
+\ell(\mathbf{W}) = (\mathbf{Y} - \mathbf{X} \mathbf{W})^\top (\mathbf{Y} - \mathbf{X} \mathbf{W})
 $$
 
 Sviluppiamo il prodotto:
 
 $$
-\ell(\mathbf{W}) = \text{Tr} \left( \mathbf{Y}^\top \mathbf{Y} - 2 \mathbf{W}^\top \mathbf{X}^\top \mathbf{Y} + \mathbf{W}^\top \mathbf{X}^\top \mathbf{X} \mathbf{W} \right)
+\ell(\mathbf{W}) = \mathbf{Y}^\top \mathbf{Y} - 2 \mathbf{W}^\top \mathbf{X}^\top \mathbf{Y} + \mathbf{W}^\top \mathbf{X}^\top \mathbf{X} \mathbf{W}
 $$
 
 Ora calcoliamo la derivata rispetto a $\mathbf{W}$:

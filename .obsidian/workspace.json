@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00_Informatica/Algoritmi/Intelligenza Artificiale/Overfitting e Underfitting.md",
-                "mode": "source",
+                "file": "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Espressioni Regolari.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Overfitting e Underfitting"
+              "title": "Espressioni Regolari"
             }
           }
         ]
@@ -170,11 +170,17 @@
   },
   "active": "0f4d551604f1b5e8",
   "lastOpenFiles": [
+    "tmp_graph.txt",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora e Normalizzazione.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Automi a Stati Finiti.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Espressioni Regolari.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Introduzione all'NLP.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Applicazioni Pratiche delle Regex.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Overfitting e Underfitting.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Tipologie di Problemi/Regressione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Classificazione/Classificazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Tipologie di Problemi/Classificazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Tipologie di Problemi",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Overfitting e Underfitting.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Linear Models/Regressione Logistica.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Classificazione",
     "00_Informatica/Algoritmi/Ottimizzazione/Dimostrazione di Invertibilità Ridge.md",
@@ -182,7 +188,6 @@
     "graph_animation.js",
     "empty.txt",
     "graph.json",
-    "tmp_graph.txt",
     "json_graph.sh",
     "empty.sh",
     "01_Matematica/Algebra/Metriche, Norme e Distanze.md",
@@ -200,12 +205,6 @@
     "01_Matematica/Calcolo/Calcolo Matriciale/Introduzione",
     "00_Informatica/Algoritmi/Ottimizzazione/Metodo dei Minimi Quadrati.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Linear Models/Regressione Lineare.md",
-    "02_AlgoTrading/03_Part 3 - Backtesting e Performance/11_The Dangers of Backtesting/The Flawless Backtest.md",
-    "02_AlgoTrading/03_Part 3 - Backtesting e Performance/14_Backtest Statistics/Tipologie di Statistiche.md",
-    "02_AlgoTrading/03_Part 3 - Backtesting e Performance/14_Backtest Statistics/Time-Weighted Return, Drawdown, Sharpe Ratio, etc..md",
-    "02_AlgoTrading/04_Part 4 - Asset Allocation e Useful Financial Features/17_Useful Financial Features/01_Entropy Features/Estimators, Plug-in & Lempel-Ziv.md",
-    "01_Matematica/Calcolo/Sottoderivata e Sottogradiente.md",
-    "01_Matematica/Calcolo/Sottoderivata.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_b.svg",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_a.svg",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/elbow-method-clustering.svg",
