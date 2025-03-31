@@ -1,18 +1,18 @@
-# Automi a Stati Finiti (FSA)
+# Automi a Stati Finiti (Finite State Automata)
 
 ## Definizione Formale
 Un automa a stati finiti è una **quintupla** $(Q, \Sigma, \delta, q_0, A)$, dove:
 - **$Q$**: Insieme finito di stati (es. $q_0, q_1, q_2$).
 - **$\Sigma$**: Alfabeto (simboli consentiti, es. $\{a, b, l\}$).
-- **$\delta$**: Funzione di transizione $\delta(q, x) \rightarrow q'$. Definisce come l'automa passa da uno stato $q$ a $q'$ leggendo il simbolo $x$.
+- **$\delta: Q \times \Sigma \rightarrow Q$**: Funzione di transizione $\delta(q, x) \rightarrow q'$. Definisce come l'automa passa da uno stato $q$ a $q'$ leggendo il simbolo $x$.
 - **$q_0$**: Stato iniziale (es. $q_0$).
 - **$A$**: Insieme di stati accettanti/finali (es. $\{q_4\}$).
 
----
+Gli automi a stati finiti fanno parte dei **rule-based systems**, come le [[Espressioni Regolari|regex]].
 
 ## Esempio: Il "Linguaggio delle Pecore"
 ### Descrizione
-- **Linguaggio $L_{\text{sheep}}$**: Stringhe che iniziano con "b", seguite da almeno due "a", e terminano con "!" (es. "baa!", "baaaaa!", ...).
+- **Linguaggio $L_{\text{sheep}} = \{ \text{baa!}, \text{baaaa!}, \text{baaaaaa!}, ... \}$**: Stringhe che iniziano con "b", seguite da almeno due "a", e terminano con "!".
 - **Regex corrispondente**: `/baa+!/`.
 
 ### Automa Corrispondente
@@ -42,16 +42,21 @@ Un automa a stati finiti è una **quintupla** $(Q, \Sigma, \delta, q_0, A)$, dov
 \end{document}
 ```
 
-### Tabella di Transizione
-| Stato | $b$      | $a$      | $!$      |
-|-------|----------|----------|----------|
-| $q_0$ | $q_1$    | -        | -        |
-| $q_1$ | -        | $q_2$    | -        |
-| $q_2$ | -        | $q_3$    | -        |
-| $q_3$ | -        | $q_3$    | $q_4$    |
-| $q_4$ | -        | -        | -        |
+### Definita come FSA
 
----
+- **Stati**: $Q = \{q_0, q_1, q_2, q_3, q_4\}$.
+- **Alfabeto**: $\Sigma = \{b, a, !\}$.
+- **Stato iniziale**: $q_0$.
+- **Stati accettanti**: $A = \{q_4\}$.
+- **Tabella di Transizione di $\delta$**:
+
+    | Stato | $b$      | $a$      | $!$      |
+    |-------|----------|----------|----------|
+    | $q_0$ | $q_1$    | -        | -        |
+    | $q_1$ | -        | $q_2$    | -        |
+    | $q_2$ | -        | $q_3$    | -        |
+    | $q_3$ | -        | $q_3$    | $q_4$    |
+    | $q_4$ | -        | -        | -        |
 
 ## Funzionamento di un FSA
 ### Processo di Riconoscimento
@@ -60,47 +65,29 @@ Un automa a stati finiti è una **quintupla** $(Q, \Sigma, \delta, q_0, A)$, dov
 2. **Input**: "ba!"
    - $q_0 \xrightarrow{b} q_1 \xrightarrow{a} q_2$ → Esaurimento input in stato non finale → **Rifiutata**.
 
----
+Quindi se l'input si esaurisce in uno stato finale, la stringa viene **riconosciuta** come appartenente al linguaggio, mentre se si esaurisce in uno stato non finale, la stringa viene **rifiutata**. Se l'automa non raggiunge mai uno stato finale, diremo che fallisce l'accettazione.
 
 ## Accettatori vs. Generatori
-- **Accettatori**: Verificano se una stringa appartiene al linguaggio.
-- **Generatori**: Producono tutte le stringhe valide.  
-**Esempio generato**:  
-```tikz
-\usepackage{tikz}
-\usetikzlibrary{automata, positioning, arrows.meta}
-\begin{document}
-\begin{tikzpicture}[
-    node distance=3cm, 
-    scale=1.5,
-    every state/.style={minimum size=1.2cm},
-    highlight/.style={red, thick}
-]
-    \node[state, initial] (start) {$q_0$};
-    \node[state, right=of start] (q1) {$q_1$};
-    \node[state, right=of q1] (q2) {$q_2$};
-    \node[state, right=of q2] (q3) {$q_3$};
-    \node[state, accepting, right=of q3] (end) {$q_4$};
-    
-    \path[->, >=Stealth, highlight]
-    (start) edge node {b} (q1)
-    (q1) edge node {a} (q2)
-    (q2) edge node {a} (q3)
-    (q3) edge[loop above] node {a} ()
-          edge node {!} (end);
-\end{tikzpicture}
-\end{document}
-```
 
----
+I [[Linguaggi Formali]] sono insiemi di stringhe composte di simboli derivati da un alfabeto (insieme finito di simboli). Gli FSA definiscono un linguaggio formale. Possiamo vedere gli FSA anche come **generatori** di stringhe di linguaggi formali.
+
+- **Accettatori**: Verificano se una stringa appartiene al linguaggio.
+- **Generatori**: Producono tutte le stringhe valide.
 
 ## Relazione tra Regex e FSA
+Ogni Regex corrisponde ad un FSA che accetta il linguaggio corrispondente. Simmetricamente, ogni FSA corrisponde ad una Regex che accetta il linguaggio corrispondente. Un'espressione regolare è un modo di caratterizzare un particolare linguaggio formale chiamato [[Linguaggio Regolare]]. Entrambi FSA e Regex sono utilizzati per descrivere linguaggi regolari.
+
+Possiamo definire il linguaggio regolare così: 
+$$L(M) = \{ w \in \Sigma^* \mid M \text{ accetta } w \}
+$$
+con $M$ un FSA.
+
 ### Equivalenze
 | Operazione Regex      | Operazione FSA                  |
 |-----------------------|---------------------------------|
-| `RE1\|RE2` (Unione)     | FSA che accetta $L_1 \cup L_2$ |
-| `RE1RE2` (Concatenazione)| FSA che accetta $L_1L_2$     |
-| `RE*` (Kleene Star)   | FSA con loop per ripetizioni    |
+| $RE_{L_1} \mid RE_{L_2}$ (Unione)     | FSA che accetta $L_1 \cup L_2 = \{ w \mid w \in L_1 \lor w \in L_2 \}$ |
+| $RE_{L_1}RE_{L_2}$ (Concatenazione)| FSA che accetta $L_1L_2 = \{ xy \mid x \in L_1 \land y \in L_2 \}$     |
+| $RE^*$ (Kleene Star)   | FSA con loop per ripetizioni $L^* = \bigcup_{n=0}^{\infty} L^n$ chiamado [[Chiusura di Kleene]]   |
 
 **Esempio**: Regex `(a|b)*c`  
 ```tikz
@@ -122,12 +109,10 @@ Un automa a stati finiti è una **quintupla** $(Q, \Sigma, \delta, q_0, A)$, dov
 \end{document}
 ```
 
----
-
 ## Esercizio Guidato
 ### Dati
-- $L_1 = \\{\text{nlp}, \text{nat\_lang\_proc}\\}$
-- $L_2 = \\{\text{\_is\_cool}\\}$
+- $L_1 = \{\text{nlp}, \text{nat\_lang\_proc}\}$
+- $L_2 = \{\text{\_is\_cool}\}$
 - $L_3 = L_1L_2^*$
 
 ### Soluzione
@@ -135,54 +120,22 @@ Un automa a stati finiti è una **quintupla** $(Q, \Sigma, \delta, q_0, A)$, dov
 ```tikz
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning, arrows.meta}
-\begin{document}
-\begin{tikzpicture}[
-    node distance=2.5cm, 
-    scale=1.5,
-    every state/.style={minimum size=1.2cm}
-]
-    \node[state, initial] (start) {$q_0$};
-    \node[state, above right=of start] (nlp) {$q_1$};
-    \node[state, below right=of start] (nat) {$q_2$};
-    \node[state, accepting, right=4cm of start] (loop) {$q_3$};
-    
-    \path[->, >=Stealth]
-    (start) edge node[above left] {nlp} (nlp)
-            edge node[below left] {nat\_lang\_proc} (nat)
-    (nlp) edge node[above] {$\epsilon$} (loop)
-    (nat) edge node[below] {$\epsilon$} (loop)
-    (loop) edge[loop right] node {\_is\_cool} ();
-\end{tikzpicture}
-\end{document}
-```
-
----
-
-## Applicazioni in NLP
-### Tokenizzazione
-```tikz
-\usepackage{tikz}
-\usetikzlibrary{automata, positioning, arrows.meta}
 
 \begin{document}
 \begin{tikzpicture}[
-    node distance=2.5cm, 
-    scale=1.5,
+    node distance=3cm,
     every state/.style={minimum size=1.2cm}
 ]
-    \node[state, initial] (start) {$q_0$};
-    \node[state, accepting, right=of start] (word) {$q_1$};
-    \node[state, accepting, below=of start] (num) {$q_2$};
+    \node[state, initial] (q0) {$q_0$};
+    \node[state, accepting, right=of q0] (q1) {$q_1$};
     
     \path[->, >=Stealth]
-    (start) edge[loop above] node {Lettere} ()
-            edge node[right] {Cifre} (num)
-            edge node[above] {Simboli} (word);
+    (q0) edge node[above] {nlp} (q1)
+         edge [bend right] node[below] {nat\_lang\_proc} (q1)
+    (q1) edge[loop right] node {\_is\_cool} ();
 \end{tikzpicture}
 \end{document}
 ```
-
----
 
 > **Etichette**: #FSA #Regex #LinguaggiFormali  
 > **Collegamenti**: [[Espressioni Regolari]], [[Teoria degli Automi]]  

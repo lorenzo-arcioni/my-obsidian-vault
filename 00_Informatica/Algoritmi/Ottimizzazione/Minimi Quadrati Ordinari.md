@@ -1,8 +1,8 @@
-# **Metodo dei Minimi Quadrati Ordinari (OLS)**
+# Metodo dei Minimi Quadrati Ordinari (OLS)
 
 Il **metodo dei minimi quadrati ordinari (OLS, Ordinary Least Squares)** è una tecnica di ottimizzazione utilizzata per stimare i parametri di un modello di regressione lineare. L'obiettivo è trovare i coefficienti che minimizzano la somma dei quadrati degli errori tra i valori osservati e quelli previsti dal modello.
 
-## **Formulazione del Problema**
+## Formulazione del Problema
 
 Consideriamo un modello di regressione lineare semplice, dove la variabile dipendente $y$ è legata alla variabile indipendente $x$ dalla relazione:
 
@@ -22,11 +22,11 @@ $$
 \ell(a, b) = \sum_{i=1}^n (y_i - a x_i - b)^2 \quad (2.31)
 $$
 
-## **Minimizzazione della Funzione di Perdita**
+## Minimizzazione della Funzione di Perdita
 
 La funzione di perdita $\ell(a, b)$ è una **funzione quadratica** e, quindi, **[[Funzioni Convesse|convessa]]**. Questo garantisce che esista un unico minimo globale. Per trovare i valori ottimali di $a$ e $b$, calcoliamo il **gradiente** della funzione di perdita rispetto a $a$ e $b$ e lo impostiamo uguale a zero.
 
-### **Calcolo del Gradiente**
+### Calcolo del Gradiente
 
 Il gradiente della funzione di perdita rispetto a $a$ e $b$ è dato da:
 
@@ -85,7 +85,7 @@ $$
 \end{cases}  
 $$  
 
-### **Soluzione del Sistema**
+### Soluzione del Sistema
 
 Risolvendo il sistema di equazioni, otteniamo le **stime OLS** per $a$ e $b$:
 
@@ -154,7 +154,7 @@ Risolvendo il sistema di equazioni, otteniamo le **stime OLS** per $a$ e $b$:
    b = \frac{\sum_{i=1}^n y_i - a \sum_{i=1}^n x_i}{n}
    $$  
 
-## **Formulazione Matriciale**
+## Formulazione Matriciale
 
 Per generalizzare il metodo OLS a modelli con più variabili indipendenti, utilizziamo una **formulazione matriciale**. Consideriamo il modello:
 
@@ -212,7 +212,7 @@ $$
 
 Questa è la soluzione **OLS** in forma matriciale.
 
-## **Caso Multidimensionale**
+## Caso Multidimensionale
 
 Nel caso in cui la variabile dipendente sia multidimensionale (ad esempio, $\mathbf{y}_i \in \mathbb{R}^d$), il modello diventa:
 
@@ -225,7 +225,7 @@ Dove:
 - $\mathbf{x}_i \in \mathbb{R}^{(m+1) \times 1}$ è il vettore delle variabili indipendenti per l'osservazione $i$.
 - $\mathbf{y}_i \in \mathbb{R}^d$ è il vettore delle osservazioni per l'osservazione $i$.
 
-### **Formulazione Matriciale**
+### Formulazione Matriciale
 Se consideriamo tutte le osservazioni simultaneamente, possiamo scrivere:
 
 $$
@@ -237,7 +237,7 @@ Dove:
 - $\mathbf{X} \in \mathbb{R}^{n \times (m+1)}$ è la matrice delle variabili indipendenti.
 - $\mathbf{W} \in \mathbb{R}^{(m+1) \times d}$ è la matrice dei coefficienti del modello.
 
-### **Funzione di Perdita**
+### Funzione di Perdita
 La funzione di perdita generalizzata diventa:
 
 $$
@@ -282,14 +282,14 @@ $$
 
 Questa è la soluzione **OLS** nel caso multidimensionale.
 
-### **Problema di Non Invertibilità di $\mathbf{X}^\top \mathbf{X}$**
+### Problema di Non Invertibilità di $\mathbf{X}^\top \mathbf{X}$
 Se $\mathbf{X}^\top \mathbf{X}$ non è invertibile (singolare o mal condizionata), la soluzione OLS non è definita. Questo accade quando:
 - Ci sono più variabili indipendenti di osservazioni ($m+1 > n$).
 - Le colonne di $\mathbf{X}$ sono altamente correlate (multicollinearità).
 
 Per risolvere il problema, possiamo applicare la **regolarizzazione di Tikhonov**, nota anche come **Ridge Regression**.
 
-### **[[Regolarizzazione]] Ridge**
+### [[Regolarizzazione]] Ridge
 Introduciamo un termine di regolarizzazione $\lambda > 0$ che penalizza la grandezza dei coefficienti, modificando il problema di minimizzazione in:
 
 $$
@@ -306,18 +306,17 @@ Dove:
 - $\mathbf{I}$ è la matrice identità di dimensione $(m+1) \times (m+1)$.
 - $\lambda$ è un iperparametro che controlla la quantità di regolarizzazione.
 
-### **Interpretazione della Regolarizzazione**
+### Interpretazione della Regolarizzazione
 - Se $\lambda = 0$, recuperiamo la soluzione OLS classica.
 - Se $\lambda > 0$, la matrice $\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I}$ diventa sempre invertibile, garantendo una soluzione ben definita.
 
 [[Dimostrazione di Invertibilità Ridge|Qui]] è disponibile una dimostrazione dettagliata sul perché la matrice $\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I}$ sia sempre invertibile.
 
-## **Conclusione**
+## Conclusione
 
 Il metodo OLS è uno strumento potente per stimare i parametri di un modello di regressione lineare. La sua formulazione matriciale lo rende adatto a problemi con più variabili indipendenti e dipendenti. La soluzione analitica, ottenuta risolvendo l'equazione normale, garantisce un'unica soluzione ottimale grazie alla convessità della funzione di perdita.
 
-## **Collegamenti Correlati**
+## Collegamenti Correlati
 - [[Regressione Lineare]]
 - [[Metriche, Norme e Distanze]]
-- [[Gradiente e Ottimizzazione]]
-- [[Formulazione Matriciale della Regressione]]
+- [[Gradiente]]

@@ -1,6 +1,6 @@
-# **Teorema di Lagrange (Teorema del Valore Medio)**
+# Teorema di Lagrange (Teorema del Valore Medio)
 
-## **Enunciato**
+## Enunciato
 Sia $f: [a, b] \to \mathbb{R}$ una funzione tale che:
 
 1. $f$ è continua in $[a, b]$,
@@ -12,13 +12,13 @@ $$
 f'(c) = \frac{f(b) - f(a)}{b - a}.
 $$
 
-## **Interpretazione Geometrica**
+## Interpretazione Geometrica
 Il Teorema di Lagrange afferma che esiste almeno un punto $c$ nell'intervallo $(a, b)$ in cui la derivata della funzione coincide con il coefficiente angolare della retta secante che passa per $(a, f(a))$ e $(b, f(b))$.
 
 In altre parole, esiste almeno un punto in cui la tangente alla curva è parallela alla secante.
 
-## **Dimostrazione**
-Si dimostra il teorema applicando il **[[Teorema di Rolle]]**.
+## Dimostrazione
+Si dimostra il teorema applicando il [[Teorema di Rolle]].
 
 1. Definiamo la funzione ausiliaria:
    $$
@@ -31,7 +31,7 @@ Si dimostra il teorema applicando il **[[Teorema di Rolle]]**.
    - $g(x)$ è derivabile in $(a, b)$ perché $f$ è derivabile.
    - $g(a) = f(a) - f(a) = 0$ e $g(b) = f(b) - f(b) = 0$, quindi $g(a) = g(b)$.
 
-3. Applicando il **[[Teorema di Rolle]]**, esiste un $c \in (a, b)$ tale che:
+3. Applicando il [[Teorema di Rolle]], esiste un $c \in (a, b)$ tale che:
    $$
 g'(c) = 0.
    $$
@@ -46,8 +46,8 @@ g'(c) = 0.
    $$
    Il che conclude la dimostrazione. $\square$
 
-## **Esempi**
-### **Esempio 1: Funzione Quadratica**
+## Esempi
+### Esempio 1: Funzione Quadratica
 Consideriamo $f(x) = x^2$ su $[1,3]$:
 
 - $f(1) = 1^2 = 1$,
@@ -60,7 +60,7 @@ $$
 
 La derivata della funzione è $f'(x) = 2x$. Risolvendo $2c = 4$, troviamo $c = 2$, che appartiene a $(1,3)$.
 
-### **Esempio 2: Funzione Seno**
+### Esempio 2: Funzione Seno
 Consideriamo $f(x) = \sin x$ su $\left[0, \frac{\pi}{2} \right]$:
 
 - $f(0) = \sin 0 = 0$,
@@ -73,10 +73,10 @@ $$
 
 La derivata è $f'(x) = \cos x$. Risolvendo $\cos c = 2/\pi$, otteniamo $c \approx 0.69$, che appartiene a $(0, \pi/2)$.
 
-## **Applicazioni del Teorema di Lagrange**
+## Applicazioni del Teorema di Lagrange
 1. **Dimostrazione dell'esistenza di soluzioni di equazioni differenziali**
 2. **Stime di variazione di una funzione**
 3. **Dimostrazione dell'uguaglianza tra velocità media e velocità istantanea in fisica**
 
-## **Conclusione**
+## Conclusione
 Il Teorema di Lagrange è un potente strumento matematico che collega la derivata di una funzione con il comportamento globale della funzione stessa, avendo implicazioni in vari ambiti della matematica e della fisica.

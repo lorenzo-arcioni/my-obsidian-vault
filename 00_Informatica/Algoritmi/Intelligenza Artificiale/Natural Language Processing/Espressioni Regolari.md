@@ -1,14 +1,13 @@
 # Espressioni Regolari (Regex)
 
 ## Cosa sono le Regex?
-- **Definizione**: Sequenze di caratteri che definiscono un pattern di ricerca, utilizzate per individuare, estrarre o sostituire testo.
+- **Definizione**: Sequenze di caratteri che definiscono un pattern di ricerca, utilizzate per individuare, estrarre o sostituire testo. Fanno parte dei **rule-based systems**.
 - **Scopo principale**: Automatizzare operazioni di testo complesse (es. validare email, estrarre dati).
 - **Esempi di utilizzo**:
   - Ricerca di parole chiave in documenti.
   - Pulizia di dataset testuali.
   - Sostituzioni avanzate in editor di codice.
-
----
+- **Pattern Matching**: Processo di identificazione di sequenze testuali che corrispondono a un formato specifico definito dal pattern. Le regex permettono di cercare, validare o estrarre porzioni di testo seguendo regole flessibili (es. trovare tutti i numeri in un documento).
 
 ## Strumenti per Testare le Regex
 - **Regex101** ([link](https://regex101.com/)): Piattaforma web con debugger integrato e spiegazioni dettagliate.
@@ -16,9 +15,25 @@
 - **Java**: Utilizza `java.util.regex` per operazioni avanzate ([guide](https://www.w3schools.com/java/java_regex.asp)).
 - **Perl**: Linguaggio storico per regex, con operatori come `s///` per sostituzioni.
 
----
-
 ## Sintassi Base delle Regex
+
+### Come Funziona il Pattern Matching  
+Il pattern matching con regex si basa su regole di sintassi che combinano:  
+- **Caratteri letterali**: Cercano corrispondenze esatte (es. `cane` trova solo "cane").  
+- **Quantificatori**: Specificano quante volte un elemento può ripetersi (es. `?`, `+`, `*`).  
+- **Ancore**: Definiscono la posizione nel testo (es. `^` per l'inizio riga, `$` per la fine).  
+- **Classi di caratteri**: Raggruppano opzioni valide (es. `[aeiou]` per vocali).
+- **Range**: Definiscono un intervallo di caratteri (es. `[a-z]` per lettere minuscole).
+- **Gruppi**: Isolano parti del pattern con `()` per riferimenti o operazioni specifiche.  
+- **Alternanza**: Permettono scelte tra opzioni con `|` (es. `gatto|cane`).  
+- **Escape**: I metacaratteri speciali (es. `.`, `*`) richiedono `\` per essere cercati letteralmente (es. `\.`).  
+
+### Caratteri Letterali
+- **Caratteri Literali**: `a`, `b`, `c`, `d`, `e`, `f`, `g`, `h`, `i`, `j`, `k`, `l`, `m`, `n`, `o`, `p`, `q`, `r`, `s`, `t`, `u`, `v`, `w`, `x`, `y`, `z`.
+- **Caratteri Numerici**: `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`. 
+- **Caratteri Speciali**: ` `, `\t`, `\n`, `\r`, `\f`, `\b`, `\a`, `\e`, `\0`, `\xHH`, `\uHHHH`, `\UHHHHHHHH`.
+- **Carattere di Escape**: `\`, `\\`, `\n`, `\t`, `\r`, `\f`, `\b`, `\a`, `\e`, `\0`, `\xHH`, `\uHHHH`, `\UHHHHHHHH`.
+
 ### Metacaratteri
 | Simbolo | Funzione | Esempio |
 |---------|----------|---------|
@@ -34,17 +49,33 @@
 - `\d`: Cifra numerica (`[0-9]`).
 - `\w`: Carattere alfanumerico o underscore (`[a-zA-Z0-9_]`).
 - `\s`: Spazio bianco (spazio, tab, newline).
-- `\D`, `\W`, `\S`: Negazioni dei precedenti.
+- `\b`: Inizio o fine di una parola.
+- `\D`, `\W`, `\S`, `\B`: Negazioni dei precedenti.
+- `\n`: Newline.
+- `\t`: Tab.
+- `\r`: Carattere di ritorno.
+- `\f`: Carattere di fine riga.
+- `\*`, `\+`, `\?`: Alias per `*`, `+`, `?`.
 
----
+## Gruppi di cattura
+Le **parentesi tonde** `()` nelle espressioni regolari vengono utilizzate per definire **gruppi di cattura**. Questi gruppi possono essere utilizzati per riferirsi ai sottostringhe cercate e per eseguire operazioni di sostituzione.
+
+### Esempio
+```regex
+/(\w+) (\w+)/
+```
+Questa espressione cerca due parole separati da uno spazio. Se applicata alla stringa "Nome Cognome", cattura "Nome" e "Cognome".
+
 
 ## Esercizio Guidato: Trovare la Parola "the"
 1. **Primo tentativo**: `/the/ → Trova "the" ma anche "there", "other" (falsi positivi).**
 2. **Matching case-insensitive**: `/[tT]he/ → Trova "The" e "the".`
 3. **Evitare parole contenenti "the"**:  
-   `/[^a-zA-Z][tT]he[^a-zA-Z]/ → " the " in "Catch the ball".`
+   `/[^a-zA-Z][tT]he[^a-zA-Z]/ → " the " in "Catch the ball"` ma non in `Mathematic`. 
+
 4. **Pattern avanzato**:  
-   `/(^|[^a-zA-Z])[tT]he([^a-zA-Z]|$)/ → Considera inizio/fine riga.`
+   `/(^|[^a-zA-Z])[tT]he([^a-zA-Z]|$)/ → Considera inizio/fine riga.`<br>
+   Cerca la parola "the" o "The" solo quando isolata (circondata da caratteri non alfabetici, spazi, punteggiatura, inizio/fine riga) compresi quando inizia o finisce una frase.
 
 **Problemi comuni**:
 - **Falsi positivi**: Match indesiderati (es. "there").
@@ -53,7 +84,7 @@
 
 ## Registri (Parentesi per Riferimenti)
 
-Le **parentesi tonde** `()` nelle espressioni regolari vengono utilizzate per definire **gruppi di cattura**, ovvero parti del pattern che possono essere successivamente richiamate nei riferimenti numerici o nelle sostituzioni.
+Le **parentesi tonde** `()` registrano le occorrenze trovate nelle espressioni regolari in dei cosi detti **registri**.
 
 ### Sintassi di Base
 Un gruppo di cattura è definito con `()` e può essere richiamato con `\n`, dove `n` è il numero del gruppo nell'ordine in cui compare.
@@ -111,17 +142,17 @@ I **registri** e i **gruppi di cattura** sono strumenti potenti per manipolare i
 
 ## Caso Storico: ELIZA (1966)
 
-    Descrizione: Primo chatbot che simulava uno psicologo rogersiano.
+Descrizione: Primo chatbot che simulava uno psicologo rogersiano.
 
-    Funzionamento:
+Funzionamento:
 
-        Utilizzava regex semplici per identificare parole chiave (es. "madre", "triste").
+  - Utilizzava regex semplici per identificare parole chiave (es. "madre", "triste").
 
-        Generava risposte predefinite basate su sostituzioni (es. "Dimmi di più sulla tua famiglia").
+  - Generava risposte predefinite basate su sostituzioni (es. "Dimmi di più sulla tua famiglia").
 
-    Limitazioni: Nessuna comprensione semantica, solo pattern matching superficiale.
+Limitazioni: Nessuna comprensione semantica, solo pattern matching superficiale.
 
-    Video dimostrativo: ELIZA in azione.
+<a href="https://www.youtube.com/watch?v=4sngIh0YJtk" target="_blank">ELIZA, video dimostrativo della funzionalità</a>
 
 ## Risorse
 

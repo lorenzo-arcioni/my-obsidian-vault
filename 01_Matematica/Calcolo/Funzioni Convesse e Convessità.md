@@ -1,6 +1,6 @@
-# **Convessità**
+# Convessità
 
-## **Introduzione**
+## Introduzione
 Nel contesto dell'ottimizzazione, il problema generale che vogliamo risolvere è:
 
 $$
@@ -9,7 +9,7 @@ $$
 
 dove $\Theta$ rappresenta i parametri del modello e $\ell(\Theta)$ è la funzione di perdita. Trovare i minimizzatori per una funzione di perdita generale è un problema aperto nel campo dell'ottimizzazione. Il metodo di ottimizzazione dipende dalle proprietà specifiche della funzione di perdita e, in alcuni casi, potrebbero esserci vincoli sui parametri. Tuttavia, tratteremo principalmente problemi non vincolati.
 
-## **Funzioni Convesse**
+## Funzioni Convesse
 Una classe di funzioni particolarmente facile da minimizzare (o massimizzare) è quella delle **funzioni convesse**, definite dalla **disuguaglianza di Jensen**:
 
 $$
@@ -22,12 +22,12 @@ Questa disuguaglianza afferma che la trasformazione convessa di una media è min
 
 *Figura 2.4: La disuguaglianza di Jensen generalizza l'affermazione che la linea secante di una funzione convessa giace sopra il grafico.*
 
-## **Perché le funzioni convesse sono facili da minimizzare?**
+## Perché le funzioni convesse sono facili da minimizzare?
 Guardando il grafico sopra, possiamo intuire che esiste sempre un **minimo unico**. Se ricordiamo un po' di calcolo delle scuole superiori, sappiamo anche che il punto in cui tale minimo è raggiunto è il punto (ancora unico) in cui la derivata della funzione è zero.
 
 Un'importante assunzione che spesso facciamo è che la funzione di perdita $\ell$ sia **differenziabile**, in modo da poter calcolare la sua derivata $\frac{d\ell}{dx}$ in tutti i punti $x$.
 
-## **Formalizzazione della Convessità**
+## Formalizzazione della Convessità
 Per spiegare formalmente, riscriviamo la disuguaglianza di Jensen in una forma diversa:
 
 $$
@@ -72,7 +72,7 @@ Notiamo che il lato sinistro della disuguaglianza è l'approssimazione di Taylor
 
 *Figura 2.5: Approssimazione di Taylor.*
 
-## **Minimizzazione di Funzioni Convesse**
+## Minimizzazione di Funzioni Convesse
 Se vogliamo trovare un minimizzatore per una funzione convessa $f$, basta calcolare la sua derivata $\frac{df}{dx}$, imporla $= 0$ e risolvere per $x$. Come abbiamo mostrato, il punto $x$ soddisfa la disuguaglianza:
 
 $$
@@ -89,9 +89,9 @@ e dunque $x$ è il **minimizzatore globale** della funzione.
 
 In generale, per trovare un minimizzatore per una funzione convessa $f$, è sufficiente calcolare la sua derivata $\frac{df}{dx}$, impostarla a zero e risolvere per $x$. Il punto $x$ sarà quindi il minimizzatore globale della funzione.
 
-## **Convessità e la Seconda Derivata**
+## Convessità e la Seconda Derivata
 
-### **Nel Caso Univariato**
+### Nel Caso Univariato
 
 Se $f(x)$ è due volte differenziabile, il **test della seconda derivata** stabilisce che:
 
@@ -175,7 +175,7 @@ Quindi, il gradiente non diminuisce mai al crescere di $x$. Questa monotonia del
 Questi punti, insieme, formano la base teorica che spiega perché le funzioni con $f''(x) \geq 0$ sono convexi e perché questa condizione rende il problema di ottimizzazione (ovvero, trovare il minimo globale) molto più semplice da risolvere.
 
 
-### **Estensione al Caso Multivariato**
+### Estensione al Caso Multivariato
 
 Per una funzione $f: \mathbb{R}^n \to \mathbb{R}$ due volte differenziabile, la condizione di convessità si generalizza attraverso la **Hessiana** $\nabla^2 f(\mathbf{x})$, la matrice delle derivate seconde. La funzione $f$ è convessa se e solo se, per ogni vettore $\mathbf{v} \in \mathbb{R}^n$:
 
@@ -185,7 +185,7 @@ $$
 
 Questo significa che la Hessiana è **positiva semidefinita**. L'interpretazione è la stessa: la funzione ha una curvatura non negativa in tutte le direzioni, estendendo il concetto della seconda derivata non negativa dal caso univariato.
 
-## **Riassunto Intuitivo**
+## Riassunto Intuitivo
 
 - **Funzioni a Una Variabile:**  
   Se $f''(x) \geq 0$ in ogni punto, la funzione è sempre "inclinata verso l'alto". La retta tangente in ogni punto funge da supporto, e la funzione non presenta inversioni di curvatura. Quindi, il punto in cui $f'(x) = 0$ è il minimo globale.
@@ -193,7 +193,7 @@ Questo significa che la Hessiana è **positiva semidefinita**. L'interpretazione
 - **Funzioni Multivariate:**  
   Se la Hessiana $\nabla^2 f(\mathbf{x})$ è positiva semidefinita, la funzione possiede una curvatura non negativa in ogni direzione. Questo garantisce l'unicità del minimo locale (che è anche globale) e semplifica la risoluzione dei problemi di ottimizzazione.
 
-## **Conclusione**
+## Conclusione
 
 La caratterizzazione della convessità mediante la disuguaglianza di Jensen e il test della seconda derivata (o della Hessiana nel caso multivariato) fornisce strumenti fondamentali per l'analisi e la risoluzione di problemi di ottimizzazione. Le funzioni convesse, avendo un unico minimo globale, permettono l'utilizzo di algoritmi efficienti e garantiscono che ogni minimo locale sia effettivamente globale, semplificando notevolmente il processo di minimizzazione.
 

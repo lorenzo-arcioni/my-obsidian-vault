@@ -1,8 +1,8 @@
-# **Sottoderivata e Sottogradiente**
+# Sottoderivata e Sottogradiente
 
 La **sottoderivata** è un concetto matematico che estende la nozione di derivata a funzioni che non sono differenziabili in tutti i punti del loro dominio. Questo strumento è particolarmente utile quando si lavora con funzioni come la **norma L1**, che non è derivabile in $x = 0$. La sottoderivata permette di definire un insieme di "derivate generalizzate" in punti in cui la funzione non è regolare.
 
-## **Definizione di Sottoderivata**
+## Definizione di Sottoderivata
 
 Sia $f: \mathbb{R} \to \mathbb{R}$ una funzione convessa. La **sottoderivata** di $f$ in un punto $x_0$ è definita come l'insieme di tutti i valori $g$ tali che:
 
@@ -12,9 +12,9 @@ $$
 
 In altre parole, la sottoderivata è l'insieme di tutte le pendenze delle rette che toccano il grafico di $f$ in $x_0$ senza attraversarlo. Questo insieme è chiamato **sottodifferenziale** di $f$ in $x_0$ e si indica con $\partial f(x_0)$.
 
-## **Esempi di Sottoderivata**
+## Esempi di Sottoderivata
 
-### **1. Funzione Valore Assoluto (Norma L1)**
+### 1. Funzione Valore Assoluto (Norma L1)
 
 Consideriamo la funzione valore assoluto $f(x) = |x|$, che è un caso particolare della norma L1. Questa funzione non è derivabile in $x = 0$, ma possiamo calcolare il suo sottodifferenziale.
 
@@ -28,7 +28,7 @@ $$
 \partial f(0) = [-1, 1]
 $$
 
-### **2. Funzione Convessa Generica**
+### 2. Funzione Convessa Generica
 
 Per una funzione convessa $f(x)$, il sottodifferenziale in un punto $x_0$ è un insieme chiuso e convesso. Se $f$ è differenziabile in $x_0$, allora il sottodifferenziale è un singleton contenente la derivata classica:
 
@@ -36,15 +36,15 @@ $$
 \partial f(x_0) = \{ f'(x_0) \}
 $$
 
-## **Proprietà della Sottoderivata**
+## Proprietà della Sottoderivata
 
 1. **Convessità**: Se $f$ è una funzione convessa, il sottodifferenziale $\partial f(x_0)$ è un insieme convesso e chiuso.
 2. **Monotonia**: Se $f$ è una funzione convessa, il sottodifferenziale è una funzione monotona, cioè per ogni $x_1 < x_2$ e per ogni $g_1 \in \partial f(x_1)$, $g_2 \in \partial f(x_2)$, si ha $g_1 \leq g_2$.
 3. **Ottimizzazione**: La sottoderivata è utile nell'ottimizzazione convessa, poiché fornisce una condizione necessaria e sufficiente per i minimi di una funzione convessa. Un punto $x_0$ è un minimo globale di $f$ se e solo se $0 \in \partial f(x_0)$.
 
-## **Applicazioni della Sottoderivata**
+## Applicazioni della Sottoderivata
 
-### **1. Regolarizzazione L1**
+### 1. Regolarizzazione L1
 
 Nella regolarizzazione L1 (Lasso), la funzione di perdita include un termine di penalità basato sulla norma L1:
 
@@ -63,16 +63,16 @@ g_i \in
 \end{cases}
 $$
 
-### **2. Ottimizzazione Convessa**
+### 2. Ottimizzazione Convessa
 
 La sottoderivata è ampiamente utilizzata nell'ottimizzazione convessa, specialmente quando si lavora con funzioni non differenziabili. Ad esempio, nell'algoritmo del **subgradient descent**, si utilizza un vettore del sottodifferenziale per aggiornare i parametri del modello.
 
 
-## **Sottogradiente**
+## Sottogradiente
 
 Il **sottogradiente** è un concetto che estende la nozione di gradiente a funzioni non differenziabili. Mentre il gradiente classico è definito solo per funzioni differenziabili, il sottogradiente è definito per funzioni convesse (anche non differenziabili) e fornisce una generalizzazione utile per l'ottimizzazione e l'analisi di funzioni non lisce.
 
-### **Definizione di Sottogradiente**
+### Definizione di Sottogradiente
 
 Sia $f: \mathbb{R}^n \to \mathbb{R}$ una funzione convessa. Un vettore $g \in \mathbb{R}^n$ è chiamato **sottogradiente** di $f$ in un punto $x_0$ se soddisfa la seguente disuguaglianza:
 
@@ -86,7 +86,7 @@ $$
 \partial f(x_0) = \{ \nabla f(x_0) \}.
 $$
 
-### **Proprietà del Sottogradiente**
+### Proprietà del Sottogradiente
 
 1. **Convessità**: Se $f$ è una funzione convessa, il sottodifferenziale $\partial f(x_0)$ è un insieme convesso e chiuso.
 2. **Non vuoto**: Per una funzione convessa, il sottodifferenziale è sempre non vuoto in ogni punto del dominio.
@@ -95,9 +95,9 @@ $$
    (g_1 - g_2)^\top (x_1 - x_2) \geq 0.
    $$
 
-### **Esempi di Sottogradiente**
+### Esempi di Sottogradiente
 
-#### **1. Norma L1 (Funzione Valore Assoluto Generalizzata)**
+#### 1. Norma L1 (Funzione Valore Assoluto Generalizzata)
 
 Consideriamo la **norma L1** di un vettore $\mathbf x \in \mathbb{R}^n$, definita come:
 
@@ -128,7 +128,7 @@ $$
 \end{cases}
 $$
 
-#### **2. Funzione Convessa Generica in $\mathbb{R}^n$**
+#### 2. Funzione Convessa Generica in $\mathbb{R}^n$
 
 Per una funzione convessa $f: \mathbb{R}^n \to \mathbb{R}$, il sottodifferenziale in un punto $\mathbf x_0 \in \mathbb{R}^n$ è un insieme convesso e chiuso. Se $f$ è differenziabile in $\mathbf x_0$, allora il sottodifferenziale è un singleton contenente il gradiente classico:
 
@@ -146,9 +146,9 @@ g_i =
 \end{cases}
 $$
 
-### **Applicazioni del Sottogradiente**
+### Applicazioni del Sottogradiente
 
-#### **1. Ottimizzazione Non Differenziabile**
+#### 1. Ottimizzazione Non Differenziabile
 
 Il sottogradiente è ampiamente utilizzato nell'ottimizzazione di funzioni non differenziabili. Ad esempio, nell'algoritmo del **subgradient descent**, si utilizza un vettore del sottodifferenziale per aggiornare i parametri del modello. L'aggiornamento è dato da:
 
@@ -161,7 +161,7 @@ Dove:
 - $g_k$ è un sottogradiente di $f$ in $x_k$.
 - $\alpha_k$ è il passo di apprendimento al passo $k$.
 
-#### **2. Regolarizzazione L1**
+#### 2. Regolarizzazione L1
 
 Nella regolarizzazione L1 (Lasso), la funzione di perdita include un termine di penalità basato sulla norma L1:
 
@@ -180,15 +180,15 @@ g_i \in
 \end{cases}
 $$
 
-### **Conclusione**
+### Conclusione
 
 Il sottogradiente è uno strumento essenziale per estendere il concetto di gradiente a funzioni non differenziabili, come la norma L1. Questo concetto è particolarmente utile nell'ottimizzazione convessa e nella regolarizzazione, dove funzioni non differenziabili sono comuni. La capacità di lavorare con sottogradienti permette di risolvere problemi complessi che altrimenti sarebbero intrattabili con gli strumenti classici del calcolo differenziale.
 
-## **Conclusione**
+## Conclusione
 
 La sottoderivata è uno strumento potente per estendere il concetto di derivata a funzioni non differenziabili, come la norma L1. Questo concetto è particolarmente utile nell'ottimizzazione convessa e nella regolarizzazione, dove funzioni non differenziabili sono comuni. La capacità di lavorare con sottoderivate permette di risolvere problemi complessi che altrimenti sarebbero intrattabili con gli strumenti classici del calcolo differenziale.
 
-## **Collegamenti Correlati**
+## Collegamenti Correlati
 - [[Regolarizzazione]]
 - [[Norme L1 e L2]]
 - [[Ottimizzazione Convessa]]

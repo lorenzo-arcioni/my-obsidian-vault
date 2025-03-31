@@ -1,4 +1,4 @@
-# **Regolarizzazione**
+# Regolarizzazione
 
 La **regolarizzazione** è una tecnica utilizzata per prevenire l'overfitting nei modelli di machine learning, aggiungendo un termine di penalità alla funzione di perdita. Questo termine di penalità controlla la complessità del modello, limitando la crescita dei parametri e migliorando la generalizzazione su dati non visti. Di seguito esploriamo i diversi tipi di regolarizzazione, il loro funzionamento e il loro impatto sui modelli.
 
@@ -136,7 +136,7 @@ Quindi, quando $\ell_\Theta$ è convessa, anche $\ell_\Theta + \lambda \|\Theta\
 Questo è molto importante perché significa che possiamo sperare di trovare un'espressione in forma chiusa per l'ottimo globale del problema di minimizzazione:
 
 $$
-\arg\min_{\Theta} \ \ell_\Theta + \lambda \|\Theta\|_p^2.
+\argmin_{\Theta} \ \ell_\Theta + \lambda \|\Theta\|_p^2.
 $$
 
 Inoltre, notiamo che qualsiasi $p$-norma non sarà lineare in $\Theta$ poiché contiene almeno il valore assoluto.

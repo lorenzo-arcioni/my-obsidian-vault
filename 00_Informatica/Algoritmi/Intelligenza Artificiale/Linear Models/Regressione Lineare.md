@@ -1,4 +1,4 @@
-# **Regressione Lineare**
+# Regressione Lineare
 
 La **Regressione Lineare** è un modello statistico utilizzato per descrivere la relazione tra una variabile dipendente (target) e una o più variabili indipendenti (predittori). Assume una relazione lineare tra le variabili e minimizza l'errore quadratico medio.
 
@@ -42,7 +42,7 @@ $$
 $$
 
 Dove:
-- $\\$
+- $\mathbf{y}$è il vettore delle variabili dipendenti $n \times 1$,
 $$
 \mathbf{X} = \begin{bmatrix}
 1 & \text{------} \mathbf{x}_1^T \text{------} \\

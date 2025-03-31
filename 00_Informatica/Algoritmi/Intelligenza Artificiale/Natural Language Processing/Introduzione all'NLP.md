@@ -1,143 +1,89 @@
-# **Parole, Corpora e Normalizzazione: Concetti Base**
+# Introduzione al Natural Language Processing (NLP)
 
-L'elaborazione del linguaggio naturale (NLP) si basa su concetti fondamentali come **corpora**, **parole** e **normalizzazione**. Comprendere queste nozioni è essenziale per pre-elaborare i dati e costruire modelli linguistici efficaci.
+## Cos'è il Natural Language Processing?
+- **Definizione**: Campo interdisciplinare che studia l'interazione tra computer e linguaggi umani (es. inglese, italiano) attraverso testo o voce.
+- **Obiettivo**: Sviluppare algoritmi per comprendere, generare e manipolare il linguaggio naturale.
+- **Esempi di applicazioni**:
+  - Assistenti vocali (Siri, Alexa).
+  - Correzione ortografica (Grammarly).
+  - Traduzione automatica (Google Translate).
+  - Autocompletamento nei motori di ricerca.
 
+## Componenti Fondamentali
+### Linguistica
+- **Sottocampi**:
+  1. **Fonetica**: Studio dei suoni linguistici.
+  2. **Fonologia**: Sistemi di suoni nelle lingue.
+  3. **Morfologia**: Struttura delle parole.
+  4. **Sintassi**: Struttura delle frasi.
+  5. **Semantica**: Significato delle frasi.
+  6. **Pragmatica**: Uso del linguaggio in contesti specifici.
 
-## **1. Corpus (pl. Corpora)**  
-Un **corpus** è una raccolta strutturata e digitale di testi o discorsi, spesso utilizzata per analisi linguistiche o per addestrare modelli NLP.  
+### Informatica
+- Integra conoscenze linguistiche con:
+  - **Intelligenza Artificiale** (ragionamento, apprendimento).
+  - **Machine Learning** (modelli statistici, deep learning).
 
-### **Caratteristiche principali**
-- **Strutturato**: Organizzato secondo criteri specifici (es. testi scritti vs. parlati).  
-- **Digitale**: Formato leggibile da un computer per l'elaborazione automatica.  
-- **Annotato (opzionale)**: Alcuni corpora contengono metadati come parti del discorso (*POS tagging*), analisi sintattica o entità nominate (*NER*).  
+## Milestone Storiche nell'NLP
+1. **Sistemi basati su regole** (es. regex per estrazione dati):
+   - Automatizano semplici task come l'estrazione di dati strutturati (come date, nomi, etc..) da quelli non strutturati (come pagine web, email, etc..).
+   - Limitati nella generalizzazione, in quanto poco robusti e semplici.
+2. **Modelli statistici e ML classico** (es. Naive Bayes):
+   - Possono risolvere problemi più complessigrazie a modelli statistici e probabilistici.
+   - Tramite la feature engineering, riescono a sfruttare bene i pattern nei dati di addestramento per fare previsioni accurate su dati mai visti.
+3. **Deep Learning** (es. word2vec, BERT):
+   - Generalizzano anche meglio dei classici approcci di machine learning. Non necessitano di caratteristiche create manualmente o di feature engineering perché funzionano automaticamente come estrattori di feature, consentendo l'addestramento end-to-end del modello.
+   - Le capacità di apprendimento dei modelli di deep learning sono più potenti rispetto a quelle dei modelli ML classici/superficiali, il che ha aperto la strada al raggiungimento dei punteggi più elevati in varie impegnative task di NLP (ad esempio, la traduzione automatica).
 
-### **Esempi di corpora noti**
-1. **British National Corpus (BNC)**  
-   - Contiene circa **100 milioni di parole** tratte da giornali, testi accademici e conversazioni.  
-   - Usato per analisi lessicali, studio delle collocazioni e modellazione linguistica.  
+## Rappresentazioni del Testo
+- **One-Hot Encoding**: 
+  - Vettori binari che codificano le parole come sequenze di 0 e 1 in base al vocabolario.
+  - Esempio: "Il gatto è sul tappeto" → matrici binarie.
+  
+    Questo approccio presenta due svantaggi significativi:
+    - **Sparsità**: I vettori risultano molto lunghi e con molti zeri (alta dimensionalità) se il vocabolario e la lunghezza del testo sono grandi.
+    - **Mancanza di Relazioni Semantiche**: Non è in grado di comprendere le relazioni tra le parole (ad esempio, "scuola" e "libro").
+- **Word Embeddings** (es. word2vec, GloVe):
+  - Questo modello di deep learning superficiale (shallow) è in grado di rappresentare le parole come vettori densi e catturare relazioni semantiche tra termini correlati (ad esempio, "Parigi" e "Francia", "Madrid" e "Spagna"). 
+  - Vettori densi che catturano relazioni semantiche (es. "Parigi → Francia").
+- **Modelli Transformer** (es. BERT, GPT):
+  - Stato dell'arte nei problemi di NLP moderni.
+  - Base per NLP avanzato (es. ChatGPT).
 
-2. **Corpus of Contemporary American English (COCA)**  
-   - Include testi dal **1990 a oggi** da fonti come TV, riviste e siti web.  
-   - Consente di analizzare come il linguaggio evolve nel tempo.  
+## NLP Multimodale  
+- **Definizione**: Estensione del NLP tradizionale che combina dati testuali con altre modalità (immagini, audio, video) per migliorare la comprensione contestuale.  
+- **Obiettivo**: Creare modelli in grado di interpretare e generare contenuti integrando informazioni multimodali (es. descrivere un'immagine o rispondere a domande su un video).  
+- **Esempi di applicazioni**:  
+  - Generazione di descrizioni testuali da immagini (image captioning).  
+  - Sistemi di risposta a domande basate su video (video QA).  
+  - Assistenti virtuali che interpretano comandi vocali e contesto visivo.  
+- **Vantaggi**:  
+  - Maggiore ricchezza informativa grazie alla fusione di fonti eterogenee.  
+  - Miglioramento delle prestazioni in task complessi (es. riconoscimento di emozioni da testo + tono vocale).  
+- **Sfide**:  
+  - Allineamento tra modalità diverse (es. sincronizzare testo parlato con frame video).  
+  - Complessità computazionale nell'elaborazione parallela di dati multimodali.  
+- **Modelli Rappresentativi**:  
+  - CLIP (OpenAI): Classifica immagini basandosi su descrizioni testuali.  
+  - DALL-E (OpenAI): Genera immagini da prompt testuali.  
+  - Whisper (OpenAI): Trascrizione e traduzione multimodale (audio → testo → altre lingue).
 
-3. **Penn Treebank**  
-   - Corpus annotato con strutture sintattiche usato per il training di modelli NLP avanzati.  
+## Task e Sfide nell'NLP
+### Task Risolti
+- Classificazione del testo (es. spam detection).
+- Part-of-Speech Tagging (POS).
+- Named Entity Recognition (NER).
 
-4. **Google Books Ngram**  
-   - Raccolta di milioni di libri, utile per studiare trend linguistici su scala storica.  
+### Sfide Aperte
+- Chatbot a dominio aperto.
+- Riassunto astrattivo.
+- NLP per lingue a bassa risorsa (es. lingue africane).
 
-### **Utilizzo dei corpora**
-- **Addestramento di modelli linguistici** (es. Word2Vec, BERT).  
-- **Studio della frequenza delle parole** per identificare termini comuni e rari.  
-- **Analisi del contesto d'uso** di parole e frasi in lingue diverse.  
+## Risorse
+- **Libri**: [Speech and Language Processing (Jurafsky & Martin)](https://web.stanford.edu/~jurafsky/slp3/).
+- **Articoli**: 
+  - [word2vec (Mikolov et al., 2013)](https://arxiv.org/abs/1301.3781).
+  - [BERT (Devlin et al., 2019)](https://arxiv.org/abs/1810.04805).
 
-
-## **2. Utterance (Enunciato)**  
-Un **utterance** è un'unità di discorso parlato, spesso diversa dal testo scritto perché riflette le caratteristiche spontanee del linguaggio orale.  
-
-### **Caratteristiche del linguaggio parlato**
-- **Disfluenze**: Interruzioni naturali del discorso come pause e esitazioni.  
-  - *Esempio*: "I do **uh** mainly business data processing."  
-- **Ripetizioni**: Riformulazioni di parole per correggersi o enfatizzare un punto.  
-  - *Esempio*: "I do **main- mainly** business data processing."  
-- **Elisioni**: Omessa articolazione di alcune parole o sillabe.  
-  - *Esempio*: "Gonna" invece di "Going to".  
-
-### **Esempio di differenza tra testo scritto e parlato**
-| Tipo di testo  | Esempio |
-|---------------|---------|
-| **Testo scritto** | "I do mainly business data processing." |
-| **Discorso reale (utterance)** | "I do uh main- mainly business data processing." |
-
-### **Applicazioni dell'analisi degli enunciati**
-- **Riconoscimento vocale**: Modelli NLP per il riconoscimento automatico del parlato devono gestire disfluenze e variazioni fonetiche.  
-- **Analisi della spontaneità nel linguaggio**: Utile in studi di linguistica computazionale.  
-
-
-## **3. Parola: Definizione Contestuale**  
-Il concetto di **parola** in NLP non è sempre univoco e dipende dal contesto di analisi.
-
-### **Sfide nella definizione di una parola**
-1. **Punteggiatura**  
-   - "gatto." e "gatto" sono lo stesso token?  
-   - Alcuni modelli considerano il punto un token separato, altri lo uniscono alla parola.  
-
-2. **Maiuscole/minuscole**  
-   - "Roma" (nome proprio) vs. "roma" (nome comune per un tipo di fiore).  
-   - La distinzione può essere fondamentale nel riconoscimento delle entità nominate (NER).  
-
-3. **Contrazioni**  
-   - "can't" può essere considerato:  
-     - Un **unico token**.  
-     - Due **token distinti**: "can" e "not".  
-   - La scelta dipende dal metodo di tokenizzazione usato.  
-
-
-## **4. Tokenizzazione: Metodi Avanzati**  
-### **Byte-Pair Encoding (BPE)**  
-Algoritmo per gestire parole rare o sconosciute attraverso fusioni iterative:  
-1. **Fase 1**: Inizia con un vocabolario di caratteri singoli.  
-2. **Fase 2**: Unisce progressivamente le coppie di caratteri più frequenti.  
-3. **Esempio**:  
-   - Corpus iniziale: ["low", "lower", "newest", "wider", "new"]  
-   - Dopo fusioni: ["lo", "w", "er", "new", "est"] (gestisce "low" e "newest").  
-
-**Processo di Token Learner**:  
-- **Passo 1**: Conta le coppie di simboli adiacenti (es. "e" e "r" → "er").  
-- **Passo 2**: Sostituisce tutte le occorrenze della coppia nel corpus.  
-- **Passo 3**: Ripete fino a ottenere un vocabolario ottimale.  
-
-**Token Parser**:  
-- Applica le regole apprese al testo di test.  
-- Esempio: "newer" → ["new", "er"] se "er" è una fusione precedentemente appresa.  
-
-> **Vantaggio**: Ideale per lingue con morfologia complessa o testi informali (social media).  
-
-
-## **5. Normalizzazione del Testo**  
-Processo di standardizzazione del testo per ridurre la complessità.  
-
-### **Metodi Principali**  
-1. **Case Folding**  
-   - Conversione di tutto il testo in minuscolo.  
-   - *Esempio*: "Woodchuck" → "woodchuck".  
-   - **Limitazioni**: Perde informazioni su nomi propri e acronimi.  
-
-2. **Lemmatizzazione**  
-   - Riduzione delle parole alla forma base (**lemma**) considerando il contesto.  
-   - *Esempio*: "running" → "run", "better" → "good" (aggettivo).  
-   - **Strumenti**: Basati su dizionari linguistici (es. SpaCy, NLTK).  
-
-3. **Stemming**  
-   - Rimozione approssimativa di affissi senza contesto.  
-   - **Porter Stemmer**:  
-     - "caresses" → "caress", "ponies" → "poni".  
-   - **Confronto con Lemmatizzazione**: Più veloce ma meno accurato.  
-
-
-## **6. Segmentazione delle Frasi**  
-Identificazione dei confini tra frasi in un testo.  
-
-### **Strategie**  
-1. **Punteggiatura**  
-   - Punti esclamativi/interrogativi → Confini chiari.  
-   - Punti ambigui: "Mr. Smith left at 5 p.m. He..." → Due frasi.  
-
-2. **Dizionari di Abbreviazioni**  
-   - Liste predefinite ("Dr.", "Inc.") per evitare errori.  
-
-3. **Modelli ML**  
-   - Addestrati per distinguere abbreviazioni da punti finali.  
-
-### **Esempio con Stanford CoreNLP**  
-- **Input**: "Mr. Smith arrived at 5 p.m. He greeted everyone."  
-- **Output**: ["Mr. Smith arrived at 5 p.m.", "He greeted everyone."]  
-
-
-> **Etichette**: #NLP #Tokenizzazione #Corpora #Normalizzazione  
-> **Collegamenti**: [[Elaborazione del Testo]], [[Modelli Linguistici]], [[Strumenti NLP]]  
-
-**Risorse**:  
-- [Speech and Language Processing (Jurafsky & Martin)](https://web.stanford.edu/~jurafsky/slp3/)  
-- [Byte-Pair Encoding Paper (Sennrich et al.)](https://arxiv.org/abs/1508.07909)  
-- [Porter Stemmer Algorithm](https://tartarus.org/martin/PorterStemmer/)  
+> **Etichetta**: #NLP #Linguistica #AI  
+> **Collegamenti**: [[Machine Learning]], [[Deep Learning]]

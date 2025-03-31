@@ -1,4 +1,4 @@
-# **Multicollinearità nella Regressione Lineare**
+# Multicollinearità nella Regressione Lineare
 
 La **multicollinearità** è una problematica che si verifica quando due o più variabili indipendenti nel modello di regressione lineare sono altamente correlate tra loro. Questa situazione può rendere difficile separare l'effetto di ciascuna variabile sul risultato e può compromettere la stabilità e l'affidabilità del modello di regressione.
 

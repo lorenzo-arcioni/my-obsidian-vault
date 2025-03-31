@@ -1,4 +1,4 @@
-# **Dimostrazione: La matrice $\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I}$ è sempre invertibile per $\lambda > 0$**
+# Dimostrazione: La matrice $\mathbf{X}^\top \mathbf{X} + \lambda \mathbf{I}$ è sempre invertibile per $\lambda > 0$
 
 Vogliamo dimostrare che se $\lambda > 0$, allora la matrice 
 
@@ -13,7 +13,7 @@ $$
 $$
 
 
-## **Passo 1: Simmetria della matrice $\mathbf{M}$**
+## Passo 1: Simmetria della matrice $\mathbf{M}$
 
 Dimostriamo che $\mathbf{M}$ è simmetrica.  
 
@@ -98,7 +98,7 @@ $$
    $$
    Questo significa che $\mathbf{M}$ è definita positiva.
 
-## **Passo 2: Espressione del prodotto quadratico $\mathbf{v}^\top \mathbf{M} \mathbf{v}$**
+## Passo 2: Espressione del prodotto quadratico $\mathbf{v}^\top \mathbf{M} \mathbf{v}$
 
 Consideriamo il prodotto quadratico associato a $\mathbf{M}$:
 
@@ -124,11 +124,11 @@ $$
 \mathbf{v}^\top \mathbf{X}^\top \mathbf{X} \mathbf{v} + \lambda \|\mathbf{v}\|^2.
 $$
 
-## **Passo 3: Proprietà di semidefinitezza di $\mathbf{X}^\top \mathbf{X}$**
+## Passo 3: Proprietà di semidefinitezza di $\mathbf{X}^\top \mathbf{X}$
 
 Dimostriamo ora che $\mathbf{X}^\top \mathbf{X}$ è **semidefinita positiva**.
 
-### **Dimostrazione della semidefinitezza positiva di $\mathbf{X}^\top \mathbf{X}$**
+### Dimostrazione della semidefinitezza positiva di $\mathbf{X}^\top \mathbf{X}$
 
 Per ogni vettore $\mathbf{v} \neq 0$, consideriamo il prodotto quadratico:
 
@@ -158,7 +158,7 @@ $$
 
 Tuttavia, in generale, se $\mathbf{X}$ non ha rango massimo, $\mathbf{X}^\top \mathbf{X}$ potrebbe avere autovalori nulli, rendendola **non invertibile**.
 
-## **Passo 4: Effetto della regolarizzazione**
+## Passo 4: Effetto della regolarizzazione
 
 Introduciamo ora il termine di regolarizzazione $\lambda \mathbf{I}$.  
 
@@ -176,7 +176,7 @@ $$
 
 Questo dimostra che $\mathbf{M}$ è **definita positiva**.
 
-## **Conclusione**
+## Conclusione
 
 Abbiamo dimostrato che per $\lambda > 0$, la matrice:
 

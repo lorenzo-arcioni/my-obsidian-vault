@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Espressioni Regolari.md",
+                "file": "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Byte-pair Encoding.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Espressioni Regolari"
+              "title": "Byte-pair Encoding"
             }
           }
         ]
@@ -53,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#NLP",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -170,10 +170,10 @@
   },
   "active": "0f4d551604f1b5e8",
   "lastOpenFiles": [
-    "tmp_graph.txt",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora e Normalizzazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Automi a Stati Finiti.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Espressioni Regolari.md",
+    "tmp_graph.txt",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora e Normalizzazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Introduzione all'NLP.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Applicazioni Pratiche delle Regex.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Overfitting e Underfitting.md",
