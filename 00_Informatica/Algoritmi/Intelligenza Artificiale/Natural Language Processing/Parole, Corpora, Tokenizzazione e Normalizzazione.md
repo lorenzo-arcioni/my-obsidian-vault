@@ -77,7 +77,7 @@ Il concetto di **parola** in NLP non è sempre univoco e dipende dal contesto di
    - **Clitici**: "what’re" → "what are", "L'ensemble" → "Le" + "ensemble"?  
    - **Numeri e date**: Formati multipli (es. "01/02/2024" vs. "1 febbraio 2024").  
 
-## 4. Tokenizzazione e segmentazione  
+## 4. Tokenizzazione lessicale  
 La segmentazione del testo in unità significative (token) è un passo fondamentale della pre-elaborazione NLP.  
 
 ### Metodi Comuni  
@@ -121,11 +121,85 @@ La segmentazione del testo in unità significative (token) è un passo fondament
   - **Token Learner**: Identifica pattern ricorrenti nel testo.  
   - **Token Parser**: Applica regole apprese per suddividere il testo.
 
-## Normalizzazione del Testo  
-Prima dell'elaborazione del linguaggio naturale, un testo deve essere normalizzato attraverso:  
-1. **Tokenizzazione**: Suddivisione del testo in token.  
-2. **Formattazione uniforme**: Standardizzazione di maiuscole/minuscole, punteggiatura, ecc.  
-3. **Segmentazione delle frasi**: Identificazione dei confini tra frasi.  
+## 5. Word Normalization  
+La **normalizzazione delle parole/token** è il processo di standardizzazione di termini con forme multiple (es. "USA" vs "US" o "uh-huh" vs "uhhuh") in un formato coerente.  
+
+### Tipi di Normalizzazione  
+1. **Case Folding**:  
+   - Conversione di tutto il testo in minuscolo.  
+   - *Esempio*: "Woodchuck" → "woodchuck".  
+   - **Vantaggi**: Utile per compiti come information retrieval e riconoscimento vocale.  
+   - **Limitazioni**: Perdita di informazioni contestuali (es. nomi propri vs. nomi comuni).  
+
+2. **Lemmatization**:  
+   - Identificazione del **lemma** (forma base) di una parola.  
+   - *Esempio*: "am", "are", "is" → lemma "be".  Oppure "dinner" e "dinners" → lemma "dinner".
+   - **Metodo**: Utilizza un **parser morfologico** per scomporre le parole in morfemi (radici e affissi).
+   - *Esempio*: Un esempio di frase lemmatizzata "he is reading detective stories" → "he be read detective story". Con lemmi "be" e "read".
+   - **Vantaggi**: Utile per compiti come information retrieval e riconoscimento vocale.  
+
+## 6. Porter Stemmer  
+Un approccio "brutale" alla lemmatizzazione, che rimuove gli affissi per ottenere la **radice** (stem) delle parole.  
+
+### Funzionamento  
+- **Regole a cascata**: Applica una serie di trasformazioni sequenziali.  
+  - *Esempio di regole*:  
+    - "sses" → "ss" (es. "caresses" → "caress").  
+    - "ies" → "i" (es. "ponies" → "poni").
+    - "ing" → "" (es. "running" → "run").  
+
+### Esempio Pratico  
+**Testo originale**:  
+*This was not the map we found in Billy Bones's chest,
+but an accurate copy, complete in all things-names
+and heights and soundings-with the single exception
+of the red crosses and the written notes.*  
+
+**Testo dopo Porter Stemmer**:  
+*Thi wa not the map we found in Billi Bone s chest
+but an accur copi complet in all thing name and
+height and sound with the singl except of the red
+cross and the written note* 
+
+### Limiti e Dettagli
+- Produce spesso **stemi non lessicali** (es. "thi" invece di "this").  
+- [Dettagli e implementazioni](https://tartarus.org/martin/).
+- [Un esempio di implementazione](https://textanalysisonline.com/nltk-porter-stemmer).
+
+## 7. Tokenizzazione Frasale  
+La **tokenizzazione frasale** o **sentence segmentation** divide il testo in frasi. In particolare, è il processo di divisione di un testo in frasi, tipicamente identificando i segni di punteggio come marcatori di fine frase.
+
+Può sembrare banale, ma non lo è sempre.
+
+Il carattere del punto ".", ad esempio, è ambiguo tra:
+- **Marcatore di confine frasale** (fine frase)
+- **Marcatore di abbreviazioni** come "Mr." o "Inc."
+
+Per questo motivo, la **tokenizzazione frasale** e la **tokenizzazione lessicale** vengono spesso affrontate congiuntamente.
+
+### Metodi di Segmentazione Frasale
+I metodi di tokenizzazione frasale generalmente:
+
+1. **Decidono** (tramite regole o machine learning) se un punto:
+   - Fa parte della parola (es. abbreviazione)
+   - È un marcatore di fine frase
+
+2. **Utilizzano dizionari di abbreviazioni** per identificare:
+   - Abbreviazioni comuni (es. "Dr.", "Prof.")
+   - I dizionari possono essere:
+     - Costruiti manualmente
+     - Appresi automaticamente (machine learning)
+
+### Implementazione in Stanford CoreNLP
+Nel toolkit [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/) [Manning et al., 2014]:
+- La segmentazione frasale è **basata su regole**
+- Una frase termina quando incontra:
+  - Punteggiatura finale (., !, ?) 
+  - Che **non** fa parte di un token esistente (es. abbreviazioni o numeri)
+  - Opzionalmente seguita da virgolette o parentesi finali
+
+**Esempio pratico (toolkit)**:
+"Dr. Smith arrived at 5 p.m. He was late." → Viene correttamente segmentato in 2 frasi nonostante i punti in "Dr." e "p.m."
 
 **Etichette**: #NLP #Tokenizzazione #Corpora  
 **Collegamenti**: [[Elaborazione del Testo]], [[Espressioni Regolari]], [[Modelli Linguistici]]
