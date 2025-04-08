@@ -138,14 +138,15 @@ Qui, ogni parola dipende **da entrambe le precedenti**, anziché solo dall'ultim
 
 ### Differenze nei valori di $N$
 
-Un aspetto fondamentale nei modelli basati su n-grammi è la scelta del valore di $N$. Questo parametro determina quante parole precedenti vengono considerate nel calcolo della probabilità di una parola successiva.  
+Un aspetto fondamentale nei modelli basati su n-grammi è il valore di $N$. Questo parametro determina quante parole precedenti vengono considerate nel calcolo della probabilità di una parola successiva.  
 
 - **Un valore più grande di $N$ implica che:**  
   - Il modello ha **più informazioni sul contesto**, poiché considera una finestra più ampia di parole precedenti.  
   - Questo porta a una **maggiore capacità discriminativa**, cioè il modello è più preciso nel prevedere la parola successiva in base a un contesto più dettagliato.  
   - Tuttavia, **cresce il problema della scarsità dei dati** (*data sparseness*):  
     - Le combinazioni di parole diventano più numerose, quindi molte sequenze potrebbero non comparire mai nel dataset di addestramento.  
-    - Questo porta a difficoltà nella stima delle probabilità, poiché alcuni n-grammi potrebbero avere conteggi molto bassi o addirittura nulli.  
+    - Questo porta a difficoltà nella stima delle probabilità, poiché alcuni n-grammi potrebbero avere conteggi molto bassi o addirittura nulli.
+    - Le tecniche di [[Smoothing nei Modelli Linguistici|smoothing]] diventano cruciali e complesse.
 
 - **Un valore più piccolo di $N$ implica che:**  
   - Il modello ha **meno precisione**, poiché considera un contesto più limitato.  
@@ -156,7 +157,7 @@ In pratica, c'è un **compromesso** nella scelta di $N$:
 - Un valore più grande di $N$ aiuta a catturare meglio la struttura del linguaggio ma aumenta il rischio di dati insufficienti.  
 - Un valore più piccolo riduce la precisione ma garantisce un modello più stabile e generalizzabile.  
 
-Per affrontare il problema della scarsità dei dati nei modelli con $N$ elevato, si utilizzano tecniche come **smoothing**, **backoff** e **modelli neurali** come le reti ricorrenti (*RNN*) o i Transformer.
+Per affrontare il problema della scarsità dei dati nei modelli con $N$ elevato, si utilizzano tecniche come **[[Smoothing nei Modelli Linguistici|smoothing]]**, **[[Backoff nei Modelli Linguistici|backoff]]**, **[[Interpolazione Lineare|interpolazione]]** e **modelli neurali** come le reti ricorrenti (*RNN*) o i Transformer.
 
 ### Riassumendo
 I modelli **N-gram** approssimano la probabilità di sequenze di parole utilizzando contesti limitati di $N-1$ parole precedenti.  Se consideriamo una sequenza di parole $w_{1}^n = w_1, w_2, ..., w_n$ con $n$ parole, abbiamo:
