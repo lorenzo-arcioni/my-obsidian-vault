@@ -10,6 +10,12 @@ L'idea è **ridistribuire la massa di probabilità** dagli n-grammi frequenti a 
 ## Tecniche Principali  
 
 ### 1. **Laplace (Add-One) Smoothing**  
+Il Laplace Smoothing, noto anche come add-one smoothing, è una tecnica usata nei modelli di linguaggio probabilistici per gestire il problema degli zeri nelle stime di probabilità. Nei modelli basati su n-grammi, ad esempio, capita spesso che alcune combinazioni di parole non compaiano mai nel corpus di addestramento. Senza smoothing, queste combinazioni avrebbero probabilità pari a zero, il che può compromettere gravemente la generazione o la valutazione di frasi.
+
+Il Laplace Smoothing risolve questo problema aggiungendo 1 al conteggio di ogni possibile n-gramma. In pratica, anche gli n-grammi mai visti ottengono un conteggio minimo, evitando probabilità nulle. 
+
+Sebbene semplice ed efficace per corpus piccoli, il Laplace Smoothing tende a sovrastimare la probabilità degli eventi rari, penalizzando quelli frequenti. Per questo motivo, in applicazioni avanzate si preferiscono metodi più sofisticati come Good-Turing o Kneser-Ney smoothing. Tuttavia, il Laplace rimane una base utile per comprendere il concetto di smoothing nei modelli di linguaggio.
+
 **Formula (Unigrammi):**  
 $$
 P_{\text{Laplace}}(w_i) = \frac{c(w_i) + 1}{N + V}
@@ -78,83 +84,6 @@ $$
 | Laplace           | Semplice da implementare         | Poco accurato per $V$ grandi |  
 | Good-Turing       | Buono per corpus piccoli         | Difficile per n-grammi alti |  
 | Kneser-Ney        | Massima accuratezza              | Computazionalmente costoso |  
-
-## Applicazione del Laplace Smoothing al BERP (Berkeley Restaurant Project)
-
-Ricordiamo [[The Berkeley Restaurant Project|l'introduzione al BERP]], dove abbiamo realizzato la tabella di frequenze dei bigrammi:
-
-|            | $<s>$          | i   | want | to  | eat | chinese | food | lunch | spend | $</s>$         |
-|------------|----------------|-----|------|-----|-----|---------|------|-------|-------|----------------|
-| **$<s>$**      | –              | $c(i_{<s>})$  | $c(want_{<s>})$  | $c(to_{<s>})$  | $c(eat_{<s>})$  | $c(chinese_{<s>})$  | $c(food_{<s>})$  | $c(lunch_{<s>})$  | $c(spend_{<s>})$  | $c(<s>_{</s>})$  |
-| **i**      | $c(i_{<s>})$     | 5   | 827  | 0   | 9   | 0       | 0    | 0     | 2     | $c(i_{</s>})$    |
-| **want**   | $c(w_{<s>})$     | 2   | 0    | 608 | 1   | 6       | 6    | 5     | 1     | $c(w_{</s>})$    |
-| **to**     | $c(t_{<s>})$     | 2   | 0    | 4   | 686 | 2       | 0    | 6     | 211   | $c(t_{</s>})$    |
-| **eat**    | $c(e_{<s>})$     | 0   | 0    | 2   | 0   | 16      | 2    | 42    | 0     | $c(e_{</s>})$    |
-| **chinese**| $c(c_{<s>})$     | 1   | 0    | 0   | 0   | 0       | 82   | 1     | 0     | $c(c_{</s>})$    |
-| **food**   | $c(f_{<s>})$     | 15  | 0    | 15  | 0   | 1       | 4    | 0     | 0     | $c(f_{</s>})$    |
-| **lunch**  | $c(l_{<s>})$     | 2   | 0    | 0   | 0   | 0       | 1    | 0     | 0     | $c(l_{</s>})$    |
-| **spend**  | $c(s_{<s>})$     | 1   | 0    | 1   | 0   | 0       | 0    | 0     | 0     | $c(s_{</s>})$    |
-
-Chiameremo questa matrice $\mathbf{B}$.
-
-E riportiamo anche il vettore delle frequenze degli unigrammi:
-
-|        | $<s>$ | i    | want | to   | eat  | chinese | food | lunch | spend | $</s>$ |
-|--------|-----|------|------|------|------|---------|------|-------|-------|------|
-| Count  | $N$   | 2533 | 927  | 2417 | 746  | 158     | 1093 | 341   | 278   | $N$    |
-
-Chiameremo questo vettore $\mathbf{u}$.
-
-### 1. Aggiunta del Contatore per il Laplace Smoothing
-
-Per applicare il Laplace smoothing, aggiungiamo 1 a ciascuna cella della matrice (eccetto le celle “–” relative ai token di inizio/fine sequenza):
-
-|            | $<s>$          | i   | want | to  | eat | chinese | food | lunch | spend | $</s>$         |
-|------------|----------------|-----|------|-----|-----|---------|------|-------|-------|----------------|
-| **$<s>$**      | 1              | $c(i_{<s>})$  | $c(want_{<s>})$  | $c(to_{<s>})$  | $c(eat_{<s>})$  | $c(chinese_{<s>})$  | $c(food_{<s>})$  | $c(lunch_{<s>})$  | $c(spend_{<s>})$  | $c(<s>_{</s>})$ |
-| **i**      | $c(i_{<s>})$     | 6   | 828  | 1   | 10  | 1       | 1    | 1     | 3     | $c(i_{</s>})$    |
-| **want**   | $c(w_{<s>})$     | 3   | 1    | 609 | 2   | 7       | 7    | 6     | 2     | $c(w_{</s>})$    |
-| **to**     | $c(t_{<s>})$     | 3   | 1    | 5   | 687 | 3       | 1    | 7     | 212   | $c(t_{</s>})$    |
-| **eat**    | $c(e_{<s>})$     | 1   | 1    | 3   | 1   | 17      | 3    | 43    | 1     | $c(e_{</s>})$    |
-| **chinese**| $c(c_{<s>})$     | 2   | 1    | 1   | 1   | 1       | 83   | 2     | 1     | $c(c_{</s>})$    |
-| **food**   | $c(f_{<s>})$     | 16  | 1    | 16  | 1   | 2       | 5    | 1     | 1     | $c(f_{</s>})$    |
-| **lunch**  | $c(l_{<s>})$     | 3   | 1    | 1   | 1   | 1       | 2    | 1     | 1     | $c(l_{</s>})$    |
-| **spend**  | $c(s_{<s>})$     | 2   | 1    | 2   | 1   | 1       | 1    | 1     | 1     | $c(s_{</s>})$    |
-
-### 2. Calcolo delle Probabilità Smoothing
-
-Per ogni bigramma $(w_{n-1}, w_n)$ il Laplace smoothing prevede:
-
-$$
-\mathbb P(w_n \mid w_{n-1}) = \frac{c(w_{n-1}, w_n) + 1}{c(w_{n-1}) + V}
-$$
-
-dove:
-- $c(w_{n-1}, w_n)$ è il conteggio (già incrementato di 1) per il bigramma;
-- $c(w_{n-1})$ è il totale dei conteggi per il contesto $w_{n-1}$ (ottenibile dal vettore delle frequenze degli unigrammi $\mathbf{u}$);
-- $V$ è la dimensione del vocabolario (in questo caso, $V=1446$).
-
-**Esempio di Calcolo:**
-
-Supponiamo di voler calcolare la probabilità condizionata del bigramma ("i", "want").  
-Dalla riga relativa a "i" abbiamo:
-- Valore incrementato per ("i", "want") = 828  
-- Totale dei conteggi per il contesto "i":  
-  $$
-  c("i") = \mathbf u_i = 2533.
-  $$
-
-Quindi:
-
-$$
-\mathbb P(\text{"want"} \mid \text{"i"}) = \frac{\overbrace{828}^{827+1}}{2533 + 1446} \approx 0.21.
-$$
-
-e quindi la probabilità $\mathbb P("i", "want") = \mathbb P(\text{"want"} \mid \text{"i"}) \cdot \mathbb P("i")$.
-
-### 3. Costruzione della Matrice di Probabilità Smoothed $\mathbf{B^*}$
-
-Una volta applicata la formula per ogni cella (per ogni bigramma), la matrice $\mathbf{B^*}$ conterrà le probabilità smoothed:
 
 
 ## Conclusione  

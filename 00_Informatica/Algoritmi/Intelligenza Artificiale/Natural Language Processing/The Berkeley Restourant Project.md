@@ -13,17 +13,32 @@ Questo dataset è impiegato per sviluppare modelli probabilistici del linguaggio
 ## Modellazione Probabilistica con N-grammi
 
 ### Calcolo della Probabilità con il Modello Bigram
-Assumendo l'indipendenza dei bigrammi e applicando la regola della catena, la probabilità di una frase viene approssimata moltiplicando le probabilità condizionali dei singoli bigrammi.  
+Assumendo l'indipendenza dei bigrammi (Markov Property) e applicando la regola della catena, la probabilità di una frase viene approssimata moltiplicando le probabilità condizionali dei singoli bigrammi.  
 Per esempio, per la frase modificata:
 $$
-P(\text{I want Chinese food}) \approx P(I|<s>) \cdot P(want|I) \cdot P(Chinese|want) \cdot P(food|Chinese)
+P(\langle s \rangle\text{I want Chinese food}) \approx P(I|\langle s \rangle) \cdot P(want|I) \cdot P(Chinese|want) \cdot P(food|Chinese) \cdot P(\langle /s \rangle|food)
 $$
 
 ## Tabelle di Conteggio
 
+Le tabelle di conteggio sono utilizzate per calcolare le probabilità dei bigrammi e degli unigrammi. Scegliamo ora solo alcune (nella realtà vanno scelte tutte) parole (unigrams, vettore $\mathbf u$) e le coppie di parole (bigrams, matrice $\mathbf B$), e contiamo il numero di volte che appaiono nel corpus.
+
+Le parole selezionate sono:
+
+- `<s>` (inizio frase)
+- `i`
+- `want`
+- `to`
+- `eat`
+- `chinese`
+- `food`
+- `lunch`
+- `spend`
+- `</s>` (fine frase)
+
 ### Conteggio degli Unigrammi
 
-|       | $<s>$  | i    | want | to   | eat | chinese | food | lunch | spend | $</s>$ |
+|       | $\langle s \rangle$  | i    | want | to   | eat | chinese | food | lunch | spend | $\langle /s \rangle$ |
 |-------|------|------|------|------|-----|---------|------|--------|--------|-------|
 |Count  | 8566 | 2816 | 1038 | 2711 | 829 | 193     | 1242 | 392    | 310    | 8566  |
 
@@ -34,9 +49,9 @@ Chiameremo questo vettore $\mathbf{u}$.
 
 In questa tabella, includiamo `<s>` come riga iniziale e `</s>` come colonna finale:
 
-|          | $<s>$ | i    | want | to   | eat  | chinese | food | lunch | spend | $</s>$ |
+|          | $\langle s \rangle$ | i    | want | to   | eat  | chinese | food | lunch | spend | $\langle /s \rangle$ |
 |----------|-----|------|------|------|------|---------|------|--------|--------|-------|
-| **<s>**      | 0   | 1922 | 4    | 32   | 4    | 10      | 4    | 39     | 1      | 0     |
+| **$\langle s \rangle$**      | 0   | 1922 | 4    | 32   | 4    | 10      | 4    | 39     | 1      | 0     |
 | **i**        | 0   | 1    | 908  | 0    | 12   | 0       | 0    | 0      | 2      | 0     |
 | **want**     | 0   | 2    | 0    | 673  | 0    | 7       | 6    | 6      | 1      | 2     |
 | **to**       | 0   | 0    | 0    | 2    | 753  | 3       | 0    | 6      | 233    | 3     |
@@ -45,7 +60,7 @@ In questa tabella, includiamo `<s>` come riga iniziale e `</s>` come colonna fin
 | **food**     | 0   | 14   | 0    | 13   | 0    | 0       | 0    | 0      | 0      | 806   |
 | **lunch**    | 0   | 1    | 0    | 0    | 0    | 0       | 1    | 0      | 0      | 221   |
 | **spend**    | 0   | 0    | 0    | 1    | 0    | 0       | 0    | 0      | 0      | 8     |
-| **$</s>$**   | 0   | 0    | 0    | 0    | 0    | 0       | 0    | 0      | 0      | 0     |
+| **$\langle /s \rangle$**   | 0   | 0    | 0    | 0    | 0    | 0       | 0    | 0      | 0      | 0     |
 
 
 Chiameremo questa matrice $\mathbf{B}$.
@@ -55,23 +70,24 @@ Chiameremo questa matrice $\mathbf{B}$.
 Per ottenere le probabilità dei bigrammi, si divide il conteggio del bigramma per il conteggio dell'unigramma del prefisso. Ad esempio, per il bigramma "i want" abbiamo:
 
 $$
-P(\text{want} \mid \text{i}) = \frac{827}{2533} \approx 0.33
+P(\text{want} \mid \text{i}) = \frac{908}{2816} \approx 0.32
 $$
 
 La matrice normalizzata $\mathbf{N}$ (contenente le probabilità) sarà strutturata in modo analogo, includendo le colonne e righe per `<s>` e `</s>`:
 
-|            |   $<s>$   |   i    |  want  |   to   |  eat   | chinese |  food  | lunch  | spend  |  $</s>$  |
-|------------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|
-| **$<s>$**  | 0.000494| 0.949161 | 0.002468| 0.016288| 0.002468| 0.005429| 0.002468| 0.019743| 0.000987| 0.000494 |
-| **i**      | 0.001072| 0.002144 | 0.974277| 0.001072| 0.013934| 0.001072| 0.001072| 0.001072| 0.003215| 0.001072 |
-| **want**   | 0.001414| 0.004243 | 0.001414| 0.953324| 0.001414| 0.011315| 0.009901| 0.009901| 0.002829| 0.004243 |
-| **to**     | 0.000990| 0.000990 | 0.000990| 0.002970| 0.746535| 0.003960| 0.000990| 0.006931| 0.231683| 0.003960 |
-| **eat**    | 0.011111| 0.011111 | 0.011111| 0.011111| 0.011111| 0.188889| 0.033333| 0.588889| 0.011111| 0.122222 |
-| **chinese**|0.008065| 0.040323 | 0.008065| 0.008065| 0.008065| 0.008065| 0.806452| 0.016129| 0.008065| 0.088710 |
-| **food**   | 0.001186| 0.017794 | 0.001186| 0.016607| 0.001186| 0.001186| 0.001186| 0.001186| 0.001186| 0.957295 |
-| **lunch**  | 0.004292| 0.008584 | 0.004292| 0.004292| 0.004292| 0.004292| 0.008584| 0.004292| 0.004292| 0.952790 |
-| **spend**  | 0.052632| 0.052632 | 0.052632| 0.105263| 0.052632| 0.052632| 0.052632| 0.052632| 0.052632| 0.473684 |
-| **$</s>$** | 0.100000| 0.100000 | 0.100000| 0.100000| 0.100000| 0.100000| 0.100000| 0.100000| 0.100000| 0.100000 |
+|            | $\langle s \rangle$   | i         | want     | to       | eat      | chinese  | food     | lunch    | spend    | $\langle /s \rangle$  |
+|------------|---------|-----------|----------|----------|----------|----------|----------|----------|----------|---------|
+| **$\langle s \rangle$**  | 0.0     | 0.224375  | 0.000467 | 0.003736 | 0.000467 | 0.001167 | 0.000467 | 0.004553 | 0.000117 | 0.000000 |
+| **i**      | 0.0     | 0.000355  | 0.322443 | 0.000000 | 0.004261 | 0.000000 | 0.000000 | 0.000000 | 0.000710 | 0.000000 |
+| **want**   | 0.0     | 0.001927  | 0.000000 | 0.648362 | 0.000000 | 0.006744 | 0.005780 | 0.005780 | 0.000963 | 0.001927 |
+| **to**     | 0.0     | 0.000000  | 0.000000 | 0.000738 | 0.277757 | 0.001107 | 0.000000 | 0.002213 | 0.085946 | 0.001107 |
+| **eat**    | 0.0     | 0.000000  | 0.000000 | 0.000000 | 0.000000 | 0.019300 | 0.002413 | 0.062726 | 0.000000 | 0.012063 |
+| **chinese**| 0.0     | 0.020725  | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.512953 | 0.005181 | 0.000000 | 0.051813 |
+| **food**   | 0.0     | 0.011272  | 0.000000 | 0.010467 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.648953 |
+| **lunch**  | 0.0     | 0.002551  | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.002551 | 0.000000 | 0.000000 | 0.563776 |
+| **spend**  | 0.0     | 0.000000  | 0.000000 | 0.003226 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.025806 |
+| **$\langle /s \rangle$** | 0.0     | 0.000000  | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |
+
 
 *Nota:* I token `<s>` e `</s>` sono inclusi solo nelle matrici normalizzate per evidenziare la probabilità di inizio e fine frase.
 
@@ -84,48 +100,30 @@ $$
 
 Per stimare la probabilità di una frase con un modello bigramma, si moltiplicano le probabilità condizionali dei bigrammi, includendo i token di inizio (`<s>`) e fine (`</s>`). In generale, per una frase:
 $$
-\text{frase} = \text{<s>} \; w_1 \; w_2 \; \dots \; w_n \; \text{</s>}
+\text{frase} = \langle s \rangle \; w_1 \; w_2 \; \dots \; w_n \; \langle /s \rangle
 $$
 la probabilità stimata è:
 $$
-P(\text{frase}) = P(w_1 \mid \text{<s>}) \cdot P(w_2 \mid w_1) \cdots P(</s> \mid w_n)
-$$
-
-### Frase: "I want English food"
-
-Poiché il token "English" non compare nei dati, $P("English")=0$. Quindi:
-- $P(I \mid \text{<s>}) = \frac{1922}{8566} \approx 0.2244$
-- $P(want \mid I) = \frac{908}{2816} \approx 0.3224$
-- $P(\text{English} \mid want) \approx 0$
-- $P(food \mid \text{English}) \approx 0$
-- $P(</s> \mid food) = \frac{806}{1242} \approx 0.6481$
-
-Pertanto, la probabilità stimata della frase:
-$$
-\begin{aligned}
-P(\text{<s> I want English food </s>}) &\approx P(I \mid \text{<s>}) \cdot P(want \mid I) \cdot P(\text{English} \mid want) \\
-&\quad \cdot P(food \mid \text{English}) \cdot P(</s> \mid food) \\
-&= 0.2244 \cdot 0.3224 \cdot 0 \cdot 0 \cdot 0.6481 \\
-&= 0
-\end{aligned}
+P(\text{frase}) = P(w_1 \mid \langle s \rangle) \cdot P(w_2 \mid w_1) \cdots P(\langle /s \rangle \mid w_n)
 $$
 
 ### Frase: "I want Chinese food"
 
-Utilizziamo i valori aggiornati dalle tabelle per stimare la probabilità:
-- $P(I \mid \text{<s>}) = \frac{1922}{8566} \approx 0.2244$
-- $P(want \mid I) = \frac{908}{2816} \approx 0.3224$
-- $P(chinese \mid want) = \frac{7}{1038} \approx 0.0067$
-- $P(food \mid chinese) = \frac{99}{193} \approx 0.5130$
-- $P(</s> \mid food) = \frac{806}{1242} \approx 0.6481$
+Utilizziamo i valori aggiornati dalla matrice per stimare la probabilità (trasformando sempre le lettere in lower case):
+
+- $P(i \mid \langle s \rangle) = 0.224375$  
+- $P(want \mid i) = 0.322443$  
+- $P(chinese \mid want) = 0.006744$  
+- $P(food \mid chinese) = 0.512953$  
+- $P(\langle /s \rangle \mid food) = 0.648953$  
 
 La probabilità della frase è:
 $$
 \begin{aligned}
-P(\text{<s> I want Chinese food </s>}) &= P(I \mid \text{<s>}) \cdot P(want \mid I) \cdot P(chinese \mid want) \\
-&\quad \cdot P(food \mid chinese) \cdot P(</s> \mid food) \\
-&\approx 0.2244 \cdot 0.3224 \cdot 0.0067 \cdot 0.5130 \cdot 0.6481 \\
-&\approx 0.00016
+P(\langle s \rangle\, i\, want\, chinese\, food\, \langle /s \rangle) &= P(i \mid \langle s \rangle) \cdot P(want \mid i) \cdot P(chinese \mid want) \\
+&\quad \cdot P(food \mid chinese) \cdot P(\langle /s \rangle \mid food) \\
+&= 0.224375 \cdot 0.322443 \cdot 0.006744 \cdot 0.512953 \cdot 0.648953 \\
+&\approx 0.000162
 \end{aligned}
 $$
 
@@ -134,8 +132,8 @@ $$
 Nonostante la semplicità, i modelli basati su N-grammi riescono a catturare informazioni interessanti riguardo al linguaggio:
 
 - **Fatti Linguistici:**  
-  - $P(\text{English} \mid want) \approx 0.0011$  
-  - $P(\text{Chinese} \mid want) \approx 0.0067$  
+  - $P(English \mid want) = 0$, che rappresenta un problema, in quanto non compare nel corpus il bigramma "*want English*".
+  - $P(Chinese \mid want) \approx 0.0067$  
   - $P(to \mid want)$ (valore elevato nei dati originali)
 
 - **Conoscenza del Mondo:**  
@@ -144,10 +142,67 @@ Nonostante la semplicità, i modelli basati su N-grammi riescono a catturare inf
 
 - **Sintassi:**  
   - $P(want \mid spend) = 0$  
-  - $P(I \mid \text{<s>}) \approx 0.2244$
+  - $P(I \mid \langle s \rangle) \approx 0.2244$
 
 - **Discorso:**  
   Le probabilità riflettono le relazioni contestuali e il flusso del discorso, evidenziando come alcuni bigrammi siano molto probabili (come quelli che iniziano con `<s>`) mentre altri risultano meno frequenti o addirittura impossibili.
+
+## Laplace Smoothing
+
+Applichiamo ora il Laplace Smoothing alla matrice di conteggio dei bigrammi per risolvere il problema dei bigrammi non osservati nel corpus, che hanno come probabilità 0.
+
+### 1. Aggiunta del Contatore per il Laplace Smoothing
+
+Per applicare il Laplace smoothing, aggiungiamo 1 a ciascuna cella della matrice $\mathbf{B}$:
+
+|                  | $\langle s \rangle$ | i    | want | to   | eat  | chinese | food | lunch | spend | $\langle /s \rangle$ |
+|------------------|---------------------|------|------|------|------|---------|------|--------|--------|-----------------------|
+| **$\langle s \rangle$**    | 1   | 1923 | 5    | 33   | 5    | 11      | 5    | 40     | 2      | 1     |
+| **i**            | 1   | 2    | 909  | 1    | 13   | 1       | 1    | 1      | 3      | 1     |
+| **want**         | 1   | 3    | 1    | 674  | 1    | 8       | 7    | 7      | 2      | 3     |
+| **to**           | 1   | 1    | 1    | 3    | 754  | 4       | 1    | 7      | 234    | 4     |
+| **eat**          | 1   | 1    | 1    | 1    | 1    | 17      | 3    | 53     | 1      | 11    |
+| **chinese**      | 1   | 5    | 1    | 1    | 1    | 1       | 100  | 2      | 1      | 11    |
+| **food**         | 1   | 15   | 1    | 14   | 1    | 1       | 1    | 1      | 1      | 807   |
+| **lunch**        | 1   | 2    | 1    | 1    | 1    | 1       | 2    | 1      | 1      | 222   |
+| **spend**        | 1   | 1    | 1    | 2    | 1    | 1       | 1    | 1      | 1      | 9     |
+| **$\langle /s \rangle$** | 1   | 1    | 1    | 1    | 1    | 1       | 1    | 1      | 1      | 1     |
+
+### 2. Calcolo delle Probabilità Smoothing
+
+Per ogni bigramma $(w_{n-1}, w_n)$ il Laplace smoothing prevede:
+
+$$
+\mathbb P(w_n \mid w_{n-1}) = \frac{c(w_{n-1}, w_n) + 1}{c(w_{n-1}) + V}
+$$
+
+dove:
+- $c(w_{n-1}, w_n)$ è il conteggio (già incrementato di 1) per il bigramma;
+- $c(w_{n-1})$ è il totale dei conteggi per il contesto $w_{n-1}$ (ottenibile dal vettore delle frequenze degli unigrammi $\mathbf{u}$);
+- $V$ è la dimensione del vocabolario (in questo caso, $V=1997$).
+
+**Esempio di Calcolo:**
+
+Supponiamo di voler calcolare la probabilità condizionata del bigramma ("i", "want").  
+Dalla riga relativa a "i" abbiamo:
+- Valore incrementato per ("i", "want") = 908  
+- Totale dei conteggi per il contesto "i":  
+  $$
+  c("i") = \mathbf u_i = 2816.
+  $$
+
+Quindi:
+
+$$
+\mathbb P(\text{"want"} \mid \text{"i"}) = \frac{\overbrace{909}^{908+1}}{2816 + 1997} \approx 0.19.
+$$
+
+e quindi la probabilità $\mathbb P("i", "want") = \mathbb P(\text{"want"} \mid \text{"i"}) \cdot \mathbb P("i")$.
+
+### 3. Costruzione della Matrice di Probabilità Smoothed $\mathbf{B^*}$
+
+Una volta applicata la formula per ogni cella (per ogni bigramma), la matrice $\mathbf{B^*}$ conterrà le probabilità smoothed:
+
 
 
 ## Conclusione
