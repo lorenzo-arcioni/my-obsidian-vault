@@ -149,7 +149,7 @@ Nonostante la semplicità, i modelli basati su N-grammi riescono a catturare inf
 
 ## Laplace Smoothing
 
-Applichiamo ora il Laplace Smoothing alla matrice di conteggio dei bigrammi per risolvere il problema dei bigrammi non osservati nel corpus, che hanno come probabilità 0.
+Applichiamo ora il Laplace [[Smoothinf nei Modelli Linguistici|Smoothing]] alla matrice di conteggio dei bigrammi per risolvere il problema dei bigrammi non osservati nel corpus, che hanno come probabilità 0.
 
 ### 1. Aggiunta del Contatore per il Laplace Smoothing
 
@@ -203,6 +203,67 @@ e quindi la probabilità $\mathbb P("i", "want") = \mathbb P(\text{"want"} \mid 
 
 Una volta applicata la formula per ogni cella (per ogni bigramma), la matrice $\mathbf{B^*}$ conterrà le probabilità smoothed:
 
+|                  | $\langle s \rangle$ | i        | want     | to       | eat      | chinese  | food     | lunch    | spend    | $\langle /s \rangle$ |
+|------------------|---------------------|----------|----------|----------|----------|----------|----------|----------|----------|-----------------------|
+| **$\langle s \rangle$**    | 0.000095            | 0.182051 | 0.000473 | 0.000095 | 0.000473 | 0.001041 | 0.000473 | 0.003787 | 0.000189 | 0.000095              |
+| **i**            | 0.000208            | 0.000416 | 0.188863 | 0.000208 | 0.002701 | 0.000208 | 0.000208 | 0.000208 | 0.000623 | 0.000208              |
+| **want**         | 0.000329            | 0.000988 | 0.000329 | 0.000329 | 0.000329 | 0.002636 | 0.002306 | 0.002306 | 0.000659 | 0.000988              |
+| **to**           | 0.000501            | 0.000501 | 0.000501 | 0.000501 | 0.000501 | 0.000501 | 0.000501 | 0.000501 | 0.000501 | 0.000501              |
+| **eat**          | 0.000354            | 0.000354 | 0.000354 | 0.000354 | 0.000354 | 0.006016 | 0.001062 | 0.018754 | 0.000354 | 0.003892              |
+| **chinese**      | 0.000457            | 0.002283 | 0.000457 | 0.000457 | 0.000457 | 0.000457 | 0.045662 | 0.000913 | 0.000457 | 0.005023              |
+| **food**         | 0.000309            | 0.004631 | 0.000309 | 0.000309 | 0.000309 | 0.000309 | 0.000309 | 0.000309 | 0.000309 | 0.249151              |
+| **lunch**        | 0.000419            | 0.000837 | 0.000419 | 0.000419 | 0.000419 | 0.000419 | 0.000837 | 0.000419 | 0.000419 | 0.092926              |
+| **spend**        | 0.000433            | 0.000433 | 0.000433 | 0.000433 | 0.000433 | 0.000433 | 0.000433 | 0.000433 | 0.000433 | 0.003901              |
+| **$\langle /s \rangle$** | 0.000095            | 0.000095 | 0.000095 | 0.000095 | 0.000095 | 0.000095 | 0.000095 | 0.000095 | 0.000095 | 0.000095              |
+
+In questo modo, le frasi che prima avevano una probabilità nulla (ma comunque non impossibili nel linguaggio naturale), ora hanno una probabilità non nulla.
+
+### Frase: "I want to want to eat Chinese food."
+
+Utilizziamo i valori aggiornati dalla matrice (trasformando tutte le parole in lower case) per stimare la probabilità della frase.  
+Attenzione: nella tabella il token "to" è indicato come "ot". Quindi, nel calcolo, sostituiamo “to” con “ot” dove necessario.
+
+I passaggi sono i seguenti:
+
+- $P(i \mid \langle s \rangle) = 0.182051$  
+- $P(want \mid i) = 0.188863$  
+- $P(to \mid want) = 0.000329$  
+- $P(want \mid to) = 0.000501$  
+- $P(to \mid want) = 0.000329$  
+- $P(eat \mid to) = 0.000501$  
+- $P(chinese \mid eat) = 0.006016$  
+- $P(food \mid chinese) = 0.045662$  
+- $P(\langle /s \rangle \mid food) = 0.249151$  
+
+La struttura della frase (includendo i token di inizio e fine frase) è:
+
+$$
+\langle s \rangle \; i \; want \; to \; want \; to \; eat \; chinese \; food \; \langle /s \rangle
+$$
+
+La probabilità complessiva della frase è data dal prodotto dei singoli passaggi:
+
+$$
+\begin{aligned}
+P(\langle s \rangle\, i\, want\, to\, want\, to\, eat\, chinese\, food\, \langle /s \rangle) &= P(i \mid \langle s \rangle) \cdot P(want \mid i) \cdot P(to \mid want) \\
+&\quad \cdot P(want \mid to) \cdot P(to \mid want) \cdot P(eat \mid to) \\
+&\quad \cdot P(chinese \mid eat) \cdot P(food \mid chinese) \cdot P(\langle /s \rangle \mid food) \\
+&= 0.182051 \cdot 0.188863 \cdot 0.000329 \cdot 0.000501 \cdot 0.000329 \cdot 0.000501 \\
+&\quad \cdot 0.006016 \cdot 0.045662 \cdot 0.249151 \\
+&\approx 6.39 \times 10^{-20}
+\end{aligned}
+$$
+
+Questa frase, pur non essendo particolarmente sensata, è corretta dal punto di vista del linguaggio. Tuttavia, utilizzando il modello bigramma senza smoothing, la probabilità stimata della frase sarebbe nulla.
+
+Grazie allo smoothing, invece, il modello bigramma riesce a stimare la probabilità della frase in modo più corretto e sensato.
+
+## Argomenti Correlati
+ 
+- [[Modelli di Linguaggio]]
+- [[Parole, Corpora, Tokenizzazione e Normalizzazione]]  
+- [[Smoothing nei Modelli Linguistici]]   
+- [[Valutazione dei Modelli di Linguaggio]]
 
 
 ## Conclusione
