@@ -24,17 +24,73 @@ Questo rende l'equazione equivalente a una media pesata.
 
 ### Interpolazione Lineare Condizionata sul Contesto
 
-In una versione leggermente più sofisticata, ogni peso $\lambda_i$ viene calcolato condizionando sul contesto (le due parole precedenti). In questo modo, se i conteggi per un particolare bigramma sono particolarmente affidabili, il modello assegna un peso maggiore ai trigrammi basati su di esso. La formula diventa:
+In questo approccio, i pesi dell'interpolazione non sono costanti ma diventano funzioni del contesto, cioè delle parole precedenti. Per un modello trigramma, la stima della probabilità del termine $w_n$ data la sequenza $w_{n-2}, w_{n-1}$ è data da:
 
 $$
-\hat{P}(w_n \mid w_{n-2}\, w_{n-1}) = \lambda_1(w_{n-2}^{n-1})\, P(w_n) + \lambda_2(w_{n-2}^{n-1})\, P(w_n \mid w_{n-1}) + \lambda_3(w_{n-2}^{n-1})\, P(w_n \mid w_{n-2}\, w_{n-1})
+\hat{P}(w_n \mid w_{n-2}, w_{n-1}) = \lambda_1(w_{n-2}, w_{n-1})\, P(w_n) + \lambda_2(w_{n-2}, w_{n-1})\, P(w_n \mid w_{n-1}) + \lambda_3(w_{n-2}, w_{n-1})\, P(w_n \mid w_{n-2}, w_{n-1})
 $$
 
-dove $\lambda_1(\cdot)$, $\lambda_2(\cdot)$ e $\lambda_3(\cdot)$ sono funzioni del contesto $w_{n-2}\, w_{n-1}$.
+dove:
+- **$P(w_n)$** è la probabilità unigrama del termine $w_n$,
+- **$P(w_n \mid w_{n-1})$** è la probabilità condizionata data dal modello bigramma,
+- **$P(w_n \mid w_{n-2}, w_{n-1})$** è la probabilità condizionata data dal modello trigramma.
 
-*Ricordiamo che $w_{n-2}^{n-1} = w_{n-2}\, w_{n-1}$*.
+#### Proprietà delle Funzioni di Peso $\lambda_i$
 
-## Apprendimento dei Pesi $\lambda_i$
+Le funzioni di peso, $\lambda_1$, $\lambda_2$ e $\lambda_3$, devono soddisfare le seguenti proprietà:
+
+1. **Normalizzazione**:  
+   Per ogni contesto $(w_{n-2}, w_{n-1})$, la somma dei pesi deve essere 1:
+   $$
+   \lambda_1(w_{n-2}, w_{n-1}) + \lambda_2(w_{n-2}, w_{n-1}) + \lambda_3(w_{n-2}, w_{n-1}) = 1.
+   $$
+
+2. **Non-negatività**:  
+   Per ogni contesto, ogni peso è non negativo:
+   $$
+   \lambda_i(w_{n-2}, w_{n-1}) \geq 0 \quad \text{per } i = 1, 2, 3.
+   $$
+
+3. **Adattamento al Contesto**:  
+   I pesi variano in base all’affidabilità delle stime fornite da ciascun modello nel contesto specifico. Ad esempio:
+   - Se il contesto $w_{n-2}, w_{n-1}$ è frequente e quindi il trigramma è ben rappresentato, è preferibile che $\lambda_3(w_{n-2}, w_{n-1})$ sia elevato.
+   - Se il trigramma è scarso o assente, il modello potrebbe ridurre il peso di $\lambda_3$ e aumentare quello di $\lambda_2$ (bigramma) o di $\lambda_1$ (unigramma).
+
+#### Possibili Schemi per la Definizione delle $\lambda_i$
+
+I pesi condizionati sul contesto possono essere definiti mediante formule che tengono conto dei conteggi relativi ai contesti. Ad esempio, si possono usare delle funzioni basate sulla frequenza osservata dei contesti:
+
+- **Ponderazione Basata sui Conteggi**:
+
+  Un possibile schema per impostare $\lambda_3$, che rappresenta il peso del trigramma, è:
+  $$
+  \lambda_3(w_{n-2}, w_{n-1}) = \frac{N(w_{n-2}, w_{n-1})}{N(w_{n-2}, w_{n-1}) + \gamma},
+  $$
+  dove:
+  - $N(w_{n-2}, w_{n-1})$ è il numero di occorrenze del contesto trigramma,
+  - $\gamma > 0$ è un iperparametro che regola la sensibilità al conteggio.
+  
+- **Distribuzione dei Pesi Rimanenti**:
+
+  Dopo aver determinato $\lambda_3$, i pesi per il bigramma e l'unigramma possono essere assegnati in modo proporzionale all’affidabilità dei loro contesti:
+  $$
+  \lambda_2(w_{n-2}, w_{n-1}) = \left(1 - \lambda_3(w_{n-2}, w_{n-1})\right) \frac{N(w_{n-1})}{N(w_{n-1}) + \delta},
+  $$
+  e
+  $$
+  \lambda_1(w_{n-2}, w_{n-1}) = 1 - \lambda_3(w_{n-2}, w_{n-1}) - \lambda_2(w_{n-2}, w_{n-1}),
+  $$
+  dove:
+  - $N(w_{n-1})$ è il numero di occorrenze del contesto bigramma (ossia la parola precedente $w_{n-1}$),
+  - $\delta > 0$ è un ulteriore iperparametro.
+
+Queste formulazioni sono solo esempi e possono essere adattate o raffinate in base alla specifica applicazione o alla quantità e qualità del corpus a disposizione.
+
+In sintesi, l'interpolazione lineare condizionata sul contesto permette di adattare in maniera dinamica e flessibile l'importanza delle stime ottenute dai modelli di diversa granularità, sfruttando informazioni specifiche del contesto. Ciò contribuisce a migliorare la robustezza del modello, soprattutto quando i dati sono scarsi o la frequenza dei contesti varia significativamente.
+
+
+
+## Apprendimento dei Pesi $\lambda_i$ (Interpolazione Lineare Semplice)
 
 I valori dei pesi $\lambda_i$ sono generalmente appresi da un **corpus di validazione** (detto anche corpus "held-out" o di tuning). Il procedimento è il seguente:
 
@@ -45,8 +101,6 @@ I valori dei pesi $\lambda_i$ sono generalmente appresi da un **corpus di valida
   - Si utilizzano algoritmi come l'**EM (Expectation-Maximization)** per trovare i valori $\lambda_i$ ottimali che, una volta inseriti in una formula come quella sopra, danno il massimo della verosimiglianza al corpus di tuning.
 
 Questo approccio permette di apprendere in modo efficace quanto peso assegnare a ciascun ordine di $n$-grammi, garantendo al contempo una migliore generalizzazione per eventi rari o mai osservati.
-
-Per determinare i pesi ottimali $\lambda_i$, si ricorre a tecniche di ottimizzazione che massimizzano la probabilità (verosimiglianza) di un **corpus di validazione** rispetto al modello interpolato. 
 
 ### Obiettivo: Massimizzare la Verosimiglianza
 

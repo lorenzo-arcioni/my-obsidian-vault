@@ -61,7 +61,7 @@ L'obiettivo è prevedere la parola successiva in una frase o correggere un error
 
 **Esempio**: Se consideriamo una frase come *"oggi piove molto"*, la probabilità congiunta $\mathbb{P}(\text{"oggi"}, \text{"piove"}, \text{"molto"})$ indica quanto questa sequenza sia comune nel linguaggio naturale.
 
-**Esempio**: Se consideriamo una frase come *"the pen is on the"*, la probabilità che la prossima parola sia "table" è $\mathbb P("table" | "the", "pen", "is", "on")$.
+**Esempio**: Se consideriamo una frase come *"the pen is on the"*, la probabilità che la prossima parola sia "table" è $\mathbb P("table" | "the", "pen", "is", "on", "the")$.
 
 ### Stima delle frequenze relative
 Per stimare queste probabilità su un **corpus molto ampio**:
@@ -157,7 +157,7 @@ In pratica, c'è un **compromesso** nella scelta di $N$:
 - Un valore più grande di $N$ aiuta a catturare meglio la struttura del linguaggio ma aumenta il rischio di dati insufficienti.  
 - Un valore più piccolo riduce la precisione ma garantisce un modello più stabile e generalizzabile.  
 
-Per affrontare il problema della scarsità dei dati nei modelli con $N$ elevato, si utilizzano tecniche come **[[Smoothing nei Modelli Linguistici|smoothing]]**, **[[Backoff nei Modelli Linguistici|backoff]]**, **[[Interpolazione Lineare|interpolazione]]** e **modelli neurali** come le reti ricorrenti (*RNN*) o i Transformer.
+Per affrontare il problema della scarsità dei dati nei modelli con $N$ elevato, si utilizzano tecniche come **[[Smoothing nei Modelli Linguistici|smoothing]]**, **[[Backoff nei Modelli Linguistici|backoff]]**, **[[Interpolazione Lineare nei Modelli Linguistici|interpolazione]]** e **modelli neurali** come le reti ricorrenti (*RNN*) o i Transformer.
 
 ### Riassumendo
 I modelli **N-gram** approssimano la probabilità di sequenze di parole utilizzando contesti limitati di $N-1$ parole precedenti.  Se consideriamo una sequenza di parole $w_{1}^n = w_1, w_2, ..., w_n$ con $n$ parole, abbiamo:
@@ -191,71 +191,9 @@ Le probabilità condizionate si stimano dai conteggi delle sequenze nel corpus:
   $$  
   Esempio: Per un trigramma ($N=3$), $P(\text{mangia} \mid \text{il, cane}) = \frac{C(\text{il cane mangia})}{C(\text{il cane})}$.  
 
-Questo approccio si basa sulla **frequenza relativa** delle sequenze, rendendolo semplice ma sensibile alla sparsità dei dati per $N$ elevati. 
+Questo approccio si basa sulla **frequenza relativa** delle sequenze, rendendolo semplice ma sensibile alla sparsità dei dati per $N$ elevati.
 
-This [[The Berkeley Restourant Project (BERP) Corpus]] is an exercise for you!
-
-### Legge di Zipf
-
-#### Introduzione
-La **Legge di Zipf** (dal linguista George Kingsley Zipf, 1902-1950) è un principio empirico che descrive la relazione tra la frequenza di un elemento e la sua posizione ("rango") in una lista ordinata. Nella linguistica, stabilisce che:
-
-> "La frequenza di una parola è inversamente proporzionale al suo rango."
-
-Il **rango** ($r$) di una parola è la sua posizione in una lista ordinata per frequenza decrescente.
-
-#### Formulazione Matematica
-Per un corpus testuale, la legge è espressa come:
-
-$$
-f(r) = \frac{C}{r^s}
-$$
-
-Dove:
-- $f(r)$: frequenza della parola di rango $r$
-- $C$: costante di normalizzazione
-- $s$: esponente caratteristico (≈1 per molte lingue naturali)
-
-In termini semplificati:
-- La parola più frequente ($r=1$) occorrerà circa 2 volte più spesso della seconda ($r=2$), 3 volte più spesso della terza ($r=3$), ecc.
-
-#### Esempi Pratici
-
-| Rango | Parola (Inglese) | Frequenza Relativa |
-|-------|------------------|--------------------|
-| 1     | the              | 7%                 |
-| 2     | of               | 3.5%               |
-| 3     | and              | 2.3%               |
-| 10    | they             | 0.7%               |
-
-<img src="/home/lorenzo/Documenti/GitHub/my-obsidian-vault/images/Zipf's_law_on_War_and_Peace.png" alt="Zipf's law on War and Peace" width="80%" style="display: block; margin-left: auto; margin-right: auto; align: center">
-
-*Figura 1: Nelle lingue, in generale, si osserva la presenza di un piccolo numero di parole con frequenza elevata (rango piu basso) e un grande numero di parole con frequenza bassa (rango piu alto).*
-
-#### Applicazioni
-La legge si osserva in:
-1. **Linguistica**: distribuzione parole nei testi
-2. **Demografia**: dimensione delle città
-3. **Informatica**: frequenza accessi a pagine web
-4. **Economia**: distribuzione del reddito
-
-#### Limiti
-- Funziona meglio su grandi dataset
-- L'esponente $s$ può variare tra 0.8-1.2
-- Non spiega il "perché" del fenomeno
-
-$$
-\begin{aligned}
-\text{Per } s=1: \quad &f(r) \propto \frac{1}{r} \\
-& \sum_{r=1}^{\infty} \frac{1}{r} \to \infty \quad (\text{Serie armonica divergente})
-\end{aligned}
-$$
-
-#### Curiosità
-Lo stesso Zipf paragonò il fenomeno al "principio del minimo sforzo" in natura. Studi recenti lo collegano a:
-- Dinamiche di ottimizzazione
-- Processi stocastici
-- Auto-organizzazione critica
+[[Legge di Zipf|Qui]] è presente un approfondimento dettagliato sulla legge di Zipf. Che spiega la motivazione teorica dietro la sparsità dei dati nei modelli N-gram. La legge di Zipf mostra che in un corpus linguistico, la distribuzione delle parole segue una legge di potenza, dove poche parole (es. articoli, preposizioni) compaiono con frequenza estremamente alta, mentre la maggioranza delle parole è rara.
 
 ## Limiti e Problematiche
 
@@ -319,6 +257,8 @@ I modelli linguistici basati su n-grammi presentano diverse limitazioni intrinse
   Non integrano informazioni esterne:  
   $$P(\text{"Roma"} | \text{"La capitale d'Italia è"}) = 0$$  
   Anche se "Roma" è l'unica risposta corretta, il modello assegna probabilità basate solo sui bigrammi/trigrammi osservati.
+
+
 
 ## Argomenti Collegati
 - [[Valutazione dei Modelli di Linguaggio]]

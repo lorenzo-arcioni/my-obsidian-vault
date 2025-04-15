@@ -6,7 +6,7 @@ tags: [nlp, modelli-linguistici, smoothing]
 # Modelli di Backoff nella Modellazione Linguistica con $N$-grammi
 
 ## Panoramica
-I modelli di backoff sono un'alternativa all'[[Interpolazione Lineare|interpolazione]] per gestire dati sparsi nei modelli linguistici basati su $n$-grammi. A differenza dell'interpolazione (che combina le probabilità di tutti gli ordini di $n$-grammi), il backoff utilizza $n$-grammi di ordine inferiore **solo quando i conteggi di ordine superiore sono zero**. Due varianti principali sono lo **Stupid Backoff** e il **Katz Backoff**.
+I modelli di backoff sono un'alternativa all'[[Interpolazione Lineare nei Modelli Linguistici|interpolazione]] per gestire dati sparsi nei modelli linguistici basati su $n$-grammi. A differenza dell'interpolazione (che combina le probabilità di tutti gli ordini di $n$-grammi), il backoff utilizza $n$-grammi di ordine inferiore **solo quando i conteggi di ordine superiore sono zero**. Due varianti principali sono lo **Stupid Backoff** e il **Katz Backoff**.
 
 ## 1. Backoff vs Interpolazione
 | Caratteristica          | Interpolazione                        | Backoff                                  |
@@ -76,7 +76,7 @@ Calcoliamo $S(\text{"processing"} | \text{"natural language"})$, abbiamo princip
 
 ### Idea Generale
 - **Sconto dei conteggi**: Riserva una parte della massa probabilistica per eventi non osservati, riducendo i conteggi osservati (es. con Good-Turing discounting).
-- **Retrocessione condizionata**: Si applica il backoff solo se il conteggio dell'$n$-gramma è zero.
+- **Retrocessione condizionata**: Si applica il backoff solo se il conteggio dell'$n$-gramma corrente è zero.
 - **Distribuzione di probabilità valida**: Garantisce $0 \leq P_{\text{Katz}}(w_i | \text{contesto}) \leq 1$ e la somma di $P_{\text{Katz}}(w_i | \text{contesto})$ su tutti i $w_i$ è 1.
 
 > In altre parole, se si utilizza una stima MLE e $P_{\text{Katz}}(w_i | \text{contesto}) = 0$, viene definita:
@@ -98,7 +98,7 @@ $$
 ### Componenti Fondamentali
 
 1. **Probabilità Scontata ($P^*$)**  
-   Utilizza tecniche come il **Good-Turing discounting** per ridurre il conteggio:
+   Utilizza tecniche, come il **Good-Turing discounting**, per ridurre il conteggio:
    $$
    P^*(w_i | \text{contesto}) = \frac{\text{count}(\text{contesto}, w_i) - d}{\text{count}(\text{contesto})},
    $$
