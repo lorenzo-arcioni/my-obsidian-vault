@@ -26,10 +26,10 @@ I modelli di backoff sono un'alternativa all'[[Interpolazione Lineare nei Modell
 ### La Formula
 Per un modello $N$-grammi:
 $$
-S(w_i | w^{i-1}_{i-N+1}) =
+\mathbb S(w_i | w^{i-1}_{i-N+1}) =
 \begin{cases}
-\frac{\text{count}(w_{i-N+1}^{i-1})}{\text{count}(w^{i-1}_{i-N+1})} & \text{se } \text{count}(w_{i-N+1}^{i-1}) > 0, \\
-\lambda \cdot S(w_i | w_{i-N+2}^{i-1}) & \text{altrimenti.}
+\frac{\text{count}(w_{i-N+1}^{i})}{\text{count}(w^{i-1}_{i-N+1})} & \text{se } \text{count}(w_{i-N+1}^{i-1}) > 0, \\
+\lambda \cdot \mathbb S(w_i | w_{i-N+2}^{i-1}) & \text{altrimenti.}
 \end{cases}
 $$
 
@@ -75,7 +75,7 @@ Calcoliamo $S(\text{"processing"} | \text{"natural language"})$, abbiamo princip
 ## 3. Katz Backoff (Katz, 1987)
 
 ### Idea Generale
-- **Sconto dei conteggi**: Riserva una parte della massa probabilistica per eventi non osservati, riducendo i conteggi osservati (es. con Good-Turing discounting).
+- **Sconto dei conteggi**: Riserva una parte della massa probabilistica per eventi non osservati, riducendo i conteggi osservati (es. con [[Smoothing nei Modelli Linguistici|Good-Turing discounting]]).
 - **Retrocessione condizionata**: Si applica il backoff solo se il conteggio dell'$n$-gramma corrente è zero.
 - **Distribuzione di probabilità valida**: Garantisce $0 \leq P_{\text{Katz}}(w_i | \text{contesto}) \leq 1$ e la somma di $P_{\text{Katz}}(w_i | \text{contesto})$ su tutti i $w_i$ è 1.
 
@@ -100,15 +100,58 @@ $$
 1. **Probabilità Scontata ($P^*$)**  
    Utilizza tecniche, come il **Good-Turing discounting**, per ridurre il conteggio:
    $$
-   P^*(w_i | \text{contesto}) = \frac{\text{count}(\text{contesto}, w_i) - d}{\text{count}(\text{contesto})},
+   P^*(w_i | w^{i-1}_{i-N+1}) = P_{\text{GT}}(w_i | w^{i-1}_{i-N+1}) = \frac{k^*}{\text{count}(w^{i-1}_{i-N+1})},
    $$
-   dove $d$ è uno sconto (ad es. $d = \frac{n_1}{n_1 + 2n_2}$, con $n_k$ il numero di $n$-grammi con conteggio $k$).
+   dove:
+   - $k = \text{count}(w^{i-1}_{i-N+1}, w_i)$ è il conteggio dell'$n$-gramma osservato.
+   - $k^*$ è il conteggio corretto ottenuto tramite Good-Turing:
+     $$
+     k^* = \frac{(k+1) \cdot N_{k+1}}{N_k},
+     $$
+     con $N_k$ che indica il numero di $n$-grammi che appaiono esattamente $k$ volte.
+   - $\text{count}(w^{i-1}_{i-N+1})$ è il numero totale di occorrenze del contesto $w^{i-1}_{i-N+1}$.
+   
+   L'approccio Good-Turing permette di ridurre il valore dei conteggi osservati per "riservare" la massa probabilistica per gli eventi non osservati, migliorando la stima delle probabilità specialmente per eventi rari.
 
 2. **Peso di Backoff ($\alpha$)**  
-   Per mantenere la massa di probabilità totale:
+   Quando il conteggio per un certo $n$-gramma è pari a zero, il modello Katz effettua il backoff a un contesto di ordine inferiore. Per assicurare la validità della distribuzione di probabilità, la massa residua (cioè quella riservata dopo lo sconto) viene redistribuita utilizzando il coefficiente di backoff $\alpha$. Esso viene calcolato in modo da garantire:
    $$
-   \alpha(\text{contesto}) = \frac{1 - \sum_{w_i \in \text{visti}} P^*(w_i | \text{contesto})}{1 - \sum_{w_i \in \text{visti}} P_{\text{Katz}}(w_i | \text{contesto ridotto})}.
+   \sum_{w_i} P_{\text{Katz}}(w_i | w^{i-1}_{i-N+1}) = 1.
    $$
+   In pratica, $\alpha(w^{i-1}_{i-N+1})$ normalizza la probabilità totale assegnata agli $n$-grammi non osservati in modo coerente con la massa scontata.
+
+### Dimostrazione della Normalizzazione
+
+Per dimostrare che il modello Katz Backoff produce una distribuzione di probabilità valida, ovvero che la somma delle probabilità assegnate a tutti i possibili $w_i$ è 1, consideriamo la seguente suddivisione:
+
+1. **$n$-grammi osservati**:  
+   Per gli $n$-grammi tali che $\text{count}(w^{i-1}_{i-N+1}, w_i) > 0$, il modello assegna la probabilità scontata:
+   $$
+   \sum_{w_i: \, \text{count}>0} P^*(w_i | w^{i-1}_{i-N+1}).
+   $$
+
+2. **$n$-grammi non osservati**:  
+   Per gli $n$-grammi con conteggio pari a zero, il modello utilizza il backoff:
+   $$
+   \sum_{w_i: \, \text{count}=0} \alpha(w^{i-1}_{i-N+1}) \cdot P_{\text{Katz}}(w_i | w^{i-1}_{i-N+2}).
+   $$
+
+Il coefficiente $\alpha(w^{i-1}_{i-N+1})$ viene calcolato in modo tale da "riempire" la massa probabilistica che manca, ossia:
+$$
+\alpha(w^{i-1}_{i-N+1}) = \frac{1 - \sum_{w_i: \, \text{count}>0} P^*(w_i | w^{i-1}_{i-N+1})}{\sum_{w_i: \, \text{count}=0} P_{\text{Katz}}(w_i | w^{i-1}_{i-N+2})}.
+$$
+
+Sostituendo questa definizione nel sommario complessivo delle probabilità, otteniamo:
+$$
+\begin{aligned}
+\sum_{w_i} P_{\text{Katz}}(w_i | w^{i-1}_{i-N+1}) &= \sum_{w_i: \, \text{count}>0} P^*(w_i | w^{i-1}_{i-N+1}) \\
+&\quad + \alpha(w^{i-1}_{i-N+1}) \sum_{w_i: \, \text{count}=0} P_{\text{Katz}}(w_i | w^{i-1}_{i-N+2}) \\
+&= \sum_{w_i: \, \text{count}>0} P^*(w_i | w^{i-1}_{i-N+1}) + \left( 1 - \sum_{w_i: \, \text{count}>0} P^*(w_i | w^{i-1}_{i-N+1}) \right) \\
+&= 1.
+\end{aligned}
+$$
+
+Questa dimostrazione evidenzia che, grazie alla corretta scelta di $\alpha(w^{i-1}_{i-N+1})$, la massa di probabilità totale è redistribuita in modo tale da garantire che la somma delle probabilità su tutti i possibili $w_i$ sia esattamente 1. $\square$
 
 ### Esempio Pratico
 

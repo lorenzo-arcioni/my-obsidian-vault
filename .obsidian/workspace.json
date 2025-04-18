@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Byte-pair Encoding.md",
+                "file": "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Part-of-Speech Tagging.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Byte-pair Encoding"
+              "title": "Part-of-Speech Tagging"
             }
           }
         ]
@@ -78,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 542.5026054382324
+    "width": 542.5026054382324,
+    "collapsed": true
   },
   "right": {
     "id": "51b5e3a0db5058da",
@@ -170,9 +171,13 @@
   },
   "active": "0f4d551604f1b5e8",
   "lastOpenFiles": [
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora, Tokenizzazione e Normalizzazione.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Part-of-Speech Tagging.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Esercizio sui Language Models.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Automi a Stati Finiti.md",
+    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Byte-pair Encoding.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Spelling Correction and Minimum Edit Distance.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/test.md",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Automi a Stati Finiti.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Espressioni Regolari.md",
     "tmp_graph.txt",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora e Normalizzazione.md",
@@ -201,11 +206,7 @@
     "01_Matematica/Calcolo/Calcolo Matriciale/Definizione di Scalare, Vettore, Matrice e Tensore.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Operazioni Elementari su Scalari, Vettori, Matrici e Tensori.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Operazioni Elementari su Vettori e Matrici.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Definizione di Scalare, Vettore, Matrice, Tensore.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Definizione di Matrice.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Introduzione.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Introduzione",
-    "00_Informatica/Algoritmi/Ottimizzazione/Metodo dei Minimi Quadrati.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_b.svg",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_a.svg",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/elbow-method-clustering.svg",
