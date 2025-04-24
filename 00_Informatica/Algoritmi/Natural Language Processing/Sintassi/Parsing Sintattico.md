@@ -351,13 +351,13 @@ Di seguito, una semplice rappresentazione del parsing di un albero sintattico pe
 Parte dalle parole e risale combinando in costituenti.
 
 ```tikz
-\documentclass[tikz, border=10pt]{standalone}
+\documentclass[tikz, border=50pt]{standalone}
 \usepackage{tikz}
 \usetikzlibrary{positioning, arrows.meta}
 
 \tikzset{
-  stepnum/.style={draw, circle, fill=white!50, inner sep=1pt, font=\footnotesize\bfseries, minimum size=15pt},
-  word/.style={font=\small},
+  stepnum/.style={draw, circle, fill=white!20, inner sep=1pt, font=\footnotesize\bfseries, minimum size=5pt},
+  word/.style={font=\footnotesize},
   tag/.style={font=\footnotesize},
   edge/.style={draw, -},
   level/.style={level distance=1cm, sibling distance=2cm}
@@ -386,7 +386,7 @@ Parte dalle parole e risale combinando in costituenti.
 \usetikzlibrary{positioning, arrows.meta}
 
 \tikzset{
-  stepnum/.style={draw, circle, fill=white!50, inner sep=1pt, font=\footnotesize\bfseries, minimum size=15pt},
+  stepnum/.style={draw, circle, fill=white!20, inner sep=1pt, font=\footnotesize\bfseries, minimum size=5pt},
   word/.style={font=\small},
   tag/.style={font=\footnotesize},
   edge/.style={draw, -},
@@ -430,7 +430,7 @@ Parte dalle parole e risale combinando in costituenti.
 \usetikzlibrary{positioning, arrows.meta}
 
 \tikzset{
-  stepnum/.style={draw, circle, fill=white!50, inner sep=1pt, font=\footnotesize\bfseries, minimum size=15pt},
+  stepnum/.style={draw, circle, fill=white!20, inner sep=1pt, font=\footnotesize\bfseries, minimum size=5pt},
   word/.style={font=\small},
   tag/.style={font=\footnotesize},
   edge/.style={draw, -},
@@ -482,7 +482,7 @@ Parte dalle parole e risale combinando in costituenti.
 \usetikzlibrary{positioning, arrows.meta}
 
 \tikzset{
-  stepnum/.style={draw, circle, fill=white!50, inner sep=1pt, font=\footnotesize\bfseries, minimum size=15pt},
+  stepnum/.style={draw, circle, fill=white!20, inner sep=1pt, font=\footnotesize\bfseries, minimum size=5pt},
   word/.style={font=\small},
   tag/.style={font=\footnotesize},
   edge/.style={draw, -},
@@ -539,7 +539,7 @@ Parte dalle parole e risale combinando in costituenti.
 \usetikzlibrary{positioning, arrows.meta}
 
 \tikzset{
-  stepnum/.style={draw, circle, fill=white!50, inner sep=1pt, font=\footnotesize\bfseries, minimum size=15pt},
+  stepnum/.style={draw, circle, fill=white!20, inner sep=1pt, font=\footnotesize\bfseries, minimum size=5pt},
   word/.style={font=\small},
   tag/.style={font=\footnotesize},
   edge/.style={draw, -},
@@ -603,7 +603,7 @@ Parte dalle parole e risale combinando in costituenti.
 \usetikzlibrary{positioning, arrows.meta}
 
 \tikzset{
-  stepnum/.style={draw, circle, fill=white!50, inner sep=1pt, font=\footnotesize\bfseries, minimum size=15pt},
+  stepnum/.style={draw, circle, fill=white!20, inner sep=1pt, font=\footnotesize\bfseries, minimum size=5pt},
   word/.style={font=\small},
   tag/.style={font=\footnotesize},
   edge/.style={draw, -},
@@ -669,50 +669,66 @@ Parte dalle parole e risale combinando in costituenti.
 
 ## Ambiguità strutturale
 
-Frase: *"I saw the man with the telescope"*
+Un’importante sfida nel parsing sintattico è la **presenza di più alberi possibili per una stessa frase**, ossia *ambiguità strutturale*.
 
-### Interpretazione 1: PP collegato a VP (strumento usato)
-```tikz
-\usepackage{tikz}
-\usetikzlibrary{automata, positioning, arrows.meta}
-\begin{document}
-\begin{tikzpicture}[
-  every node/.style={draw, circle, fill=white!10, minimum size=0.7cm},
-  level distance=1.5cm
-]
-\node {S}
-  child {node {NP} child {node {I}}}
-  child {node {VP} 
-    child {node {V} child {node {saw}}}
-    child {node {NP} child {node {the man}}}
-    child {node {PP} child {node {with the telescope}}}
-  };
-\end{tikzpicture}
-\end{document}
-```
+### Esempio classico
 
-### Interpretazione 2: PP collegato a NP (descrizione dell’uomo)
+**Frase**:  
+> "He saw the man with the telescope"
 
-```tikz
-\usepackage{tikz}
-\usetikzlibrary{automata, positioning, arrows.meta}
-\begin{document}
-\begin{tikzpicture}[
-  every node/.style={draw, circle, fill=red!10, minimum size=0.7cm},
-  level distance=1.5cm
-]
-\node {S}
-  child {node {NP} child {node {I}}}
-  child {node {VP} 
-    child {node {V} child {node {saw}}}
-    child {node {NP} 
-      child {node {the man}}
-      child {node {PP} child {node {with the telescope}}}
-    }
-  };
-\end{tikzpicture}
-\end{document}
-```
+Questa frase ha **due interpretazioni** sintattiche distinte:
 
+1. **Interpretazione 1** – *Ha visto l’uomo con il telescopio* (cioè, l’uomo ha il telescopio)  
+   → Il sintagma preposizionale "with the telescope" si collega al **nome "man"**
 
-### Dynamic Programming
+2. **Interpretazione 2** – *Ha visto (con il telescopio) l’uomo*  
+   → Il sintagma preposizionale "with the telescope" si collega al **verbo "saw"**
+
+### Implicazioni
+
+- Queste ambiguità sono comuni in linguaggio naturale.
+- Rappresentano un ostacolo per i parser sintattici deterministici.
+- In NLP, è spesso necessario ricorrere a **modelli probabilistici** o **contesto semantico** per risolverle.
+
+Anche se una frase non è ambigua globalmente, può essere ambigua localmente, e può essere computazionalmente costosa risolverla. Come ad esempio:
+
+**Frase**:  
+> "Book that flight"
+
+- La frase non è ambigua globalmente.
+- Quando il parser vede la parola *Book* non sa se si tratta di un verbo o un nome, per cui non riesce a decidere la sua [Part-of-Speech Tagging|PoS] corretta.
+
+## Approccio Backtracking nel Parsing
+
+Uno degli approcci più semplici per il parsing sintattico è il **backtracking**, in cui si esplorano **tutte le possibili derivazioni** della frase a partire dalla grammatica, tornando indietro ogni volta che un'analisi si rivela non valida. Esattamente l'approccio utilizzato negli esempi di parsing sintattico (Top-Down e Bottom-Up) precedenti.
+
+### Come funziona
+
+- Si parte dal simbolo iniziale della grammatica.
+- Si tenta di derivare la frase applicando le regole grammaticali.
+- Se un cammino porta a un vicolo cieco, si torna indietro (*backtrack*) e si prova una derivazione alternativa.
+
+### Svantaggi del backtracking
+
+- È **computazionalmente costoso**, perché in presenza di ambiguità strutturale o grammatiche complesse, il numero di derivazioni può crescere **esponenzialmente**.
+- Può causare **ripetizione di lavoro**, esplorando più volte gli stessi sottoproblemi.
+
+### Programmazione dinamica come alternativa
+
+Per superare queste limitazioni, si preferisce usare **algoritmi di parsing basati su programmazione dinamica**, come l’algoritmo **CKY**, che:
+
+- Evita ripetizioni memorizzando i risultati intermedi.
+- Riduce il tempo di parsing a **tempo polinomiale** per grammatiche in forma normale di Chomsky (CNF).
+- È più adatto per implementazioni efficienti in NLP.
+
+👉 Vedi anche: [[Algoritmo CKY]]
+
+## Conclusioni
+
+Il **parsing sintattico** è un passaggio cruciale nell'analisi del linguaggio naturale, in quanto permette di attribuire una struttura gerarchica e formale alle frasi. In questa nota abbiamo:
+
+- Esplorato cosa siano gli **alberi sintattici** e il loro ruolo nella rappresentazione della struttura delle frasi.
+- Analizzato il concetto di **ambiguità strutturale**, evidenziando come una stessa frase possa dare luogo a interpretazioni sintattiche differenti.
+- Descritto l'approccio di **backtracking** e i suoi limiti computazionali, motivando la preferenza per tecniche più efficienti come la **programmazione dinamica**.
+
+Comprendere il parsing sintattico non solo è essenziale per applicazioni NLP come l'analisi grammaticale automatica, ma fornisce anche una base teorica solida per comprendere come i computer possano "capire" il linguaggio umano. È un ponte tra la linguistica e l'informatica che dimostra la potenza e la bellezza delle grammatiche formali.
