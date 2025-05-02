@@ -119,18 +119,6 @@ $$
 - Otteniamo così una **approssimazione low-rank**.
 - Utilissima per **compressione** e **estrazione di struttura latente**.
 
-## 📊 Collegamento con LSA e Word Embeddings
-
-🔗 Vedi la nota: [[Dense Word Embeddings]]  
-SVD è alla base di tecniche come **LSA (Latent Semantic Analysis)**, dove:
-
-- $\mathbf{X}$ è la matrice **term-document** (frequenze o tf-idf)
-- La decomposizione estrae **argomenti latenti** che strutturano semanticamente il linguaggio
-
-## 📐 Esempio Grafico
-
-<div align='center'><img src="../../images/mysvd.png?raw=1" width='65%' ></div>
-
 ## 🧬 Interpretazione Probabilistica
 
 - $\mathbf{X}^\top \mathbf{X}$ è la **covarianza tra termini** nello spazio dei documenti.
@@ -162,7 +150,7 @@ Nota: SVD è più generale e robusta.
 
 ## 🧪 Applicazioni
 
-- **NLP**: Latent Semantic Analysis (LSA)
+- **NLP**: [[Latent Semantic Analysis]] (LSA)
 - **Motori di raccomandazione**: filtraggio collaborativo
 - **Visione artificiale**: compressione di immagini
 - **Machine Learning**: preprocessing per PCA e clustering
