@@ -32,16 +32,16 @@ Se ruotiamo il quadrato **prima** di applicare una trasformazione lineare $M$, p
 
 ## Formalizzazione della SVD
 
-Sia $v_1, v_2$ una base ortonormale. Applichiamo $M$:
+Sia $\mathbf v_1, \mathbfv_2$ una base ortonormale. Applichiamo $M$:
 
 $$
-Mv_1 = \sigma_1 u_1,\quad Mv_2 = \sigma_2 u_2
+M \mathbf v_1 = \sigma_1 \mathbf u_1,\quad M \mathbf v_2 = \sigma_2 \mathbf u_2
 $$
 
-Quindi, ogni vettore $x$ può essere scritto come:
+Quindi, ogni vettore $\mathbf x$ può essere scritto come:
 
 $$
-x = (x \cdot v_1) v_1 + (x \cdot v_2) v_2
+\mathbf x = [\mathbf x] v_1 + [\mathbf x] v_2
 $$
 
 Applicando $M$:
@@ -241,4 +241,102 @@ Questa decomposizione **esiste per ogni matrice reale $ \mathbf{A} $**. Di conse
 - $\mathbf{U}$: ruota nel codominio.
 
 La SVD è quindi una **generalizzazione dell'autodecomposizione**, valida anche per matrici rettangolari.
+
+
+
+# Eigendecomposition
+
+## 🔍 Motivazione intuitiva
+- **Analogia con la fattorizzazione in primi**  
+  Come un numero intero (es. 12) può essere scomposto in fattori primi \(`12 = 2 × 2 × 3`\), anche una matrice può essere “scomposta” in componenti più semplici che ne rivelano la **struttura intrinseca**, indipendente dal modo in cui la rappresentiamo.
+- **Perché ci interessa?**  
+  - Scopriamo direzioni privilegiate in cui la trasformazione agisce in modo semplice (solo **scala**).  
+  - Possiamo capire se la matrice è invertibile, positiva definita, ecc.  
+  - Applicazioni in PCA, risoluzione di sistemi, ottimizzazione quadratica, e molto altro.
+
+---
+
+## ⚙️ Definizione di autovalore e autovettore
+
+> **Definizione:**  
+> Un vettore non nullo $v$ è **autovettore** di una matrice quadrata $A$ se  
+> $$
+> A\,v = \lambda\,v
+> $$  
+> dove $\lambda$ è lo **autovalore** corrispondente.
+
+- Se prendi qualsiasi **multiplo** di $v$, cioè $s\,v$ con $s\neq0$, ottieni lo **stesso** autovalore $\lambda$.  
+- Per semplificare, di solito normalizziamo gli autovettori a **lunghezza 1**.
+
+---
+
+## 🧩 Decomposizione completa
+
+Se $A\\in\mathbb{R}^{n\times n}$ ha $n$ autovettori **linearmente indipendenti**  
+$\{v^{(1)},\dots,v^{(n)}\}$ e autovalori corrispondenti  
+$\{\lambda_1,\dots,\lambda_n\}$, definiamo:
+
+- Matrice di autovettori:  
+  $$
+    V = \bigl[\,v^{(1)} \;\; v^{(2)} \;\;\dots\;\; v^{(n)}\bigr]
+  $$
+- Matrice diagonale degli autovalori:  
+  $$
+    \Lambda = \mathrm{diag}(\lambda_{1},\dots,\lambda_{n})
+  $$
+
+La **eigendecomposition** di $A$ è  
+$$
+  A = V\,\Lambda\,V^{-1}
+$$
+
+> **Interpretazione:** applicando $A$ nello spazio, prima ruoti/proietti sul sistema di assi formato da $V^{-1}$, poi **scali** lungo ogni asse di fattore $\lambda_i$, infine ritorni allo spazio originale con $V$.
+
+---
+
+## 🔄 Caso simmetrico reale
+
+Per $A = A^\top$ reale:
+
+1. Gli autovettori sono **ortogonali**  
+2. Si può scegliere $Q$ ortogonale \(`Q^{-1}=Q^{T}`$  
+3. La decomposizione diventa  
+   $$
+     A = Q\,\Lambda\,Q^\top
+   $$
+
+- **Vantaggi:**  
+  - Autovalori reali  
+  - Rotazioni pure (no riflessioni extra)  
+  - Più stabile numericamente
+
+---
+
+## 📐 Interpretazione geometrica
+
+- Disegna il **cerchio unitario** (tutti i vettori di norma 1).  
+- Applica $A$ a ogni punto del cerchio → ottieni un’**ellisse**.  
+- Le direzioni principali dell’ellisse corrispondono agli **autovettori** di $A$, mentre le lunghezze dei suoi semiassi sono gli **autovalori**.
+
+---
+
+## ✅ Proprietà utili
+
+- **Invertibilità**  
+  $A$ è singolare ⇔ ⁠alcun autovalore $\lambda_i=0$.
+- **Ottimizzazione quadratica**  
+  Massimo e minimo di $x^\top A x$ su $\|x\|=1$ sono rispettivamente gli **autovalori** massimo e minimo.
+- **Definiteness**  
+  - **Positiva definita** se tutti $\lambda_i>0$.  
+  - **Positiva semidefinita** se tutti $\lambda_i\ge0$.  
+  - (Analoghi casi **negativi**.)
+
+---
+
+## 🛠 Applicazioni pratiche
+
+- **PCA** (Principal Component Analysis): riduzione dimensionale scegliendo assi di massima varianza ↔ autovettori di matrice di covarianza.  
+- **Soluzione di sistemi differenziali**: esponenziale di matrici diagonalizzabili.  
+- **Grafica 3D**: decomporre trasformazioni in rotazioni/scalature.  
+- **Ottimizzazione**: caratterizzare i punti stazionari di funzioni quadratiche.
 

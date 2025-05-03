@@ -4,7 +4,18 @@
 
 ## 📌 Introduzione
 
-La **Singular Value Decomposition (SVD)** è una delle decomposizioni matriciali più importanti in algebra lineare, con applicazioni fondamentali in compressione dei dati, riduzione dimensionale, raccomandazione, elaborazione di segnali, visione artificiale e NLP.
+La **Singular Value Decomposition (SVD)** è una delle tecniche più potenti e versatili dell’algebra lineare. È un metodo che ci permette di "guardare dentro" una matrice e capirne il comportamento profondo, rivelandone le direzioni principali di azione e le dimensioni lungo cui opera.
+
+Immagina una trasformazione come qualcosa che prende un insieme di punti e li sposta, allunga, schiaccia o ruota nello spazio. La SVD ci permette di scomporre questa trasformazione complessa in tre passaggi semplici e interpretabili:
+
+- una **rotazione iniziale**, che riallinea il sistema di riferimento;
+- una **scalatura**, che modifica le lunghezze lungo gli assi principali;
+- una **rotazione finale**, che orienta il risultato nello spazio d’uscita.
+
+In sostanza, SVD svela la struttura nascosta di qualsiasi matrice, anche se non è quadrata, anche se ha righe o colonne ridondanti, o persino se è "disturbata" dal rumore. 
+
+Questa capacità di scomporre e reinterpretare trasformazioni la rende una tecnica centrale in molti campi: compressione delle immagini, riconoscimento facciale, sistemi di raccomandazione, ricerca semantica nei testi, e tanto altro.
+
 
 ## 🔍 Definizione Formale
 
@@ -34,6 +45,13 @@ $$
 
 Questa decomposizione corrisponde alla seguente **pipeline geometrica**:
 
+<img src="../../images/svd_pipeline.png" width="600" style="display: block; margin-left: auto; margin-right: auto;">
+<br>
+
+L'immagine illustra geometricamente la decomposizione a valori singolari (SVD) di una matrice **A**, mostrando come può essere interpretata come una sequenza di trasformazioni.
+
+
+
 ### 🔹 1. Rotazione iniziale dello spazio ($\mathbf{V}^\top$)
 
 - Si tratta di una **rotazione (o riflessione)** del sistema di riferimento originale.
@@ -42,10 +60,28 @@ Questa decomposizione corrisponde alla seguente **pipeline geometrica**:
 
 Questa fase rappresenta una **preparazione**: porta i dati in un sistema di riferimento in cui la scalatura sarà **assiale** (cioè indipendente per ciascuna dimensione).
 
+#### Ma cosa significa applicare $\mathbf{V}^\top$ a un vettore $\mathbf{x}$?
+
+$$
+\mathbf{z} = \mathbf{V}^\top \mathbf{x}
+$$
+
+Questa operazione ha un significato **geometrico fondamentale**: è un **cambio di base**.
+
+- $\mathbf{x} \in \mathbb{R}^n$ è espresso nelle coordinate originali.
+- $\mathbf{V}^\top$ proietta $\mathbf{x}$ nel **nuovo sistema di riferimento ortonormale** definito dalle colonne di $\mathbf{V}$.
+- $\mathbf{z}$ sono le **coordinate di $\mathbf{x}$** rispetto alle **nuove direzioni principali** (cioè i "concetti" o "assi principali" trovati dalla SVD).
+
+#### 🧠 Intuizione
+
+- Ogni colonna di $\mathbf{V}$ rappresenta una direzione **ortogonale** nel nuovo spazio dei concetti (assimilabile agli assi principali della varianza).
+- Moltiplicare per $\mathbf{V}^\top$ ruota il sistema di coordinate per **rappresentare $\mathbf{x}$ in termini di quei concetti**.
+- Se $\mathbf{x}$ è un documento, $\mathbf{V}^\top \mathbf{x}$ ci dice **quanto quel documento "partecipa" a ciascun concetto**.
+
 ### 🔹 2. Scalatura assiale ($\mathbf{\Sigma}$)
 
 - $\mathbf{\Sigma}$ è una matrice **diagonale** che **scala** ogni coordinata **indipendentemente** lungo un asse ortogonale.
-- I valori diagonali $\sigma_1 \geq \sigma_2 \geq \dots \geq \sigma_r > 0$ sono i **valori singolari** e rappresentano **quanto** viene deformato lo spazio in ciascuna direzione.
+- I valori diagonali $\sigma_1 \geq \sigma_2 \geq \dots \geq \sigma_r \geq 0$ sono i **valori singolari** e rappresentano **quanto** viene deformato lo spazio in ciascuna direzione.
 - Nessuna rotazione o shearing: solo **dilatazione o contrazione**.
 
 In questo passaggio avviene il "cuore" della trasformazione: le direzioni principali vengono **ingrandite o compresse** in base alla loro **importanza informativa**.
@@ -106,7 +142,7 @@ Risultato: da una figura simmetrica e isotropa (cerchio), otteniamo un oggetto d
 - I vettori di $\mathbf{U}$ e $\mathbf{V}$ formano **basi ortonormali** per lo spazio delle righe e delle colonne.
 - I **valori singolari** $\sigma_i$ rappresentano la **quantità di informazione** trasportata lungo ciascuna direzione.
 - $\text{rank}(\mathbf{X}) =$ numero di valori singolari non nulli.
-- È strettamente legata all’**autovalori** della matrice $\mathbf{X}^\top \mathbf{X}$ e $\mathbf{X} \mathbf{X}^\top$.
+- Può essere vista come una generalizzazione dell’autodecomposizione (eigendecomposition).
 
 ## 🔧 Riduzione Dimensionale tramite Truncated SVD
 
