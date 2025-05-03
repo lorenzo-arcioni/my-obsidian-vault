@@ -19,7 +19,105 @@ Questa capacità di scomporre e reinterpretare trasformazioni la rende una tecni
 
 ## 🔍 Definizione Formale
 
-Sia $\mathbf{X} \in \mathbb{R}^{m \times n}$ una matrice qualsiasi. La **SVD** è una fattorizzazione della matrice nella forma:
+Sia $\{\mathbf v_1, \cdots, \mathbf v_n\}$ con $\mathbf v_i \in \mathbb{R}^m$ una base ortonormale e $\mathbf{X} \in \mathbb{R}^{m \times n}$ una matrice qualsiasi. Applichiamo $\mathbf{X} \in \mathbb{R}^{m \times n}$ a $\mathbf v_1, \cdots \mathbf v_n$:
+
+$$
+\mathbf X \mathbf v_1 = \sigma_1 \mathbf u_1,\quad \cdots \quad \mathbf X \mathbf v_n = \sigma_n \mathbf u_n
+$$
+
+dove:
+
+- $\{\sigma_i\}_{i=1}^n$ sono i valori singolari di $\mathbf{X}$ in ordine decrescente
+- $\{\mathbf{u}_i\}_{i=1}^n$ sono vettori i vettori singolari destri di $\mathbf{X}$
+
+Quindi, dato che abbiamo una base ortonormale, ogni vettore $\mathbf x$ può essere scritto come:
+
+$$
+\mathbf x = (\mathbf v_1 \cdot \mathbf x) \mathbf v_1 + \cdots + (\mathbf v_n \cdot \mathbf x) \mathbf v_n
+$$
+
+Applicando $\mathbf X$:
+
+$$
+\mathbf X \mathbf x = \sigma_1 (\mathbf v_1 \cdot \mathbf x) \mathbf u_1 + \cdots + \sigma_n (\mathbf v_n \cdot \mathbf x) \mathbf u_n
+$$
+
+Sostituendo termini, si ottiene la forma canonica:
+
+$$
+\mathbf{X} \mathbf{x} = \sum_{i=1}^{n} \sigma_i (\mathbf{v}_i \cdot \mathbf{x}) \mathbf{u}_i
+$$
+
+Cerchiamo ora di scrivere questa formula in forma matriciale:
+
+1. **Raggruppiamo le proiezioni**  
+   Definiamo il vettore delle coordinate di $\mathbf{x}$ nella base $\{\mathbf{v}_i\}_{i=1}^n$:
+   $$
+     z_i = \mathbf{v}_i \cdot \mathbf{x},
+     \quad
+     \mathbf{z} = 
+     \begin{bmatrix}
+       z_1\\
+       \vdots\\
+       z_n
+     \end{bmatrix}.
+   $$
+   Per ortonormalità, $\mathbf{z} = V^\top \mathbf{x}$. Ricordiamo, dato che $V$ è una matrice ortogonale, che $V^T V = I \Rightarrow V^\top = V^{-1}$.
+
+2. **Applichiamo la scalatura**  
+   La matrice dei valori singolari $\Sigma$ agisce su $\mathbf{z}$ moltiplicando ciascuna componente $z_i$ per $\sigma_i$:
+   $$
+     \Sigma\,\mathbf{z}
+     = 
+     \begin{bmatrix}
+       \sigma_1 & & 0 \\
+       & \ddots & \\
+       0 & & \sigma_n
+     \end{bmatrix}
+     \begin{bmatrix}
+       z_1 \\
+       \vdots \\
+       z_n
+     \end{bmatrix}
+     =
+     \begin{bmatrix}
+       \sigma_1\,z_1 \\
+       \vdots \\
+       \sigma_n\,z_n
+     \end{bmatrix}.
+   $$
+
+3. **Sommiamo lungo gli $\mathbf{u}_i$**  
+   Il vettore risultante si combina con i vettori singolari sinistri $\{\mathbf{u}_i\}$:
+   $$
+     \sum_{i=1}^n (\sigma_i\,z_i)\,\mathbf{u}_i
+     = U\,(\Sigma\,\mathbf{z}).
+   $$
+
+4. **Mettiamo tutto insieme**
+   $$
+     \mathbf{X}\,\mathbf{x}
+     = U\,\bigl(\Sigma\,(V^\top \mathbf{x})\bigr)
+     = \bigl(U\,\Sigma\,V^\top\bigr)\,\mathbf{x}.
+   $$
+   Poiché vale per ogni vettore $\mathbf{x}$, ne segue la **forma canonica**:
+   $$
+     \boxed{
+       \mathbf{X} = U\,\Sigma\,V^\top
+     }
+   $$
+
+### 📐 Interpretazione Geometrica
+
+Questa formula mostra come la SVD scompone ogni trasformazione lineare in una **sequenza ordinata** di operazioni:
+
+1. **Rotazione** (o cambio di base) del vettore di input nello spazio delle $\mathbf{v}_i$, tramite $\mathbf{V}^\top$.
+2. **Scalatura anisotropa** lungo queste direzioni, con coefficienti $\sigma_i$.
+3. **Rotazione** finale nello spazio delle $\mathbf{u}_i$, tramite $\mathbf{U}$.
+
+Questa decomposizione è non solo utile dal punto di vista computazionale, ma rivela anche la **struttura interna** della trasformazione stessa.
+
+Quindi sia $\mathbf{X} \in \mathbb{R}^{m \times n}$ una matrice qualsiasi. La **SVD** è una fattorizzazione della matrice nella forma:
 
 $$
 \mathbf{X} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^{\top}
@@ -49,8 +147,6 @@ Questa decomposizione corrisponde alla seguente **pipeline geometrica**:
 <br>
 
 L'immagine illustra geometricamente la decomposizione a valori singolari (SVD) di una matrice **A**, mostrando come può essere interpretata come una sequenza di trasformazioni.
-
-
 
 ### 🔹 1. Rotazione iniziale dello spazio ($\mathbf{V}^\top$)
 

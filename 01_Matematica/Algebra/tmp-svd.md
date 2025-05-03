@@ -32,7 +32,7 @@ Se ruotiamo il quadrato **prima** di applicare una trasformazione lineare $M$, p
 
 ## Formalizzazione della SVD
 
-Sia $\mathbf v_1, \mathbfv_2$ una base ortonormale. Applichiamo $M$:
+Sia $\mathbf v_1, \mathbf v_2$ una base ortonormale. Applichiamo $M$:
 
 $$
 M \mathbf v_1 = \sigma_1 \mathbf u_1,\quad M \mathbf v_2 = \sigma_2 \mathbf u_2
@@ -248,7 +248,7 @@ La SVD è quindi una **generalizzazione dell'autodecomposizione**, valida anche 
 
 ## 🔍 Motivazione intuitiva
 - **Analogia con la fattorizzazione in primi**  
-  Come un numero intero (es. 12) può essere scomposto in fattori primi \(`12 = 2 × 2 × 3`\), anche una matrice può essere “scomposta” in componenti più semplici che ne rivelano la **struttura intrinseca**, indipendente dal modo in cui la rappresentiamo.
+  Come un numero intero (es. 12) può essere scomposto in fattori primi $`12 = 2 × 2 × 3`$, anche una matrice può essere “scomposta” in componenti più semplici che ne rivelano la **struttura intrinseca**, indipendente dal modo in cui la rappresentiamo.
 - **Perché ci interessa?**  
   - Scopriamo direzioni privilegiate in cui la trasformazione agisce in modo semplice (solo **scala**).  
   - Possiamo capire se la matrice è invertibile, positiva definita, ecc.  
@@ -299,7 +299,7 @@ $$
 Per $A = A^\top$ reale:
 
 1. Gli autovettori sono **ortogonali**  
-2. Si può scegliere $Q$ ortogonale \(`Q^{-1}=Q^{T}`$  
+2. Si può scegliere $Q$ ortogonale $`Q^{-1}=Q^{T}`$  
 3. La decomposizione diventa  
    $$
      A = Q\,\Lambda\,Q^\top
@@ -339,4 +339,191 @@ Per $A = A^\top$ reale:
 - **Soluzione di sistemi differenziali**: esponenziale di matrici diagonalizzabili.  
 - **Grafica 3D**: decomporre trasformazioni in rotazioni/scalature.  
 - **Ottimizzazione**: caratterizzare i punti stazionari di funzioni quadratiche.
+
+## 🔍 Dimostrazione: il **prodotto scalare** restituisce la coordinata in una base ortonormale
+
+> **Teorema.** Se $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ è una base **ortonormale** di $\mathbb{R}^n$, allora per ogni vettore $\mathbf{x}\in\mathbb{R}^n$ vale
+> $$
+> \mathbf{x}
+> = \sum_{i=1}^n (\mathbf{v}_i\cdot \mathbf{x})\,\mathbf{v}_i
+> \quad\text{e in particolare}\quad
+> \text{coordinata di $\mathbf{x}$ lungo $\mathbf{v}_j$} = \mathbf{v}_j\cdot\mathbf{x}.
+> $$
+
+---
+
+### 1. Espansione in base generica
+
+Poiché $\{\mathbf{v}_i\}$ è una base, esistono scalari $a_1,\dots,a_n$ tali che
+$$
+\mathbf{x} = \sum_{i=1}^n a_i\,\mathbf{v}_i.
+$$
+Il problema è trovare esplicitamente ogni coefficiente $a_j$.
+
+---
+
+### 2. Uso dell’ortonormalità
+
+Le $\mathbf{v}_i$ soddisfano
+$$
+\mathbf{v}_i \cdot \mathbf{v}_j =
+\begin{cases}
+1 & \text{se } i = j,\\
+0 & \text{se } i \neq j.
+\end{cases}
+$$
+
+---
+
+### 3. Prodotto scalare per isolare $a_j$
+
+Prendiamo il prodotto scalare di entrambi i lati con $\mathbf{v}_j$:
+$$
+\mathbf{v}_j \cdot \mathbf{x}
+= \mathbf{v}_j \cdot \Bigl(\sum_{i=1}^n a_i\,\mathbf{v}_i\Bigr)
+= \sum_{i=1}^n a_i \, (\mathbf{v}_j \cdot \mathbf{v}_i)
+= \sum_{i=1}^n a_i \,\delta_{ji}
+= a_j.
+$$
+Qui $\delta_{ji}$ è la delta di Kronecker, che annulla tutti i termini tranne $i=j$.
+
+---
+
+### 4. Conclusione
+
+Abbiamo dimostrato che
+$$
+a_j \;=\; \mathbf{v}_j \cdot \mathbf{x}
+\quad\Longrightarrow\quad
+\boxed{\mathbf{x} = \sum_{i=1}^n (\mathbf{v}_i\cdot\mathbf{x})\,\mathbf{v}_i.}
+$$
+Quindi, in una base ortonormale, il **prodotto scalare** con un vettore base fornisce **esattamente** la coordinata lungo quella direzione.  
+
+## 🔒 Perché anche i $\mathbf{u}_i$ sono ortonormali
+
+Partiamo dalle ipotesi già scritte:
+
+- $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ è una base **ortonormale** in $\mathbb{R}^n$.
+- Per ciascun $i$ vale
+  $$
+    \mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i,
+    \quad\sigma_i > 0.
+  $$
+  
+Aggiungiamo ora il passo chiave: **i** vettori $\mathbf{v}_i$ sono scelti come **autovettori** di $\mathbf{X}^\top\mathbf{X}$, con autovalori $\sigma_i^2$. In simboli,
+
+$$
+  \mathbf{X}^\top \mathbf{X}\,\mathbf{v}_i
+  = \sigma_i^2\,\mathbf{v}_i.
+$$
+
+### 1. Definizione di $\mathbf{u}_i$
+
+Da $\mathbf{X}\mathbf{v}_i = \sigma_i\,\mathbf{u}_i$ definiamo  
+$$
+  \boxed{\mathbf{u}_i \;=\; \frac{1}{\sigma_i}\,\mathbf{X}\,\mathbf{v}_i.}
+$$
+Per $\sigma_i>0$, questa relazione è ben definita e assicura che ogni $\mathbf{u}_i$ abbia norma unitaria:
+
+$$
+  \|\mathbf{u}_i\|
+  = \frac{1}{\sigma_i}\,\|\mathbf{X}\,\mathbf{v}_i\|
+  = \frac{1}{\sigma_i}\,\sqrt{\mathbf{v}_i^\top(\mathbf{X}^\top\mathbf{X})\,\mathbf{v}_i}
+  = \frac{1}{\sigma_i}\,\sqrt{\sigma_i^2\,\|\mathbf{v}_i\|^2}
+  = 1.
+$$
+
+### 2. Ortogonalità tra $\mathbf{u}_i$ e $\mathbf{u}_j$ $(i\neq j)$
+
+Consideriamo il prodotto scalare
+$$
+  \mathbf{u}_i^\top \,\mathbf{u}_j
+  = \frac{1}{\sigma_i\,\sigma_j}\,
+    (\mathbf{X}\,\mathbf{v}_i)^\top\!(\mathbf{X}\,\mathbf{v}_j)
+  = \frac{1}{\sigma_i\,\sigma_j}\,
+    \mathbf{v}_i^\top\,(\mathbf{X}^\top\mathbf{X})\,\mathbf{v}_j.
+$$
+Poiché $\mathbf{v}_i$ e $\mathbf{v}_j$ sono autovettori **distinti** di $\mathbf{X}^\top\mathbf{X}$, con autovalori $\sigma_i^2$ e $\sigma_j^2$, sappiamo che
+$\mathbf{v}_i^\top\,(\mathbf{X}^\top\mathbf{X})\,\mathbf{v}_j = \sigma_j^2\,(\mathbf{v}_i^\top\mathbf{v}_j) = 0$.  
+Quindi,
+$$
+  \mathbf{u}_i^\top \mathbf{u}_j
+  = \frac{\sigma_j^2}{\sigma_i\,\sigma_j}\;(\mathbf{v}_i^\top\mathbf{v}_j)
+  = 0.
+$$
+
+---
+
+### 📌 Conclusione
+
+- **Norma unitaria**: $\|\mathbf{u}_i\| = 1$.  
+- **Ortogonali**: $\mathbf{u}_i^\top \mathbf{u}_j = 0$ per $i\neq j$.
+
+Pertanto, $\{\mathbf{u}_1,\dots,\mathbf{u}_n\}$ è anch’essa una **base ortonormale** nello spazio di uscita di $\mathbf{X}$. 
+
+## 🔗 Collegamento logico con $\mathbf{X}^\top\mathbf{X}$
+
+Partiamo dalle ipotesi già scritte:
+
+> Sia $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ una base **ortonormale** e  
+> $\mathbf{X}\in\mathbb{R}^{m\times n}$ una matrice qualsiasi, tali che
+> $$
+> \mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i,
+> \quad i=1,\dots,n.
+> $$
+
+Per mostrare perché i $\mathbf{u}_i$ risultino anch’essi **ortonormali**, inseriamo ora il ruolo di $\mathbf{X}^\top\mathbf{X}$:
+
+1. **Definizione di $\sigma_i$ e $\mathbf{u}_i$**  
+   Dalla relazione $\mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i$, definiamo
+   $$
+     \sigma_i = \|\mathbf{X}\,\mathbf{v}_i\|,
+     \quad
+     \mathbf{u}_i = \frac{\mathbf{X}\,\mathbf{v}_i}{\sigma_i}.
+   $$
+   Per $\sigma_i>0$, $\mathbf{u}_i$ ha norma unitaria:
+   $\|\mathbf{u}_i\|=1$.
+
+2. **Uso di $\mathbf{X}^\top\mathbf{X}$ per collegare le due famiglie**  
+   - Moltiplichiamo a sinistra $\mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i$ per $\mathbf{X}^\top$:
+     $$
+       \mathbf{X}^\top\mathbf{X}\,\mathbf{v}_i
+       = \sigma_i\,\mathbf{X}^\top\,\mathbf{u}_i.
+     $$
+   - Ma, poiché abbiamo scelto i $\mathbf{v}_i$ come **autovettori** di $\mathbf{X}^\top\mathbf{X}$ con autovalori $\sigma_i^2$,
+     $$
+       \mathbf{X}^\top\mathbf{X}\,\mathbf{v}_i = \sigma_i^2\,\mathbf{v}_i.
+     $$
+   - Confrontando i due risultati:
+     $$
+       \sigma_i^2\,\mathbf{v}_i = \sigma_i\,\mathbf{X}^\top\,\mathbf{u}_i
+       \quad\Longrightarrow\quad
+       \mathbf{X}^\top\,\mathbf{u}_i = \sigma_i\,\mathbf{v}_i.
+     $$
+
+3. **Ortonormalità incrociata**  
+   Consideriamo ora il prodotto scalare fra $\mathbf{u}_i$ e $\mathbf{u}_j$ ($i\neq j$):
+   $$
+     \mathbf{u}_i^\top\,\mathbf{u}_j
+     = \frac{1}{\sigma_i\,\sigma_j}
+       (\mathbf{X}\,\mathbf{v}_i)^\top (\mathbf{X}\,\mathbf{v}_j)
+     = \frac{1}{\sigma_i\,\sigma_j}
+       \mathbf{v}_i^\top\bigl(\mathbf{X}^\top\mathbf{X}\bigr)\mathbf{v}_j.
+   $$
+   Ma $\mathbf{X}^\top\mathbf{X}\,\mathbf{v}_j = \sigma_j^2\,\mathbf{v}_j$ e
+   $\mathbf{v}_i\cdot\mathbf{v}_j=0$ per ortonormalità, dunque
+   $$
+     \mathbf{u}_i^\top\,\mathbf{u}_j
+     = \frac{\sigma_j^2}{\sigma_i\,\sigma_j}\,
+       (\mathbf{v}_i^\top\,\mathbf{v}_j)
+     = 0.
+   $$
+
+---
+
+### 📌 In sintesi
+
+- Abbiamo **collegato** $\mathbf{X}\,\mathbf{v}_i$ a $\mathbf{X}^\top\mathbf{X}\,\mathbf{v}_i$ per introdurre gli **autovalori** $\sigma_i^2$.  
+- Questo ci ha permesso di mostrare che i $\mathbf{u}_i$ definiti da $\mathbf{X}\,\mathbf{v}_i/\sigma_i$ sono **unitari** e **ortogonali** fra loro.  
+- Quindi $\{\mathbf{u}_1,\dots,\mathbf{u}_n\}$ è una **base ortonormale** nello spazio di uscita di $\mathbf{X}$.  
 
