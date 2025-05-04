@@ -19,16 +19,26 @@ Questa capacità di scomporre e reinterpretare trasformazioni la rende una tecni
 
 ## 🔍 Definizione Formale
 
-Sia $\{\mathbf v_1, \cdots, \mathbf v_n\}$ con $\mathbf v_i \in \mathbb{R}^m$ una base ortonormale e $\mathbf{X} \in \mathbb{R}^{m \times n}$ una matrice qualsiasi. Applichiamo $\mathbf{X} \in \mathbb{R}^{m \times n}$ a $\mathbf v_1, \cdots \mathbf v_n$:
+Sia $\{\mathbf v_1, \cdots, \mathbf v_n\}$ una base **ortonormale** dello spazio di partenza, con $\mathbf v_i \in \mathbb{R}^n$, e sia $\mathbf{X} \in \mathbb{R}^{m \times n}$ una matrice qualsiasi. Applichiamo $\mathbf{X}$ ai vettori della base:
 
 $$
-\mathbf X \mathbf v_1 = \sigma_1 \mathbf u_1,\quad \cdots \quad \mathbf X \mathbf v_n = \sigma_n \mathbf u_n
+\mathbf X \mathbf v_1 = \sigma_1 \mathbf u_1,\quad \cdots,\quad \mathbf X \mathbf v_n = \sigma_n \mathbf u_n
 $$
 
 dove:
 
-- $\{\sigma_i\}_{i=1}^n$ sono i valori singolari di $\mathbf{X}$ in ordine decrescente
-- $\{\mathbf{u}_i\}_{i=1}^n$ sono vettori i vettori singolari destri di $\mathbf{X}$
+- $\{\sigma_i\}_{i=1}^n$ sono i **valori singolari** di $\mathbf{X}$, ordinati in modo decrescente,
+- $\{\mathbf{v}_i\}_{i=1}^n$ sono gli **autovettori** di $\mathbf{X}^\top \mathbf{X}$,
+- $\{\mathbf{u}_i\}_{i=1}^n$ sono gli **autovettori** di $\mathbf{X} \mathbf{X}^\top$.
+
+### 🔍 Intuizione geometrica
+
+Ma perché proprio queste due matrici?
+
+- $\mathbf{X}^\top \mathbf{X}$ è una matrice simmetrica $n \times n$ che **vive nello spazio di partenza**: i suoi autovettori $\mathbf{v}_i$ rappresentano le **direzioni privilegiate d’ingresso** su cui $\mathbf{X}$ agisce in modo particolarmente "coerente" (senza cambiare direzione, solo scalando).
+- $\mathbf{X} \mathbf{X}^\top$, invece, è simmetrica $m \times m$ e vive nello spazio di arrivo: i suoi autovettori $\mathbf{u}_i$ sono le **direzioni di uscita** in cui $\mathbf{X}$ "proietta" ciascun $\mathbf{v}_i$.
+
+I valori singolari $\sigma_i$ rappresentano **quante volte viene stirato** ogni vettore $\mathbf{v}_i$ nel passaggio verso $\mathbf{u}_i$.
 
 Quindi, dato che abbiamo una base ortonormale, ogni vettore $\mathbf x$ può essere scritto come:
 
@@ -129,11 +139,8 @@ dove:
 - $\mathbf{\Sigma} \in \mathbb{R}^{m \times n}$: matrice diagonale con valori $\sigma_i$ detti **singular values** in ordine decrescente
 - $\mathbf{V} \in \mathbb{R}^{n \times n}$: matrice ortogonale delle **right singular vectors**
 
-## 🧠 Intuizione Geometrica
+## 🧠 Approfondimento
 
-Una delle intuizioni più potenti della **Singular Value Decomposition** è che essa permette di "vedere" ogni **trasformazione lineare** come una sequenza ordinata di operazioni geometriche fondamentali nello spazio euclideo:
-
-### 🔄 Trasformazioni Lineari come Sequenza Ordinata
 
 Ogni trasformazione lineare $\mathbf{X} \in \mathbb{R}^{m \times n}$, per quanto complessa, può essere sempre **scomposta in tre fasi geometriche**:
 
@@ -143,76 +150,42 @@ $$
 
 Questa decomposizione corrisponde alla seguente **pipeline geometrica**:
 
-<img src="../../images/svd_pipeline.png" width="600" style="display: block; margin-left: auto; margin-right: auto;">
-<br>
-
-L'immagine illustra geometricamente la decomposizione a valori singolari (SVD) di una matrice **A**, mostrando come può essere interpretata come una sequenza di trasformazioni.
-
 ### 🔹 1. Rotazione iniziale dello spazio ($\mathbf{V}^\top$)
 
-- Si tratta di una **rotazione (o riflessione)** del sistema di riferimento originale.
-- In altre parole, $\mathbf{V}^\top$ "orienta" i vettori d'ingresso in una base ortonormale ottimale per la trasformazione successiva.
-- Cambiamo punto di vista: ruotiamo lo spazio dei dati per **allineare** le direzioni principali della trasformazione.
+- Ruota (o riflette) lo spazio originale per allinearlo alle direzioni principali della trasformazione.
 
-Questa fase rappresenta una **preparazione**: porta i dati in un sistema di riferimento in cui la scalatura sarà **assiale** (cioè indipendente per ciascuna dimensione).
+- Trasforma ogni vettore $\mathbf{x}$ nel nuovo sistema di riferimento ortonormale: $\mathbf z= \mathbf V^⊤ \mathbf x$
 
-#### Ma cosa significa applicare $\mathbf{V}^\top$ a un vettore $\mathbf{x}$?
-
-$$
-\mathbf{z} = \mathbf{V}^\top \mathbf{x}
-$$
-
-Questa operazione ha un significato **geometrico fondamentale**: è un **cambio di base**.
-
-- $\mathbf{x} \in \mathbb{R}^n$ è espresso nelle coordinate originali.
-- $\mathbf{V}^\top$ proietta $\mathbf{x}$ nel **nuovo sistema di riferimento ortonormale** definito dalle colonne di $\mathbf{V}$.
-- $\mathbf{z}$ sono le **coordinate di $\mathbf{x}$** rispetto alle **nuove direzioni principali** (cioè i "concetti" o "assi principali" trovati dalla SVD).
-
-#### 🧠 Intuizione
-
-- Ogni colonna di $\mathbf{V}$ rappresenta una direzione **ortogonale** nel nuovo spazio dei concetti (assimilabile agli assi principali della varianza).
-- Moltiplicare per $\mathbf{V}^\top$ ruota il sistema di coordinate per **rappresentare $\mathbf{x}$ in termini di quei concetti**.
-- Se $\mathbf{x}$ è un documento, $\mathbf{V}^\top \mathbf{x}$ ci dice **quanto quel documento "partecipa" a ciascun concetto**.
+- Intuitivamente, è come esprimere $\mathbf{x}$ in una nuova base ortogonale costruita sui concetti principali della trasformazione.
 
 ### 🔹 2. Scalatura assiale ($\mathbf{\Sigma}$)
 
 - $\mathbf{\Sigma}$ è una matrice **diagonale** che **scala** ogni coordinata **indipendentemente** lungo un asse ortogonale.
 - I valori diagonali $\sigma_1 \geq \sigma_2 \geq \dots \geq \sigma_r \geq 0$ sono i **valori singolari** e rappresentano **quanto** viene deformato lo spazio in ciascuna direzione.
 - Nessuna rotazione o shearing: solo **dilatazione o contrazione**.
-
-In questo passaggio avviene il "cuore" della trasformazione: le direzioni principali vengono **ingrandite o compresse** in base alla loro **importanza informativa**.
+- In questo passaggio avviene il "cuore" della trasformazione: le direzioni principali vengono **ingrandite o compresse** in base alla loro **importanza informativa**.
 
 ### 🔹 3. Rotazione finale ($\mathbf{U}$)
 
-- Una volta che i vettori sono stati scalati, $\mathbf{U}$ effettua una **rotazione finale** per posizionare il risultato nello spazio di uscita (range).
-- È un ulteriore cambiamento di base, ma questa volta nello **spazio codominio**.
+- Dopo che il vettore è stato proiettato e scalato lungo le direzioni principali, $\mathbf{U}$ applica una rotazione (o riflessione) per posizionare il risultato nello spazio d'uscita: quello di $\mathbb{R}^m$ se $\mathbf{X} \in \mathbb{R}^{m \times n}$.
 
-### 📐 Rappresentazione schematica
+- La trasformazione $\mathbf{U}$ agisce come un cambio di base nello spazio del codominio:
+essa assegna un significato geometrico e direzionale al risultato, stabilendo in quale direzione finale andrà ogni componente scalata.
 
-$$
-\mathbf{X} \mathbf{x}
-= 
-\underbrace{\mathbf{U}}_{\text{Rotazione finale}}
-\underbrace{
-\mathbf{\Sigma}
-\underbrace{
-\mathbf{V}^\top \mathbf{x}
-}_{\text{Rotazione iniziale}}
-}_{\text{Scalatura}}
-$$
-
-Quindi l’intera trasformazione può essere **visualizzata come**:
-- ruotare i dati,
-- scalarli lungo assi ortogonali,
-- ruotarli di nuovo.
+- Geometricamente, $\mathbf{U}$ determina l’orientamento dell’ellisse risultante: mentre $\mathbf{V}^\top$ allinea l’ingresso alle direzioni principali e $\Sigma$ deforma (scala) secondo quelle direzioni, $\mathbf{U}$ decide come disporre quella deformazione nello spazio originale d’uscita.
 
 ### 🌌 Esempio Visivo
 
-Immagina un **cerchio unitario** nello spazio 2D. Applichiamo $\mathbf{X}$ tramite la sua SVD:
+Immagina un **cerchio unitario** nello spazio 2D. Applichiamo $\mathbf{A}$ tramite la sua SVD:
 
-- **$\mathbf{V}^\top$** ruota il cerchio, trasformandolo in un’ellisse orientata.
-- **$\mathbf{\Sigma}$** schiaccia o dilata l’ellisse lungo i suoi assi principali.
-- **$\mathbf{U}$** ruota nuovamente l’ellisse nel suo spazio finale.
+<img src="../../images/svd_pipeline.png" width="600" style="display: block; margin-left: auto; margin-right: auto;">
+<br>
+
+L'immagine illustra geometricamente la decomposizione a valori singolari (SVD) di una matrice $\mathbf A$, mostrando come può essere interpretata come una sequenza di trasformazioni.
+
+- **$\mathbf{V}^\top$** ruota il cerchio nella direzione delle **direzioni principali** (quelle dove deve avvenire lo stretching).
+- **$\mathbf{\Sigma}$** schiaccia o dilata il cerchio lungo i suoi assi principali, trasformandolo in un ellisse.
+- **$\mathbf{U}$** riallinea (ruota o riflette) l’ellisse nell’output space, secondo le direzioni principali dell'immagine di $\mathbf{X}$, cioè gli autovettori di $\mathbf{X} \mathbf{X}^\top$.
 
 Risultato: da una figura simmetrica e isotropa (cerchio), otteniamo un oggetto deformato ma **con significato direzionale**.
 
@@ -227,35 +200,51 @@ Risultato: da una figura simmetrica e isotropa (cerchio), otteniamo un oggetto d
 | Passaggio | Matrice        | Tipo             | Azione nello spazio |
 |-----------|----------------|------------------|---------------------|
 | 1         | $\mathbf{V}^\top$ | Ortogonale       | Rotazione iniziale |
-| 2         | $\mathbf{\Sigma}$ | Diagonale (reale) | Scalatura assiale  |
+| 2         | $\mathbf{\Sigma}$ | Diagonale | Scalatura assiale  |
 | 3         | $\mathbf{U}$      | Ortogonale       | Rotazione finale   |
 
 👉 Questo rende la SVD **lo strumento matematico più naturale per comprendere e manipolare le trasformazioni lineari complesse** con una lente geometrica. 
-
 
 ## 📏 Proprietà
 
 - I vettori di $\mathbf{U}$ e $\mathbf{V}$ formano **basi ortonormali** per lo spazio delle righe e delle colonne.
 - I **valori singolari** $\sigma_i$ rappresentano la **quantità di informazione** trasportata lungo ciascuna direzione.
 - $\text{rank}(\mathbf{X}) =$ numero di valori singolari non nulli.
-- Può essere vista come una generalizzazione dell’autodecomposizione (eigendecomposition).
+- Può essere vista come una generalizzazione dell’autodecomposizione (eigendecomposition) per matrici rettangolari.
 
 ## 🔧 Riduzione Dimensionale tramite Truncated SVD
 
-Spesso, molte direzioni (componenti) sono **rumore** o trascurabili. Usiamo **solo i primi $k \ll \min(m,n)$** valori singolari:
+Spesso, molte direzioni in cui la matrice $\mathbf{X}$ proietta i dati risultano **trascurabili o rumorose**. La **Truncated SVD** consiste nel conservare **solo i primi $k \ll \min(m, n)$ valori singolari** più grandi:
 
 $$
 \mathbf{X} \approx \mathbf{X}_k = \mathbf{U}_k \mathbf{\Sigma}_k \mathbf{V}_k^\top
 $$
 
-- Otteniamo così una **approssimazione low-rank**.
-- Utilissima per **compressione** e **estrazione di struttura latente**.
+- $\mathbf{U}_k \in \mathbb{R}^{m \times k}$ contiene i primi $k$ vettori singolari sinistri.
+- $\mathbf{\Sigma}_k \in \mathbb{R}^{k \times k}$ contiene i primi $k$ valori singolari (i più grandi).
+- $\mathbf{V}_k^\top \in \mathbb{R}^{k \times n}$ contiene i primi $k$ vettori singolari destri.
 
-## 🧬 Interpretazione Probabilistica
+🔍 **Perché funziona?**
 
-- $\mathbf{X}^\top \mathbf{X}$ è la **covarianza tra termini** nello spazio dei documenti.
-- $\mathbf{X} \mathbf{X}^\top$ è la **covarianza tra documenti** nello spazio dei termini.
-- SVD decompone questa correlazione strutturata in **componenti ortogonali**.
+1. I valori singolari $\sigma_1 \geq \sigma_2 \geq \dots \geq \sigma_r$ sono ordinati in modo decrescente:  
+   **i primi rappresentano le direzioni in cui $\mathbf{X}$ ha la massima "energia"** (varianza proiettata).
+
+2. Geometricamente:  
+   - Ogni direzione $\mathbf{v}_i$ corrisponde a un asse principale su cui $\mathbf{X}$ proietta i dati.
+   - Il valore $\sigma_i$ misura **quanto è importante quella direzione**.
+   - Troncando dopo $k$, scartiamo le direzioni meno influenti.
+
+3. Matematicamente:  
+   $$ 
+   \mathbf{X}_k = \arg\min_{\text{rank-}k\text{ matrices } \mathbf{A}} \|\mathbf{X} - \mathbf{A}\|_F 
+   $$
+   cioè $\mathbf{X}_k$ è la **migliore approssimazione di rango $k$** di $\mathbf{X}$ in norma di Frobenius (somma dei quadrati degli scarti).
+
+🚀 **Utilità**:
+- **Compressione dei dati**: conserviamo solo l’informazione essenziale.
+- **Riduzione del rumore**: eliminiamo direzioni deboli o casuali.
+- **Estrazione di concetti latenti**: fondamentale in NLP, raccomandazione, clustering.
+
 
 ## 🧾 Differenze tra SVD ed Eigendecomposition
 

@@ -165,7 +165,7 @@ dove:
 
 - $\mathbf{U} \in \mathbb{R}^{m \times m}$ è ortogonale: $\mathbf{U}^\top \mathbf{U} = \mathbf{I}_m$,
 - $\mathbf{V} \in \mathbb{R}^{n \times n}$ è ortogonale: $\mathbf{V}^\top \mathbf{V} = \mathbf{I}_n$,
-- $\mathbf{\Sigma} \in \mathbb{R}^{m \times n}$ è diagonale (rettangolare), con $\sigma_1 \geq \sigma_2 \geq \dots \geq \sigma_r > 0$, e $r = \operatorname{rank}(\mathbf{A})$.
+- $\mathbf{\Sigma} \in \mathbb{R}^{m \times n}$ è diagonale (rettangolare), con $\sigma_1 \geq \sigma_2 \geq \dots \geq \sigma_r 0$, e $r = \operatorname{rank}(\mathbf{A})$.
 
 ---
 
@@ -258,12 +258,12 @@ La SVD è quindi una **generalizzazione dell'autodecomposizione**, valida anche 
 
 ## ⚙️ Definizione di autovalore e autovettore
 
-> **Definizione:**  
-> Un vettore non nullo $v$ è **autovettore** di una matrice quadrata $A$ se  
-> $$
-> A\,v = \lambda\,v
-> $$  
-> dove $\lambda$ è lo **autovalore** corrispondente.
+**Definizione:**  
+Un vettore non nullo $v$ è **autovettore** di una matrice quadrata $A$ se  
+$$
+A\,v = \lambda\,v
+$$  
+dove $\lambda$ è lo **autovalore** corrispondente.
 
 - Se prendi qualsiasi **multiplo** di $v$, cioè $s\,v$ con $s\neq0$, ottieni lo **stesso** autovalore $\lambda$.  
 - Per semplificare, di solito normalizziamo gli autovettori a **lunghezza 1**.
@@ -290,7 +290,7 @@ $$
   A = V\,\Lambda\,V^{-1}
 $$
 
-> **Interpretazione:** applicando $A$ nello spazio, prima ruoti/proietti sul sistema di assi formato da $V^{-1}$, poi **scali** lungo ogni asse di fattore $\lambda_i$, infine ritorni allo spazio originale con $V$.
+**Interpretazione:** applicando $A$ nello spazio, prima ruoti/proietti sul sistema di assi formato da $V^{-1}$, poi **scali** lungo ogni asse di fattore $\lambda_i$, infine ritorni allo spazio originale con $V$.
 
 ---
 
@@ -342,13 +342,13 @@ Per $A = A^\top$ reale:
 
 ## 🔍 Dimostrazione: il **prodotto scalare** restituisce la coordinata in una base ortonormale
 
-> **Teorema.** Se $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ è una base **ortonormale** di $\mathbb{R}^n$, allora per ogni vettore $\mathbf{x}\in\mathbb{R}^n$ vale
-> $$
-> \mathbf{x}
-> = \sum_{i=1}^n (\mathbf{v}_i\cdot \mathbf{x})\,\mathbf{v}_i
-> \quad\text{e in particolare}\quad
-> \text{coordinata di $\mathbf{x}$ lungo $\mathbf{v}_j$} = \mathbf{v}_j\cdot\mathbf{x}.
-> $$
+**Teorema.** Se $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ è una base **ortonormale** di $\mathbb{R}^n$, allora per ogni vettore $\mathbf{x}\in\mathbb{R}^n$ vale
+$$
+\mathbf{x}
+= \sum_{i=1}^n (\mathbf{v}_i\cdot \mathbf{x})\,\mathbf{v}_i
+\quad\text{e in particolare}\quad
+\text{coordinata di $\mathbf{x}$ lungo $\mathbf{v}_j$} = \mathbf{v}_j\cdot\mathbf{x}.
+$$
 
 ---
 
@@ -407,7 +407,7 @@ Partiamo dalle ipotesi già scritte:
 - Per ciascun $i$ vale
   $$
     \mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i,
-    \quad\sigma_i > 0.
+    \quad\sigma_i 0.
   $$
   
 Aggiungiamo ora il passo chiave: **i** vettori $\mathbf{v}_i$ sono scelti come **autovettori** di $\mathbf{X}^\top\mathbf{X}$, con autovalori $\sigma_i^2$. In simboli,
@@ -465,12 +465,12 @@ Pertanto, $\{\mathbf{u}_1,\dots,\mathbf{u}_n\}$ è anch’essa una **base ortono
 
 Partiamo dalle ipotesi già scritte:
 
-> Sia $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ una base **ortonormale** e  
-> $\mathbf{X}\in\mathbb{R}^{m\times n}$ una matrice qualsiasi, tali che
-> $$
-> \mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i,
-> \quad i=1,\dots,n.
-> $$
+Sia $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ una base **ortonormale** e  
+$\mathbf{X}\in\mathbb{R}^{m\times n}$ una matrice qualsiasi, tali che
+$$
+\mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i,
+\quad i=1,\dots,n.
+$$
 
 Per mostrare perché i $\mathbf{u}_i$ risultino anch’essi **ortonormali**, inseriamo ora il ruolo di $\mathbf{X}^\top\mathbf{X}$:
 
@@ -527,3 +527,74 @@ Per mostrare perché i $\mathbf{u}_i$ risultino anch’essi **ortonormali**, ins
 - Questo ci ha permesso di mostrare che i $\mathbf{u}_i$ definiti da $\mathbf{X}\,\mathbf{v}_i/\sigma_i$ sono **unitari** e **ortogonali** fra loro.  
 - Quindi $\{\mathbf{u}_1,\dots,\mathbf{u}_n\}$ è una **base ortonormale** nello spazio di uscita di $\mathbf{X}$.  
 
+
+## 🔗 Collegamento logico con $\mathbf{X}^\top\mathbf{X}$
+
+Partiamo dalle ipotesi:
+
+Sia $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ una base **ortonormale** di $\mathbb{R}^n$ e  
+$\mathbf{X}\in\mathbb{R}^{m\times n}$ una matrice qualsiasi, tali che
+$$
+\mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i,
+\quad i=1,\dots,n.
+$$
+
+### 📌 Perché scegliere $\{\mathbf{v}_i\}$ come autovettori di $\mathbf{X}^\top\mathbf{X}$?
+
+1. **Quadratic form & norma dell’output**  
+  $$
+  \|\mathbf{X}\,\mathbf{x}\|^2 \;=\; \mathbf{x}^\top (\mathbf{X}^\top\mathbf{X})\,\mathbf{x}
+  $$
+   mostra che $\mathbf{X}^\top\mathbf{X}$ è la **matrice del quadrato** della norma dell’immagine di $\mathbf{x}$.  
+   Le sue direzioni principali (autovettori) sono esattamente le direzioni in cui il “guadagno” $\|\mathbf{X}\,\mathbf{v}\|$ è puro fattore di scala.
+
+2. **Simmetria e ortogonalità**  
+   $\mathbf{X}^\top\mathbf{X}$ è simmetrica e semidefinita positiva, quindi **può essere diagonalizzata** da una matrice ortogonale:
+   $$
+   \mathbf{X}^\top\mathbf{X} = V\,\Sigma^2\,V^\top,
+   $$
+   dove le colonne di $V$ sono autovettori **ortonormali**.  
+   Scegliere $\{\mathbf{v}_i\}$ fra questi garantisce subito la ortonormalità della base.
+
+3. **Direzioni di massima deformazione**  
+   Ogni autovalore $\sigma_i^2$ di $\mathbf{X}^\top\mathbf{X}$ misura **quanto** $\mathbf{X}$ allunga lungo $\mathbf{v}_i$.  
+   Di conseguenza:
+   $$
+   \|\mathbf{X}\,\mathbf{v}_i\| = \sqrt{\mathbf{v}_i^\top(\mathbf{X}^\top\mathbf{X})\,\mathbf{v}_i} = \sigma_i.
+   $$
+   Vale dunque la relazione
+   $\mathbf{X}\,\mathbf{v}_i = \sigma_i\,\mathbf{u}_i$ con $\|\mathbf{u}_i\|=1$.
+
+---
+
+### Passaggi della dimostrazione
+
+1. **Definizione di $\sigma_i$ e $\mathbf{u}_i$**  
+   $$
+   \sigma_i = \|\mathbf{X}\,\mathbf{v}_i\|,\quad
+   \mathbf{u}_i = \frac{\mathbf{X}\,\mathbf{v}_i}{\sigma_i}
+   $$
+   garantisce $\|\mathbf{u}_i\|=1$.
+
+2. **Autovalori & autovettori**  
+   Dalla simmetria di $\mathbf{X}^\top\mathbf{X}$:
+   $$
+   \mathbf{X}^\top\mathbf{X}\,\mathbf{v}_i = \sigma_i^2\,\mathbf{v}_i.
+   $$
+
+3. **Ortonormalità incrociata**  
+   Per $i\neq j$:
+   $$
+    \mathbf{u}_i^\top\mathbf{u}_j
+    = \frac{1}{\sigma_i\sigma_j}\,
+      (\mathbf{X}\mathbf{v}_i)^\top(\mathbf{X}\mathbf{v}_j)
+    = \frac{1}{\sigma_i\sigma_j}\,
+      \mathbf{v}_i^\top(\mathbf{X}^\top\mathbf{X})\mathbf{v}_j
+    = 0,
+   $$
+   perché $\mathbf{v}_i$ e $\mathbf{v}_j$ sono **autovettori** distinti di $\mathbf{X}^\top\mathbf{X}$.
+
+---
+
+**Conclusione:**  
+Scegliere $\{\mathbf{v}_i\}$ come autovettori di $\mathbf{X}^\top\mathbf{X}$ è la via naturale per ottenere subito una base **ortonormale** nel dominio, che diagonalizza la quadratic form $\|\mathbf{X}x\|^2$ e rende la SVD possibile.  
