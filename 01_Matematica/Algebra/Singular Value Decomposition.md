@@ -260,7 +260,7 @@ $$
    A^T \mathbf{u}_i
    = \sum_{j=1}^n \bigl(\mathbf{v}_j^T (A^T \mathbf{u}_i)\bigr)\,\mathbf{v}_j.
    $$
-   Ma  
+   E quindi  
    $$
    \mathbf{v}_j^T (A^T \mathbf{u}_i)
    = (A\,\mathbf{v}_j)^T\,\mathbf{u}_i.
