@@ -8,9 +8,22 @@ LSA è una tecnica di *apprendimento non supervisionato* utilizzata nel *Natural
 - 🔢 **[[Singular Value Decomposition|Scomposizione ai valori singolari (SVD)]]**: tecnica algebrica per decomporre matrici.
 - 🔍 **Scoperta di argomenti latenti**: estrazione non supervisionata di strutture semantiche nei dati testuali.
 - 📦 **Densificazione delle rappresentazioni**: da rappresentazioni sparse e lunghe a vettori corti e densi.
+
+L'idea è quindi cercare di estrarre dal testo dei "concetti" (o temi) nascosti nei documenti e rappresentare questi temi come combinazione lineare delle parole nel vocabolario. Come ad esempio:
+
+$$
+\text{DBMS} = \text{data} \cdot 0.8 + \text{system} \cdot 0.7 + \text{server} \cdot 0.6 
+$$
+
+dove:
+- DBMS è un concetto latente
+- data, system e server sono parole del vocabolario
+- $0.8, 0.7, 0.6$ sono i pesi che rappresentano la relazione tra questi tre termini e il concetto latente.
+
 ## 🧾 Matrice termine-documento
 
-Sia $\mathbf{X} \in \mathbb{R}^{|D| \times |V|}$ una matrice termine-documento o una matrice TF-IDF.  
+Sia $\mathbf{X} \in \mathbb{R}^{|D| \times |V|}$ una matrice termine-documento o una matrice TF-IDF calcolata a partire da un corpus.
+
 Dove:
 
 - $|D|$: numero di documenti
@@ -42,9 +55,9 @@ $$
 
 dove:
 
-- $\mathbf{U} \in \mathbb{R}^{|D| \times |D|}$: **matrice dei documenti**, ortonormale
-- $\mathbf{S} \in \mathbb{R}^{|D| \times |V|}$: **matrice diagonale** dei valori singolari (importanza degli assi)
-- $\mathbf{V} \in \mathbb{R}^{|V| \times |V|}$: **matrice dei termini**, ortonormale
+- $\mathbf{U} \in \mathbb{R}^{|D| \times |D|}$: **matrice dei documenti**, ortonormale, ci dice quanto ogni documento è simile agli altri.
+- $\mathbf{S} \in \mathbb{R}^{|D| \times |V|}$: **matrice diagonale** dei valori singolari (importanza degli assi) di $\mathbf{X}$.
+- $\mathbf{V} \in \mathbb{R}^{|V| \times |V|}$: **matrice dei termini**, ortonormale, ci dice quanto ogni termine è simile agli altri.
 
 ## ✂️ Approssimazione a rango ridotto (Truncated SVD)
 
