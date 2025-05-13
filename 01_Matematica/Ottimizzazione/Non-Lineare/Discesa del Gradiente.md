@@ -2,6 +2,14 @@
 
 La discesa del gradiente (*Gradient Descent*, GD) è un algoritmo iterativo di minimizzazione del primo ordine. Viene definito **iterativo** poiché esegue una sequenza di aggiornamenti successivi per determinare un minimo locale della funzione obiettivo, a partire da una condizione iniziale.
 
+È possibile che invece di un minimo locale (o globale), l'algoritmo si interrompa su un punto di sella. Durante la discesa del gradiente, l’algoritmo cerca punti dove il valore della funzione diminuisce. Se si avvicina a un punto di sella, il gradiente (cioè l'indicazione della direzione in cui scendere) può diventare molto piccolo, e questo può **rallentare o bloccare** temporaneamente l’ottimizzazione. Anche se i punti di sella esistono, è **molto improbabile** che la discesa del gradiente si fermi esattamente su uno di essi, per due motivi principali:
+
+1. **Instabilità numerica**: i punti di sella sono instabili — basta una piccola variazione (come un errore di arrotondamento o un passo leggermente diverso) per spingere l’algoritmo lontano dal punto di sella.
+
+2. **Alta dimensionalità**: negli spazi ad alta dimensione, i punti di sella sono molto più frequenti dei minimi, ma anche molto più "facili da evitare". È molto raro "cadere" perfettamente in un punto di sella, e ancor più raro restarci a lungo.
+
+In pratica, anche se ci si può avvicinare a un punto di sella, la discesa del gradiente tende naturalmente a superarlo e continuare verso un minimo.
+
 Un aspetto cruciale della discesa del gradiente è che, nel caso di funzioni **non convesse**, non possiamo garantire che l'algoritmo trovi il minimo globale. Infatti, tali funzioni possono presentare **molteplici minimi locali**, e il punto di convergenza dipenderà dalle condizioni iniziali del modello.
 
 L'intuizione alla base della discesa del gradiente è piuttosto semplice:
@@ -26,6 +34,10 @@ dove:
 - $\Theta^{(t)}$ rappresenta i parametri del modello all'iterazione $t$,
 - $\alpha$ è il **tasso di apprendimento** (*learning rate*), un iperparametro che determina l'ampiezza del passo nella direzione del gradiente,
 - $\nabla \ell(\Theta^{(t)})$ è il gradiente della funzione di perdita $\ell$ rispetto ai parametri $\Theta$.
+
+Ovviamente, per poter calcolare correttamente il gradiente di una funzione, e quindi eseguire correttamente la discesa del gradiente, abbiamo bisogno che la funzione $\ell$ sia differenziabile in ogni suo punto.
+
+Infatti, non basta che sia definita la derivata parziale di $\ell$ rispetto a ogni singola variabile $\theta_i$, ma è necessario che $\ell$ abbia un gradiente continuo.
 
 Possiamo anche, tramite l'unrolling ricorsivo, riscrivere esplicitamente $\Theta^{(t+1)}$ come:
 
@@ -183,7 +195,7 @@ plt.savefig('./images/gradient.jpg',
 plt.show()
 ```
 
-<img src="/home/lorenzo/Documenti/GitHub/my-obsidian-vault/images/gradient.jpg" alt="Gradient Descent">
+<img src="../../../images/gradient.jpg" alt="Gradient Descent">
 
 *Figura 1.1: Visualizzazione della funzione $f(x,y)$ con la sua superficie 3D, mappa di livello e campi vettoriali del gradiente positivo e negativo, evidenziando le direzioni di massima variazione.*
 
@@ -286,9 +298,167 @@ plt.savefig('./images/gradient.jpg',
 plt.show()
 ```
 
-<img src="/home/lorenzo/Documenti/GitHub/my-obsidian-vault/images/gradient-orthogonal.jpg" alt="Gradient Descent 2">
+<img src="../../../images/gradient-orthogonal.jpg" alt="Gradient Descent 2">
 
 *Figura 1.2: Ortogonalità tra il vettore tangente alla curva di livello e il vettore -gradiente*
+
+## Differenziabilità
+
+Come abbiamo visto, il gradiente è l’elemento chiave nel funzionamento della discesa del gradiente. Ma ci si potrebbe chiedere: **tutte le funzioni di perdita permettono il calcolo del gradiente?**
+
+La risposta è: **non sempre**.
+
+Non tutte le funzioni sono **differenziabili**, cioè non tutte ammettono un gradiente ben definito in ogni punto del dominio. Questo è un problema rilevante, perché **la discesa del gradiente richiede che la funzione sia differenziabile**, altrimenti il gradiente potrebbe non esistere in certi punti e l’algoritmo potrebbe bloccarsi o dare risultati errati.
+
+### Derivate parziali ≠ Differenziabilità
+
+In una funzione di più variabili, avere **tutte le derivate parziali definite** non è sufficiente per garantire la differenziabilità. Infatti, può succedere che tutte le derivate esistano, ma non siano continue — e questo è un segnale che la funzione **non è veramente differenziabile**.
+
+Un esempio classico è la seguente funzione:
+
+- $f(x, y) = 0$ se $(x, y) = (0, 0)$
+- $f(x, y) = \frac{x^2 y}{x^2 + y^2}$ altrimenti
+
+<img src="../../../images/gradient-non-differentiable.jpg" alt="Gradient Descent 3">
+
+*Figura 1.3: Funzione non differenziabile*
+
+Questa funzione ha derivate parziali definite ovunque, ma una di esse (in particolare rispetto a $y$) è **discontinua nell’origine**, e questo significa che $f$ **non è differenziabile** in $(0, 0)$.
+
+### Implicazioni pratiche
+
+Fortunatamente, nella pratica si usano spesso funzioni di perdita ben progettate, che sono **lisce e differenziabili** quasi ovunque. Tuttavia, **non è raro incontrare funzioni di perdita non differenziabili**, ad esempio con funzioni *piecewise* o attivazioni come la ReLU.
+
+In questi casi, si adottano diverse strategie per rendere il problema trattabile:
+
+- **Modifica o sostituzione della funzione** con una variante liscia (es. ReLU → Softplus)
+- **Tecniche come il "reparametrization trick"** nei modelli generativi come le VAE, che permettono il passaggio del gradiente anche quando la funzione non è differenziabile nel senso classico
+
+In conclusione, **la differenziabilità è un requisito fondamentale per l’applicazione diretta della discesa del gradiente**, ma esistono metodi e tecniche per aggirare o gestire in modo efficace i casi in cui essa venga meno.
+
+## Learning Rate
+
+Nella legge di aggiornamento della discesa del gradiente:
+
+$$
+\Theta^{(t+1)} = \Theta^{(t)} - \alpha \nabla \ell(\Theta^{(t)}),
+$$
+
+il parametro $\alpha$ gioca un ruolo fondamentale. Questo parametro si chiama **learning rate** (tasso di apprendimento) ed è un **iperparametro**, cioè non viene appreso durante l’ottimizzazione, ma deve essere scelto manualmente (o tramite ricerca automatica).
+
+Il learning rate è **sempre positivo**: se fosse negativo, infatti, ci si muoverebbe nella direzione opposta a quella desiderata, **massimizzando** invece che minimizzando la funzione di perdita.
+
+### Effetti del learning rate
+
+Il valore di $\alpha$ determina **quanto grande è ogni passo** che l’algoritmo compie nella direzione opposta al gradiente. Non coincide esattamente con la lunghezza del passo (che dipende anche dalla norma del gradiente), ma è **proporzionale ad essa**.
+
+A seconda della sua scelta, il comportamento dell’algoritmo può variare notevolmente:
+
+- Se **$\alpha$ è troppo piccolo**, l’algoritmo avanza molto lentamente e richiede molte iterazioni per convergere.
+- Se **$\alpha$ è troppo grande**, si rischia di **superare il minimo**, causando **oscillazioni** o addirittura **divergenza**.
+- Esiste un valore "ottimale" $\alpha^*$ per ogni punto, che minimizzerebbe la funzione lungo la direzione di discesa. Tuttavia, trovare questo valore è difficile perché richiederebbe una soluzione chiusa del problema, che **non è disponibile in generale** per funzioni non lineari.
+
+Questa situazione è illustrata nella seguente figura:
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Dati sintetici
+np.random.seed(42)
+X = np.random.randn(100, 1)
+y = 3 * X.squeeze() + 2 + np.random.randn(100) * 0.5
+
+# Funzione di perdita
+def loss(w, b, X, y):
+    y_pred = w * X.squeeze() + b
+    return np.mean((y - y_pred) ** 2)
+
+# Gradiente
+def gradients(w, b, X, y):
+    y_pred = w * X.squeeze() + b
+    error = y_pred - y
+    dw = 2 * np.mean(error * X.squeeze())
+    db = 2 * np.mean(error)
+    return dw, db
+
+# Allenamento
+def train(alpha, steps=30):
+    w, b = 0.0, 0.0
+    trajectory = [(w, b)]
+    for _ in range(steps):
+        dw, db = gradients(w, b, X, y)
+        w -= alpha * dw
+        b -= alpha * db
+        trajectory.append((w, b))
+    return trajectory
+
+# Parametri per i plot
+alphas = [0.01, 0.1, 0.95]
+titles = ['Small α', 'Optimal α', 'Large α']
+colors = ['#1f77b4', '#2ca02c', '#d62728']
+trajectories = [train(alpha) for alpha in alphas]
+
+# Curve di livello
+w_range = np.linspace(-1, 5, 100)
+b_range = np.linspace(0, 5, 100)
+W, B = np.meshgrid(w_range, b_range)
+Z = np.array([[loss(w, b, X, y) for w in w_range] for b in b_range])
+
+# Plot
+fig, axs = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+for ax, traj, title, color in zip(axs, trajectories, titles, colors):
+    contours = ax.contour(W, B, Z, levels=50, cmap='cividis')
+    w_vals, b_vals = zip(*traj)
+    ax.plot(w_vals, b_vals, marker='o', color=color, linewidth=2, alpha=0.8, label=title)
+    ax.plot(3, 2, marker='*', color='black', markersize=15, label='Minimo')
+    ax.set_title(title, fontsize=14)
+    ax.set_xlabel('w')
+    ax.grid(True, linestyle='--', alpha=0.5)
+    ax.legend()
+axs[0].set_ylabel('b')
+plt.suptitle('Confronto tra traiettorie di gradient descent con diversi learning rate', fontsize=16)
+plt.tight_layout()
+plt.subplots_adjust(top=0.85)
+plt.show()
+```
+
+<p align="center">
+  <img src="../../../images/learning-rate-comparison-sgd.png" alt="Confronto tra diversi learning rate">
+</p>
+
+*Figura 2.0: Confronto tra learning rate troppo piccolo, troppo grande e ottimale*
+
+### Line Search
+
+Una strategia per scegliere dinamicamente il valore di $\alpha$ è il **line search**: una procedura che, una volta nota la direzione di discesa $-\nabla \ell(\Theta^{(t)})$, cerca il valore di $\alpha$ che **massimizza la diminuzione** della funzione di perdita lungo quella direzione. In pratica, si risolve un piccolo problema di ottimizzazione interno a ogni passo.
+
+Questa tecnica è più costosa, ma può migliorare la stabilità e l'efficacia dell’ottimizzazione.
+
+### Decadimento del learning rate
+
+In alternativa al line search, è comune utilizzare **strategie di decadimento** del learning rate, cioè farlo **diminuire nel tempo** secondo una certa regola:
+
+- **Decadimento lineare**:  
+  $$ \alpha^{(t+1)} = \alpha^{(0)} - \rho t $$
+- **Decadimento razionale**:  
+  $$ \alpha^{(t+1)} = \frac{\alpha^{(0)}}{1 + \rho t} $$
+- **Decadimento esponenziale**:  
+  $$ \alpha^{(t+1)} = \alpha^{(0)} e^{-\rho t} $$
+
+dove $\rho$ è un parametro di decadimento.
+
+L’idea alla base è che all’inizio si vogliono fare **passi ampi** per esplorare rapidamente lo spazio dei parametri, mentre verso la fine servono **passi piccoli** per affinare la soluzione e garantire la convergenza ottimale.
+
+### Considerazioni pratiche
+
+Non esiste una "ricetta perfetta" per scegliere il learning rate o la sua strategia di aggiornamento. Molto spesso, la scelta viene fatta tramite:
+
+- **esperienza pratica**
+- **grid search o random search**
+- **ottimizzazione bayesiana o altri metodi automatici**
+
+Alcuni algoritmi, come **Adam**, includono meccanismi per **adattare automaticamente il learning rate** per ogni parametro, rendendo l'ottimizzazione più robusta e spesso più veloce.
 
 ## Batch, Mini-Batch e Stochastic Gradient Descent
 
