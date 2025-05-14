@@ -26,14 +26,14 @@ L'intuizione alla base della discesa del gradiente è piuttosto semplice:
 Formalmente, il processo di aggiornamento iterativo può essere espresso come:
 
 $$
-\Theta^{(t+1)} \leftarrow \Theta^{(t)} - \alpha \nabla \ell(\Theta^{(t)})
+\Theta^{(t+1)} \leftarrow \Theta^{(t)} - \alpha \nabla \ell_{\Theta^{(t)}}
 $$
 
 dove:
 
 - $\Theta^{(t)}$ rappresenta i parametri del modello all'iterazione $t$,
 - $\alpha$ è il **tasso di apprendimento** (*learning rate*), un iperparametro che determina l'ampiezza del passo nella direzione del gradiente,
-- $\nabla \ell(\Theta^{(t)})$ è il gradiente della funzione di perdita $\ell$ rispetto ai parametri $\Theta$.
+- $\nabla \ell_{\Theta^{(t)}}$ è il gradiente della funzione di perdita $\ell$ rispetto ai parametri $\Theta$.
 
 Ovviamente, per poter calcolare correttamente il gradiente di una funzione, e quindi eseguire correttamente la discesa del gradiente, abbiamo bisogno che la funzione $\ell$ sia differenziabile in ogni suo punto.
 
@@ -43,18 +43,18 @@ Possiamo anche, tramite l'unrolling ricorsivo, riscrivere esplicitamente $\Theta
 
 $$
 \begin{align*}
-\Theta^{(1)}   &= \Theta^{(0)} - \alpha \nabla \ell (\Theta^{(0)})\\
-\Theta^{(2)}   &= \Theta^{(1)} - \alpha \nabla \ell (\Theta^{(1)})\\
-               &= \Theta^{(0)} - \alpha \nabla \ell (\Theta^{(0)}) - \alpha \nabla \ell (\Theta^{(1)})\\
+\Theta^{(1)}   &= \Theta^{(0)} - \alpha \nabla \ell_{\Theta^{(0)}}\\
+\Theta^{(2)}   &= \Theta^{(1)} - \alpha \nabla \ell_{\Theta^{(1)}}\\
+               &= \Theta^{(0)} - \alpha \nabla \ell_{\Theta^{(0)}} - \alpha \nabla \ell_{\Theta^{(1)}}\\
 \vdots\\
-\Theta^{(t+1)} &= \Theta^{(0)} - \alpha \sum_{i=0}^{t} \nabla \ell(\Theta^{(i)}).
+\Theta^{(t+1)} &= \Theta^{(0)} - \alpha \sum_{i=0}^{t} \nabla \ell_{\Theta^{(i)}}.
 \end{align*}
 $$
 
 Il criterio di arresto più comune è la verifica della norma del gradiente:
 
 $$
-\|\nabla \ell(\Theta^{(t)})\| \leq \epsilon
+\|\nabla \ell_{\Theta^{(t)}}\| \leq \epsilon
 $$
 
 dove $\epsilon$ è una soglia positiva molto piccola che determina il livello di precisione desiderato.
@@ -384,7 +384,7 @@ In conclusione, **la differenziabilità è un requisito fondamentale per l’app
 Nella legge di aggiornamento della discesa del gradiente:
 
 $$
-\Theta^{(t+1)} = \Theta^{(t)} - \alpha \nabla \ell(\Theta^{(t)}),
+\Theta^{(t+1)} = \Theta^{(t)} - \alpha \nabla \ell_{\Theta^{(t)}},
 $$
 
 il parametro $\alpha$ gioca un ruolo fondamentale. Questo parametro si chiama **learning rate** (tasso di apprendimento) ed è un **iperparametro**, cioè non viene appreso durante l’ottimizzazione, ma deve essere scelto manualmente (o tramite ricerca automatica).
@@ -474,7 +474,7 @@ plt.show()
 
 ### Line Search
 
-Una strategia per scegliere dinamicamente il valore di $\alpha$ è il **line search**: una procedura che, una volta nota la direzione di discesa $-\nabla \ell(\Theta^{(t)})$, cerca il valore di $\alpha$ che **massimizza la diminuzione** della funzione di perdita lungo quella direzione. In pratica, si risolve un piccolo problema di ottimizzazione interno a ogni passo.
+Una strategia per scegliere dinamicamente il valore di $\alpha$ è il **line search**: una procedura che, una volta nota la direzione di discesa $-\nabla \ell_{\Theta^{(t)}}$, cerca il valore di $\alpha$ che **massimizza la diminuzione** della funzione di perdita lungo quella direzione. In pratica, si risolve un piccolo problema di ottimizzazione interno a ogni passo.
 
 Questa tecnica è più costosa, ma può migliorare la stabilità e l'efficacia dell’ottimizzazione.
 
@@ -674,7 +674,7 @@ Le tecniche moderne includono anche ottimizzatori avanzati (come Adam, RMSProp, 
 
 Uno dei principali limiti della discesa del gradiente standard è la sua **lentezza di convergenza** in presenza di **vallate strette e profonde** nella funzione di perdita, oppure in direzioni con **curvature molto diverse** (ad esempio funzioni “a sella” o “a banana”). In questi casi, l’algoritmo può oscillare lungo le direzioni di maggiore curvatura, rallentando notevolmente il percorso verso il minimo.
 
-Per mitigare questo problema, viene introdotto il concetto di **momentum**, ispirato alla fisica newtoniana: invece di aggiornare i parametri unicamente in base al gradiente attuale, si tiene conto anche della **direzione e velocità del movimento passato**, accumulando “inerzia” lungo le direzioni coerenti.
+Per mitigare questo problema, viene introdotto il concetto di **momentum**, ispirato alla fisica newtoniana: invece di aggiornare i parametri unicamente in base al gradiente attuale e al learning rate, si tiene conto anche della **direzione e velocità del movimento passato**, accumulando “inerzia” lungo le direzioni coerenti.
 
 ### Formula dell'Aggiornamento con Momentum
 
@@ -682,7 +682,7 @@ L’algoritmo introduce una variabile ausiliaria $\mathbf{v}^{(t)}$ che rapprese
 
 $$
 \begin{aligned}
-\mathbf{v}^{(t+1)} &= \lambda \cdot \mathbf{v}^{(t)} - \alpha \cdot \nabla \ell(\Theta^{(t)}), \\
+\mathbf{v}^{(t+1)} &= \lambda \cdot \mathbf{v}^{(t)} - \alpha \cdot \nabla \ell_{\Theta^{(t)}}, \\
 \Theta^{(t+1)} &= \Theta^{(t)} + \mathbf{v}^{(t+1)}.
 \end{aligned}
 $$
@@ -691,7 +691,7 @@ dove:
 
 - $\alpha$ è il **learning rate**,
 - $\lambda \in [0,1)$ è il **coefficiente di momentum**, che controlla il peso del termine di velocità accumulato (valori tipici: $\lambda = 0.9$),
-- $\nabla \ell(\Theta^{(t)})$ è il gradiente della funzione di perdita all’iterazione $t$,
+- $\nabla \ell_{\Theta^{(t)}}$ è il gradiente della funzione di perdita all’iterazione $t$,
 - $\mathbf{v}^{(t)}$ è la velocità accumulata al passo precedente. Al tempo $t=0$, $\mathbf{v}^{(0)} = 0$.
 
 ### Interpretazione Intuitiva
@@ -704,6 +704,9 @@ dove:
 *Figura 1.3: La discesa del gradiente con momentum permette una traiettoria più fluida e veloce verso il minimo, evitando oscillazioni e rallentamenti dovuti a curvature diverse nelle direzioni principali.*
 
 ### Derivazione della forma chiusa per GD con Momentum
+
+
+L’obiettivo è derivare una **forma chiusa** (non ricorsiva) dell’aggiornamento dei parametri al tempo $t+1$, in funzione di tutti i gradienti calcolati fino a quel momento. In questo modo possiamo analizzare in modo più chiaro **l’effetto cumulativo del momentum**, che combina i gradienti passati pesandoli secondo una **decadimento geometrico** controllato dall' iperparametro $\lambda$. Questo permette di evidenziare come il metodo favorisca le direzioni persistenti nel tempo e smorzi le oscillazioni dovute a cambiamenti locali nel paesaggio della funzione di perdita.
 
 Partiamo dalle **equazioni ricorsive** della discesa del gradiente con momentum:
 
