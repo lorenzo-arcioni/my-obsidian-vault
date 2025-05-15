@@ -763,6 +763,81 @@ dove:
 - Quando i gradienti puntano nella **stessa direzione** in iterazioni successive, il termine $\lambda \cdot \mathbf{v}^{(t)}$ **rafforza** la velocità in quella direzione, rendendo l’avanzamento più rapido.
 - Quando la direzione del gradiente **cambia spesso** (es. oscillazioni), il momentum **smorza le variazioni**, stabilizzando l’andamento e migliorando la convergenza.
 
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Funzione di costo
+def f(x, y):
+    return 0.5 * (x**2 + 10 * y**2)
+
+# Gradiente della funzione
+def grad_f(x, y):
+    return np.array([x, 10 * y])
+
+# GD semplice
+def gradient_descent(start, lr, steps):
+    x = np.zeros((steps, 2))
+    x[0] = start
+    for i in range(1, steps):
+        grad = grad_f(*x[i-1])
+        x[i] = x[i-1] - lr * grad
+    return x
+
+# GD con momentum
+def gradient_descent_momentum(start, lr, steps, gamma):
+    x = np.zeros((steps, 2))
+    v = np.zeros(2)
+    x[0] = start
+    for i in range(1, steps):
+        grad = grad_f(*x[i-1])
+        v = gamma * v + lr * grad
+        x[i] = x[i-1] - v
+    return x
+
+# Parametri
+start = np.array([-4.0, 2.0])
+steps = 80
+lr = 0.01
+gamma = 0.75
+optimum = np.array([0.0, 0.0])  # punto di minimo
+
+# Percorsi
+path_gd = gradient_descent(start, lr, steps)
+path_mom = gradient_descent_momentum(start, lr, steps, gamma)
+
+# Contorno della funzione
+X, Y = np.meshgrid(np.linspace(-5, 5, 400), np.linspace(-3, 3, 400))
+Z = f(X, Y)
+levels = np.logspace(-0.5, 3, 20)
+
+# Setup figura allungata
+fig, axs = plt.subplots(2, 1, figsize=(12, 5), dpi=150)
+
+for ax, path, title in zip(
+    axs,
+    [path_gd, path_mom],
+    ['(a) Without momentum', '(b) With momentum']
+):
+    ax.contour(X, Y, Z, levels=levels, cmap='Greens_r', alpha=0.1)
+    ax.plot(path[:, 0], path[:, 1], color='darkorange', marker='o', markersize=2)
+    
+    # Starting point e Solution
+    ax.annotate('Starting Point', xy=path[0], xytext=(-4.8, 2.3), arrowprops=dict(arrowstyle='->'))
+    ax.annotate('Solution', xy=path[-1], xytext=(-2.5, -1.7), arrowprops=dict(arrowstyle='->'))
+    
+    # Ottimo
+    ax.plot(*optimum, 'o', color='steelblue', markersize=6)
+    ax.annotate('Optimum', xy=optimum, xytext=(0.5, 0.3), textcoords='data', ha='left',
+                arrowprops=dict(arrowstyle='->', color='black'))
+
+    ax.set_title(title)
+    ax.axis('off')
+
+plt.tight_layout()
+plt.show()
+```
+
 <img src="../../../images/momentum.png" alt="Momentum Gradient Descent">
 
 *Figura 1.3: La discesa del gradiente con momentum permette una traiettoria più fluida e veloce verso il minimo, evitando oscillazioni e rallentamenti dovuti a curvature diverse nelle direzioni principali.*
