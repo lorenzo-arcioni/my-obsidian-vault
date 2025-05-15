@@ -606,6 +606,12 @@ Qui calcoliamo ogni volta il gradiente su $m$ esempi, quindi un epoca in questo 
 - Vantaggi: bilancia precisione e velocità, sfrutta l'efficienza computazionale del calcolo vettoriale su GPU.
 - È la scelta più comune nelle reti neurali moderne.
 
+#### Considerazioni sull'uso dei Mini-Batch
+
+- Ogni mini-batch può essere elaborato in **parallelo**, caratteristica che si sposa bene con l'aumento di disponibilità e potenza delle **architetture parallele** come le **GPGPU** (General Purpose Graphic Processing Unit), sempre più usate nei compiti di deep learning. In questo caso, la dimensione massima del batch è limitata dall’hardware e dalla rappresentazione in memoria dei dati.
+
+- Mini-batch di **piccole dimensioni** possono avere un **effetto regolarizzante**, introducendo **varianza nella stima del gradiente**. Questo può impedire all’algoritmo di raggiungere il minimo esatto, contribuendo così a **ridurre l’overfitting**. Tuttavia, batch troppo piccoli (nel limite, apprendimento online con un solo dato per volta) introducono **una varianza troppo elevata**, richiedendo l’uso di un **learning rate piccolo** (meglio se **decrescente**) per mantenere la stabilità dell’algoritmo.
+
 ### Confronto Grafico
 
 Il seguente esempio Python illustra la differenza tra Batch, Mini-Batch e Stochastic Gradient Descent, evidenziando le traiettorie nel piano dei parametri:
@@ -757,7 +763,7 @@ dove:
 - Quando i gradienti puntano nella **stessa direzione** in iterazioni successive, il termine $\lambda \cdot \mathbf{v}^{(t)}$ **rafforza** la velocità in quella direzione, rendendo l’avanzamento più rapido.
 - Quando la direzione del gradiente **cambia spesso** (es. oscillazioni), il momentum **smorza le variazioni**, stabilizzando l’andamento e migliorando la convergenza.
 
-<img src="../../../images/momentum.jpg" alt="Momentum Gradient Descent">
+<img src="../../../images/momentum.png" alt="Momentum Gradient Descent">
 
 *Figura 1.3: La discesa del gradiente con momentum permette una traiettoria più fluida e veloce verso il minimo, evitando oscillazioni e rallentamenti dovuti a curvature diverse nelle direzioni principali.*
 
