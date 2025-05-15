@@ -1111,22 +1111,27 @@ In pratica, **SGD** è preferito nei grandi dataset (dove $n$ è molto grande), 
 La discesa del gradiente si conferma come uno degli algoritmi fondamentali nell'ottimizzazione di modelli matematici e machine learning. Attraverso un'analisi multidimensionale, emergono chiaramente diversi aspetti cruciali:
 
 1. **Natura Iterativa e Sfide**:
+
    - La dipendenza dalle condizioni iniziali e la presenza di minimi locali in funzioni non convesse sottolineano l'importanza di strategie di inizializzazione robuste.
    - I punti di sella, sebbene teoricamente problematici, risultano meno critici in pratica grazie all'instabilità numerica e all'alta dimensionalità degli spazi di parametri.
 
 2. **Differenziabilità e Continuità**:
+
    - La differenziabilità della funzione obiettivo è un requisito essenziale per il calcolo del gradiente, con implicazioni pratiche nella scelta delle funzioni di attivazione e di loss.
    - Casi patologici come funzioni con derivate parziali discontinue evidenziano la necessità di verifiche analitiche preliminari.
 
 3. **Aspetti Implementativi**:
+
    - Il *learning rate* si rivela un iperparametro critico, con strategie come il decadimento dinamico e il *line search* che mitigano rischi di divergenza o convergenza lenta.
    - L'eterogeneità delle curvature del terreno di ottimizzazione motiva l'adozione di tecniche avanzate come il momentum, che accelerano la convergenza smorzando le oscillazioni.
 
 4. **Trade-off Computazionali**:
+
    - Il confronto tra Batch GD, SGD e Mini-Batch GD delinea un chiaro compromesso tra precisione, costo computazionale e rumore stocastico, con la variante Mini-Batch che rappresenta spesso il miglior bilanciamento per applicazioni su larga scala.
    - I limiti superiori asintotici rivelano come SGD sia preferibile in scenari *big data* nonostante una convergenza teorica più lenta, grazie alla scalabilità indipendente dalla dimensione del dataset.
 
 5. **Prospettive Moderne**:
+   
    - Estensioni come Nesterov Momentum e ottimizzatori adattativi (es. Adam) ereditano i principi della discesa del gradiente classica, integrando meccanismi di auto-regolazione per gestire paesaggi di loss complessi.
 
 In sintesi, la discesa del gradiente non è solo un algoritmo ma un *framework concettuale* che unisce rigore matematico e pragmatismo computazionale. La sua efficacia deriva dall'armonia tra teoria dell'ottimizzazione, intuizione geometrica e adattamento alle sfide ingegneristiche, rendendolo uno strumento indispensabile nell'era dei modelli ad alta dimensionalità.
