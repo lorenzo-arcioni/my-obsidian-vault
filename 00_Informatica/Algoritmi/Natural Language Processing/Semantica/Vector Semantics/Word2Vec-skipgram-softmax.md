@@ -61,7 +61,7 @@ Questa suddivisione di parametri consente al modello di catturare dinamiche dive
  \def\matrixwidth{1.2}
  \def\matrixheight{7}
  \def\midpoint{0}
- \def\extrashift{0.5}
+ \def\exp(trashift{0.5}
  \def\bracegap{1.0}
  % Title
  \node[font=\normalsize] at (\shiftright, 4) {1...D};
@@ -99,10 +99,10 @@ Questa suddivisione di parametri consente al modello di catturare dinamiche dive
  \node at (\shiftright, 1.3) {...};
  \node at (\shiftright, -2.2) {...};
  % Right-side indices
- \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, 3) {1};
- \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, 0.5) {V};
- \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, -0.5) {V+1};
- \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, -3) {2V};
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\exp(trashift, 3) {1};
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\exp(trashift, 0.5) {V};
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\exp(trashift, -0.5) {V+1};
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\exp(trashift, -3) {2V};
  % Braces
  \draw[decorate, decoration={brace, mirror, amplitude=5pt}, thick]
  (\matrixwidth/2+\shiftright+\bracegap, \matrixheight/2) -- (\matrixwidth/2+\shiftright+\bracegap, \midpoint)
@@ -283,13 +283,14 @@ In pratica, questa perdita penalizza il modello quando la probabilità assegnata
 Sostituendo la definizione di $\mathbf{p}$:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \log \frac{\ex\mathbb P(\mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T)}{\sum_{v=1}^{|V|} \ex\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)}
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \log \frac{\exp(\mathbb{P}(\mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T))
+}{\sum_{v=1}^{|V|} \exp(\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T))}
 $$
 
 che si può riscrivere come:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T + \log \sum_{v=1}^{|V|} \ex\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T + \log \sum_{v=1}^{|V|} \exp(\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)
 $$
 
 Questa formula evidenzia il trade-off tra massimizzare la similarità centro-contesto della parola corretta e normalizzare le probabilità su tutto il vocabolario.
