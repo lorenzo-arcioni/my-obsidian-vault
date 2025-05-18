@@ -12,97 +12,161 @@ Sia $V$ il vocabolario di parole del modello, e sia $D$ la dimensione dello spaz
 
 Indichiamo con:
 
-$$
-\Large \mathbf{\theta} = [\mathbf{\theta}_W; \mathbf{\theta}_C]
+$$\large
+\bm{\theta} =
+\begin{bmatrix}
+\bm{\theta}_W \\ \hline
+\bm{\theta}_C
+\end{bmatrix}
+\quad\text{con}\quad
+\bm{\theta}_W \in \mathbb{R}^{|V| \times d},\quad
+\bm{\theta}_C \in \mathbb{R}^{|V| \times d}
 $$
 
 l'insieme dei parametri del modello, suddiviso in due matrici principali:
 
-- **$\mathbf{\theta}_W$** (matrice degli embedding delle parole centro):
-  - **Dimensione:** $|V| \times D$
-  - Ogni riga di $\mathbf{\theta}_W$ è un vettore che rappresenta una parola specifica **nel ruolo di parola centrale** all’interno di una finestra di contesto. Questo significa che il vettore codifica le proprietà della parola quando è il punto focale della previsione del modello.
-  - Il vettore di embedding in $\mathbf{\theta}_W$ viene usato dal modello per cercare di predire le parole di contesto che la circondano: ad esempio, dato un vettore centrale, il modello calcola la probabilità di ogni parola nel vocabolario come possibile parola di contesto.
-  - Questa rappresentazione è fondamentale perché permette al modello di apprendere relazioni tra parole basate sulle co-occorrenze: parole con significati simili o usi simili tendono ad avere vettori vicini nello spazio degli embedding.
-  - È importante notare che la stessa parola avrà vettori distinti in $\mathbf{\theta}_W$ e in $\mathbf{\theta}_C$, poiché il suo ruolo nel modello cambia (centro vs contesto). Questo permette una rappresentazione più ricca e flessibile del linguaggio.
+- **$\bm{\theta}_W$** (matrice degli embedding delle parole centro):
+ 
+    - **Dimensione:** $|V| \times D$
+    - Ogni riga di $\bm{\theta}_W$ è un vettore che rappresenta una parola specifica **nel ruolo di parola centrale** all’interno di una finestra di contesto. Questo significa che il vettore codifica le proprietà della parola quando è il punto focale della previsione del modello.
+    - Il vettore di embedding in $\bm{\theta}_W$ viene usato dal modello per cercare di predire le parole di contesto che la circondano: ad esempio, dato un vettore centrale, il modello calcola la probabilità di ogni parola nel vocabolario come possibile parola di contesto.
+    - Questa rappresentazione è fondamentale perché permette al modello di apprendere relazioni tra parole basate sulle co-occorrenze: parole con significati simili o usi simili tendono ad avere vettori vicini nello spazio degli embedding.
+    - È importante notare che la stessa parola avrà vettori distinti in $\bm{\theta}_W$ e in $\bm{\theta}_C$, poiché il suo ruolo nel modello cambia (centro vs contesto). Questo permette una rappresentazione più ricca e flessibile del linguaggio.
 
 
-- **$\mathbf{\theta}_C$** (matrice degli embedding delle parole contesto):
-  - **Dimensione:** $|V| \times D$
-  - Ogni riga di $\mathbf{\theta}_C$ è un vettore che rappresenta una parola **quando essa agisce come contesto** di una parola centrale. In altre parole, questi vettori sono usati per modellare le parole che circondano la parola centrale nella finestra di contesto.
-  - La funzione di $\mathbf{\theta}_C$ è catturare le proprietà semantiche e sintattiche delle parole nel loro ruolo di contesto, cioè come "indizi" o segnali che aiutano a prevedere la parola centrale.
-  - Ad esempio, la parola "delicious" avrà un embedding in $\mathbf{\theta}_C$ che riflette il suo uso frequente vicino a parole legate al cibo, mentre la stessa parola avrà un embedding differente in $\mathbf{\theta}_W$ quando appare come parola centrale.
-  - Questa doppia rappresentazione consente al modello di distinguere come una parola si comporta quando è il fulcro della previsione (centro) rispetto a quando è un "supporto" per predire altre parole (contesto).
-  - Grazie a $\mathbf{\theta}_C$, il modello impara a riconoscere quali parole di contesto sono più probabili dati i vettori delle parole centrali, migliorando così la capacità di rappresentare le relazioni semantiche tra parole.
+- **$\bm{\theta}_C$** (matrice degli embedding delle parole contesto):
+
+    - **Dimensione:** $|V| \times D$
+    - Ogni riga di $\bm{\theta}_C$ è un vettore che rappresenta una parola **quando essa agisce come contesto** di una parola centrale. In altre parole, questi vettori sono usati per modellare le parole che circondano la parola centrale nella finestra di contesto.
+    - La funzione di $\bm{\theta}_C$ è catturare le proprietà semantiche e sintattiche delle parole nel loro ruolo di contesto, cioè come "indizi" o segnali che aiutano a prevedere la parola centrale.
+    - Ad esempio, la parola "delicious" avrà un embedding in $\bm{\theta}_C$ che riflette il suo uso frequente vicino a parole legate al cibo, mentre la stessa parola avrà un embedding differente in $\bm{\theta}_W$ quando appare come parola centrale.
+    - Questa doppia rappresentazione consente al modello di distinguere come una parola si comporta quando è il fulcro della previsione (centro) rispetto a quando è un "supporto" per predire altre parole (contesto).
+    - Grazie a $\bm{\theta}_C$, il modello impara a riconoscere quali parole di contesto sono più probabili dati i vettori delle parole centrali, migliorando così la capacità di rappresentare le relazioni semantiche tra parole.
 
 Questa suddivisione di parametri consente al modello di catturare dinamiche diverse, come il significato di una parola quando appare come centro o quando appare come contesto nella finestra di contesto.
 
+```tikz
+\usepackage{tikz}
+\documentclass[tikz, border=2pt]{standalone}
+\usepackage{amsmath}
+\usetikzlibrary{decorations.brace, positioning}
+\begin{document}
+\begin{tikzpicture}
+ % Styles
+ \tikzset{
+ smalldot/.style={circle, fill=red!70!black, inner sep=0pt, minimum size=2pt}
+ }
+ % Shift to center the matrix (visually)
+ \def\shiftright{10} % Aumentato ulteriormente per spostare tutto più a destra
+ \def\matrixwidth{1.2}
+ \def\matrixheight{7}
+ \def\midpoint{0}
+ \def\extrashift{0.5}
+ \def\bracegap{1.0}
+ % Title
+ \node[font=\normalsize] at (\shiftright, 4) {1...D};
+ % Main rectangle - ora con la linea orizzontale spezzata
+ \draw[thin] (-\matrixwidth/2+\shiftright, -\matrixheight/2) -- (-\matrixwidth/2+\shiftright, \matrixheight/2);
+ \draw[thin] (\matrixwidth/2+\shiftright, -\matrixheight/2) -- (\matrixwidth/2+\shiftright, \matrixheight/2);
+ \draw[thin] (-\matrixwidth/2+\shiftright, \matrixheight/2) -- (\matrixwidth/2+\shiftright, \matrixheight/2);
+ \draw[thin] (-\matrixwidth/2+\shiftright, -\matrixheight/2) -- (\matrixwidth/2+\shiftright, -\matrixheight/2);
+ % Upper and lower fill
+ \fill[green!30!gray!20] (-\matrixwidth/2+\shiftright, \midpoint) rectangle (\matrixwidth/2+\shiftright, \matrixheight/2);
+ \fill[blue!20!gray!10] (-\matrixwidth/2+\shiftright, -\matrixheight/2) rectangle (\matrixwidth/2+\shiftright, \midpoint);
+ % Dots inside
+ \foreach \y in {3, 2, 0.5, -0.5, -1.5, -3} {
+ \foreach \x in {-0.7, 0, 0.7} {
+ \node[smalldot] at (\x*0.5+\shiftright, \y) {};
+ }
+ }
+ % Word labels
+ \node[text=green!50!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, 3) {aardvark};
+ \node[text=green!50!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, 2) {apricot};
+ \node[text=green!50!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, 1.3) {...};
+ \node[text=green!50!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, 0.5) {zebra};
+ \node[text=violet!70!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, -0.5) {aardvark};
+ \node[text=violet!70!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, -1.5) {apricot};
+ \node[text=violet!70!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, -2.2) {...};
+ \node[text=violet!70!black, anchor=east] at (-\matrixwidth/2+\shiftright-0.3, -3) {zebra};
+ % Theta (spostato più a sinistra)
+ \node at (\shiftright - 3.5, -0.5) {$\boldsymbol{\theta} =$};
+ % Linea centrale spezzata (con un gap)
+ \def\gapsize{0.5} % Dimensione dello spazio nella linea centrale
+ \draw[thin] (-\matrixwidth/2+\shiftright, \midpoint) -- (\shiftright-\gapsize, \midpoint); % Prima parte della linea orizzontale
+ \draw[thin] (\shiftright+\gapsize, \midpoint) -- (\matrixwidth/2+\shiftright, \midpoint); % Seconda parte della linea orizzontale
+ 
+ % Inner dots
+ \node at (\shiftright, 1.3) {...};
+ \node at (\shiftright, -2.2) {...};
+ % Right-side indices
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, 3) {1};
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, 0.5) {V};
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, -0.5) {V+1};
+ \node[text=gray!80!black] at (\matrixwidth/2+\shiftright+\extrashift, -3) {2V};
+ % Braces
+ \draw[decorate, decoration={brace, mirror, amplitude=5pt}, thick]
+ (\matrixwidth/2+\shiftright+\bracegap, \matrixheight/2) -- (\matrixwidth/2+\shiftright+\bracegap, \midpoint)
+ node[midway, right=7pt] {W \quad target words};
+ \draw[decorate, decoration={brace, mirror, amplitude=5pt}, thick]
+ (\matrixwidth/2+\shiftright+\bracegap, \midpoint) -- (\matrixwidth/2+\shiftright+\bracegap, -\matrixheight/2)
+ node[midway, right=7pt] {C \quad context \& noisewords};
+\end{tikzpicture}
+\end{document}
+```
+
 ### Perché due matrici distinte?
 
-È fondamentale notare che nel modello Skip-Gram, le parole assumono ruoli diversi:
-- Come parola **centro** (target da cui si predice il contesto),
-- Come parola **contesto** (parole da prevedere attorno alla parola centro).
+- **Ruoli diversi**: 
 
-Di conseguenza, per ogni parola del vocabolario esistono due vettori distinti:
-- Uno quando la parola agisce da centro,
-- Uno quando la parola è parte del contesto.
+  - $\mathbf{\theta}_W$: embedding quando la parola è **centro** (target da cui si predice).  
+  - $\mathbf{\theta}_C$: embedding quando la parola è **contesto** (segnale per la previsione).
 
-Questo doppio embedding consente al modello di catturare dinamiche diverse, perché il significato di una parola può essere influenzato in modo differente dal suo ruolo nella frase.
+- **Esempio** (“Il **gatto** nero dorme…”):
 
-### Esempi che chiariscono la differenza tra parole centro e parole contesto
+  - “gatto” → $\mathbf{\theta}_W$ cattura come “gatto” governa il contesto (“nero”, “dorme”).  
+  - “nero”, “dorme” → $\mathbf{\theta}_C$ catturano come questi agiscono da indizi per “gatto”.
 
-Per capire perché è necessario distinguere tra embedding delle parole come **centro** ($\mathbf{\theta}_W$) e come **contesto** ($\mathbf{\theta}_C$), consideriamo un esempio pratico.
+### ⚠️ Problemi con un singolo embedding
 
-Supponiamo di avere la frase:
-
-> "Il **gatto** nero dorme sul tappeto."
-
-- La parola **gatto** qui è la parola centrale su cui vogliamo fare la previsione.
-- Le parole attorno a "gatto" — come "Il", "nero", "dorme" — sono le parole di contesto.
-
-Quando il modello guarda la parola **gatto** come parola centrale, la rappresenta con un vettore in $\mathbf{\theta}_W$ che sintetizza come questa parola "comanda" il contesto, cioè quali parole è probabile che la circondino.
-
-Al contrario, le parole di contesto come "nero" o "dorme" hanno un embedding in $\mathbf{\theta}_C$ che riflette il loro ruolo di supporto: in questo caso, aiutano a fornire informazioni per riconoscere o prevedere la parola centrale.
-
-### Perché questa distinzione è importante?
-
-- La stessa parola può assumere ruoli diversi: una parola usata come centro (soggetto della previsione) ha una funzione diversa da quando è usata come contesto (fornisce segnali per la previsione).
+1. **Ruolo funzionale perso**
   
-- Ad esempio, la parola **"rosso"** in $\mathbf{\theta}_C$ rappresenta come un aggettivo che spesso accompagna nomi di colori o oggetti, mentre in $\mathbf{\theta}_W$ potrebbe riflettere quali contesti (parole di contorno) è probabile che appaiano vicino a "rosso" come parola centrale.
+   - Ogni parola può comparire sia come **centrale** sia come **di contesto**.
+   - Esempio:
+  
+     - “**book**” come centrale (es. *"I read a book about history."*) → predice parole come *read*, *history*.
+     - “**book**” come contesto (es. *"She put the book on the table."*) → aiuta a predire *put*, *table*.
+  
+   - Se usiamo **un solo embedding**, non distinguiamo questi ruoli → perdiamo informazione funzionale importante.
 
-- Questa doppia rappresentazione permette al modello di imparare relazioni più sottili e asimmetriche tra le parole. Se avessimo un solo embedding per parola, perderemmo questa distinzione funzionale.
+2. **Relazioni asimmetriche non modellate**
 
-In sintesi, $\mathbf{\theta}_W$ e $\mathbf{\theta}_C$ rappresentano la stessa parola in due "ruoli" diversi, consentendo al modello di cogliere meglio le strutture e le dipendenze linguistiche.
+   - Il significato delle relazioni cambia a seconda della direzione:
 
-### Problemi nell'usare un solo embedding per ogni parola (senza distinzione centro/contesto)
+     - “**eat**” → “**food**” = tipico: il verbo suggerisce l’oggetto (cosa si mangia).
+     - “**food**” → “**eat**” = più debole: “food” potrebbe comparire in molti altri contesti (buy, cook, smell…).
+  
+   - Se usiamo lo stesso embedding per “food” in entrambi i ruoli, non possiamo catturare questa asimmetria.
+   - Due matrici permettono:
 
-Se invece di avere due matrici separate $\mathbf{\theta}_W$ e $\mathbf{\theta}_C$ usassimo un **unico embedding** per ogni parola, cioè una singola rappresentazione vettoriale indipendentemente dal ruolo, potremmo incorrere in alcuni problemi importanti:
+     - $\theta_W$(eat) → embedding ottimizzato per predire cibo.
+     - $\theta_C$(food) → embedding ottimizzato per essere predetto da verbi come *eat*.
 
-1. **Perdita di informazioni sul ruolo funzionale della parola:**
+3. **Embedding meno precisi**
 
-   - La parola può assumere significati o funzioni diverse quando è **centro** o quando è **contesto**.
-   - Ad esempio, la parola "bank" (in inglese) può riferirsi a una sponda di un fiume o a una banca finanziaria. Come parola centrale, potrebbe essere più importante catturare il significato principale, mentre come contesto può fornire indizi diversi.
-   - Usare un unico embedding rende difficile modellare questa ambiguità funzionale, poiché la stessa rappresentazione deve mediare entrambi i ruoli.
-
-2. **Difficoltà nel modellare relazioni asimmetriche:**
-
-   - Le relazioni tra parola centrale e contesto non sono simmetriche. Ad esempio, la parola centrale "mangiare" probabilmente si accompagna a contesti come "cibo", "pasto", mentre la parola "cibo" come contesto aiuta a predire "mangiare".
-   - Un solo embedding non riesce a distinguere bene questi ruoli, perché la relazione "mangiare" → "cibo" non è la stessa di "cibo" → "mangiare".
-   - Due embedding distinti permettono di modellare questa asimmetria, migliorando la qualità delle previsioni.
-
-3. **Capacità ridotta di apprendere pattern più complessi:**
-
-   - Con un unico embedding, il modello deve trovare una media "compromissoria" per rappresentare tutte le funzioni della parola, il che può portare a una perdita di precisione.
-   - Questo può tradursi in embedding meno discriminativi e quindi in prestazioni inferiori nelle attività di rappresentazione semantica.
+   - Un solo embedding deve essere "tuttofare" → media tra ruoli e significati.
+   - Risultato: vettori **più confusi, meno specializzati**, e performance peggiori in downstream tasks.
+   - Due matrici aiutano a ottenere rappresentazioni **più informative e discriminative**.
 
 ### Numero totale di parametri
 
 Il numero complessivo di parametri del modello è dato dalla somma degli elementi di entrambe le matrici:
 
 $$
-2 \times |V| \times D
+2 \cdot |V| \times D
 $$
 
 Ovvero:
+
 - $|V| \times D$ parametri per gli embedding come centro,
 - $|V| \times D$ parametri per gli embedding come contesto.
 
@@ -115,7 +179,7 @@ Immagina il vocabolario come una lista di parole:
 | 1      | "lemon"     | vettore in $\mathbb{R}^D$              | vettore in $\mathbb{R}^D$                 |
 | 2      | "tablespoon"| vettore in $\mathbb{R}^D$              | vettore in $\mathbb{R}^D$                 |
 | ...    | ...         | ...                                     | ...                                        |
-| |V|    | "jam"       | vettore in $\mathbb{R}^D$              | vettore in $\mathbb{R}^D$                 |
+| \|V\|    | "jam"       | vettore in $\mathbb{R}^D$              | vettore in $\mathbb{R}^D$                 |
 
 - Quando "tablespoon" è parola centro, useremo la riga 2 di $\mathbf{\theta}_W$.
 - Quando "tablespoon" è nel contesto, useremo la riga 2 di $\mathbf{\theta}_C$.
@@ -131,7 +195,7 @@ Rappresentare le parole come vettori in uno spazio continuo di dimensione $D$ co
 
 - $\mathbf{\theta}_W$ e $\mathbf{\theta}_C$ sono matrici di embedding distinte per parola centro e contesto.
 - Entrambe hanno dimensione $|V| \times D$.
-- Complessivamente abbiamo $2 \times |V| \times D$ parametri da imparare.
+- Complessivamente abbiamo $2 \cdot |V| \times D$ parametri da imparare.
 - Questo doppio embedding è la chiave per modellare le relazioni tra parole in un modo più ricco e flessibile.
 
 Questa struttura di parametri sarà la base su cui il modello Skip-Gram costruirà la sua funzione di probabilità e la sua funzione di perdita durante l'addestramento.
@@ -156,15 +220,15 @@ Il modello considera una finestra di contesto di ampiezza $m$ (ad esempio $m=2$)
 
 Vogliamo modellare la probabilità congiunta di osservare le parole di contesto data la parola centrale:
 
-$$ p(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} | w_t; \mathbf{\theta}) $$
+$$ \mathbb P(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} \mid w_t; \mathbf{\theta}) $$
 
 Per semplicità si assume una **forte indipendenza condizionata** tra le parole di contesto dato il centro:
 
-$$ p(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} | w_t; \mathbf{\theta}) \approx \prod_{j=-m, j \neq 0}^{m} p(w_{t+j} | w_t; \mathbf{\theta}) $$
+$$ \mathbb P(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} \mid w_t; \mathbf{\theta}) \approx \prod_{j=-m, j \neq 0}^{m} \mathbb P(w_{t+j} \mid w_t; \mathbf{\theta}) $$
 
 Questo significa che ogni parola di contesto è indipendente dalle altre data la parola centrale.
 
-## Come si calcola $p(w_{t+j}|w_t)$?
+## Come si calcola $\mathbb P(w_{t+j}\mid w_t)$?
 
 Dato un centro $w_t$, vogliamo predire la parola di contesto $w_{t+j}$. Questa probabilità è modellata come una distribuzione categorica su tutto il vocabolario $V$.
 
@@ -172,23 +236,29 @@ Dato un centro $w_t$, vogliamo predire la parola di contesto $w_{t+j}$. Questa p
 2. Calcoliamo i punteggi (logits) per tutte le parole del vocabolario come prodotto scalare tra ogni vettore di contesto in $\mathbf{\theta}_C$ e l'embedding del centro:
 
    $$
-   \mathbf{z} = \mathbf{\theta}_C \cdot {\mathbf{\theta}_W^i}^T
+   \underbrace{\mathbf{z}}_{|V|\times 1}=\overbrace{\underbrace{\bm{\theta}_C}_{|V|\times D}}^{\text{as context}}\cdot\overbrace{\underbrace{{\bm{\theta}_{W}^i}^T}_{D\times 1}}^{\text{as center}}
    $$
 
    dove $\mathbf{z}$ è un vettore di dimensione $|V|$, con ogni elemento che rappresenta la similarità (dot product) tra la parola centro e una possibile parola di contesto.
 
 3. Applichiamo la funzione **softmax** ai logits per ottenere una distribuzione di probabilità:
 
-   $$
-   \mathbf{p} = \text{softmax}(\mathbf{z}) = \frac{e^{z_v}}{\sum_{v'=1}^{|V|} e^{z_{v'}}}
-   $$
+  $$
+  \mathbf{p} = \text{softmax}(\mathbf{z}) = \Large\begin{bmatrix}
+  \frac{e^{z_1}}{\sum_{i=1}^{|V|} e^{z_{i}}} \\
+  \\
+  \vdots \\
+  \\
+  \frac{e^{z_{|V|}}}{\sum_{i=1}^{|V|} e^{z_{i}}}
+  \end{bmatrix}
+  $$
 
 Così otteniamo la probabilità di ogni parola del vocabolario come contesto dato il centro.
 
 ## Interpretazione
 
 - $\mathbf{p}$ è una distribuzione di probabilità discreta su $|V|$ parole.
-- L'elemento $p(w_{t+j} = \text{`tablespoon`} | w_t = \text{`apricot`})$ rappresenta la probabilità che la parola "tablespoon" sia nel contesto della parola "apricot".
+- L'elemento $\mathbb P(w_{t+j} = \text{`tablespoon`} | w_t = \text{`apricot`})$ rappresenta la probabilità che la parola "tablespoon" sia nel contesto della parola "apricot".
 
 ## Funzione di perdita (loss)
 
@@ -203,7 +273,7 @@ $$
 - La funzione di perdita è la **cross-entropy** tra la distribuzione vera e quella predetta:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{y}^\top \log \mathbf{p} = -\log p(w_{t+j} | w_t; \mathbf{\theta})
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{y}^\top \log \mathbf{p} = -\log \mathbb P(w_{t+j} | w_t; \mathbf{\theta})
 $$
 
 In pratica, questa perdita penalizza il modello quando la probabilità assegnata alla parola reale di contesto è bassa.
@@ -213,13 +283,13 @@ In pratica, questa perdita penalizza il modello quando la probabilità assegnata
 Sostituendo la definizione di $\mathbf{p}$:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \log \frac{\exp(\mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T)}{\sum_{v=1}^{|V|} \exp(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)}
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \log \frac{\ex\mathbb P(\mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T)}{\sum_{v=1}^{|V|} \ex\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)}
 $$
 
 che si può riscrivere come:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T + \log \sum_{v=1}^{|V|} \exp(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T + \log \sum_{v=1}^{|V|} \ex\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)
 $$
 
 Questa formula evidenzia il trade-off tra massimizzare la similarità centro-contesto della parola corretta e normalizzare le probabilità su tutto il vocabolario.
@@ -229,13 +299,13 @@ Questa formula evidenzia il trade-off tra massimizzare la similarità centro-con
 Per ogni parola centrale $w_t$, la probabilità congiunta di osservare tutte le parole di contesto nella finestra è:
 
 $$
-L(\mathbf{\theta}) = \prod_{j=-m, j \neq 0}^{m} p(w_{t+j} | w_t; \mathbf{\theta})
+L(\mathbf{\theta}) = \prod_{j=-m, j \neq 0}^{m} \mathbb P(w_{t+j} | w_t; \mathbf{\theta})
 $$
 
 Il nostro obiettivo è trovare i parametri $\mathbf{\theta}$ che massimizzano la likelihood su tutto il corpus, ossia:
 
 $$
-\mathbf{\theta}^* = \arg\max_{\mathbf{\theta}} \prod_{t=1}^T \prod_{j=-m, j \neq 0}^m p(w_{t+j} | w_t; \mathbf{\theta})
+\mathbf{\theta}^* = \arg\max_{\mathbf{\theta}} \prod_{t=1}^T \prod_{j=-m, j \neq 0}^m \mathbb P(w_{t+j} | w_t; \mathbf{\theta})
 $$
 
 ## Minimizzazione della loss totale
@@ -243,7 +313,7 @@ $$
 Si usa la funzione di perdita negativa del logaritmo della likelihood, che è equivalente a minimizzare la somma della cross-entropy su tutte le parole del corpus:
 
 $$
-\mathbf{\theta}^* = \arg\min_{\mathbf{\theta}} \mathcal{L}(\mathbf{\theta}) = -\frac{1}{T} \sum_{t=1}^T \sum_{j=-m, j \neq 0}^m \log p(w_{t+j} | w_t; \mathbf{\theta})
+\mathbf{\theta}^* = \arg\min_{\mathbf{\theta}} \mathcal{L}(\mathbf{\theta}) = -\frac{1}{T} \sum_{t=1}^T \sum_{j=-m, j \neq 0}^m \log \mathbb P(w_{t+j} | w_t; \mathbf{\theta})
 $$
 
 Così il modello impara ad associare ad ogni parola centrale i vettori che predicono meglio il suo contesto.

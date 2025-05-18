@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "4f8fd489edb5d9c8",
+        "id": "b2dc7a6f0765ddbc",
         "type": "tabs",
         "children": [
           {
-            "id": "0f4d551604f1b5e8",
+            "id": "aec93fe64e1f7988",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Part-of-Speech Tagging.md",
-                "mode": "preview",
+                "file": "00_Informatica/Algoritmi/Natural Language Processing/Semantica/Vector Semantics/Word2Vec-skipgram-softmax.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Part-of-Speech Tagging"
+              "title": "Word2Vec-skipgram-softmax"
             }
           }
         ]
@@ -78,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 542.5026054382324,
-    "collapsed": true
+    "width": 279.5
   },
   "right": {
     "id": "51b5e3a0db5058da",
@@ -169,8 +168,10 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "0f4d551604f1b5e8",
+  "active": "aec93fe64e1f7988",
   "lastOpenFiles": [
+    "00_Informatica/Algoritmi/Natural Language Processing/Semantica/Vector Semantics/Word2Vec.md",
+    "00_Informatica/Algoritmi/Natural Language Processing/Semantica/Vector Semantics/Word2Vec-skipgram-softmax.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora, Tokenizzazione e Normalizzazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Part-of-Speech Tagging.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Esercizio sui Language Models.md",
@@ -204,8 +205,6 @@
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Linear Models/Multicollinearità.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Tipi di Matrici.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Definizione di Scalare, Vettore, Matrice e Tensore.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Operazioni Elementari su Scalari, Vettori, Matrici e Tensori.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Operazioni Elementari su Vettori e Matrici.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Introduzione",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_b.svg",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_a.svg",
