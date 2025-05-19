@@ -218,13 +218,13 @@ Il modello considera una finestra di contesto di ampiezza $m$ (ad esempio $m=2$)
 
 ## Obiettivo del modello
 
-Vogliamo modellare la probabilità congiunta di osservare le parole di contesto data la parola centrale:
+Vogliamo modellare la probabilità congiunta di osservare le parole di contesto data la parola centrale $w_t$, ossia:
 
-$$ \mathbb P(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} \mid w_t; \mathbf{\theta}) $$
+$$\mathbb P(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} \mid w_t; \mathbf{\theta}) $$
 
 Per semplicità si assume una **forte indipendenza condizionata** tra le parole di contesto dato il centro:
 
-$$ \mathbb P(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} \mid w_t; \mathbf{\theta}) \approx \prod_{j=-m, j \neq 0}^{m} \mathbb P(w_{t+j} \mid w_t; \mathbf{\theta}) $$
+$$ \mathbb P(w_{t-2}, w_{t-1}, w_{t+1}, w_{t+2} \mid w_t; \mathbf{\theta}) \approx \prod_{j=-m, j \neq 0}^{m} \mathbb P(w_{t+j} \mid w_t; \mathbf{\theta})$$
 
 Questo significa che ogni parola di contesto è indipendente dalle altre data la parola centrale.
 
@@ -236,7 +236,7 @@ Dato un centro $w_t$, vogliamo predire la parola di contesto $w_{t+j}$. Questa p
 2. Calcoliamo i punteggi (logits) per tutte le parole del vocabolario come prodotto scalare tra ogni vettore di contesto in $\mathbf{\theta}_C$ e l'embedding del centro:
 
    $$
-   \underbrace{\mathbf{z}}_{|V|\times 1}=\overbrace{\underbrace{\bm{\theta}_C}_{|V|\times D}}^{\text{as context}}\cdot\overbrace{\underbrace{{\bm{\theta}_{W}^i}^T}_{D\times 1}}^{\text{as center}}
+   \underbrace{\mathbf{z}_i}_{|V|\times 1}=\overbrace{\underbrace{\bm{\theta}_C}_{|V|\times D}}^{\text{as context}}\cdot\overbrace{\underbrace{{\bm{\theta}_{W}^i}^T}_{D\times 1}}^{\text{as center}}
    $$
 
    dove $\mathbf{z}$ è un vettore di dimensione $|V|$, con ogni elemento che rappresenta la similarità (dot product) tra la parola centro e una possibile parola di contesto.
@@ -244,7 +244,22 @@ Dato un centro $w_t$, vogliamo predire la parola di contesto $w_{t+j}$. Questa p
 3. Applichiamo la funzione **softmax** ai logits per ottenere una distribuzione di probabilità:
 
   $$
-  \mathbf{p} = \text{softmax}(\mathbf{z}) = \Large\begin{bmatrix}
+  \mathbf{p}_i = \text{softmax}(\mathbf{z}_i) = \begin{bmatrix}
+  p_1 \\
+  \\
+  \vdots \\
+  \\
+  p_{|V|}
+  \\[0.45em]
+  \end{bmatrix}= \begin{bmatrix}
+  \mathbb P(w_{t+j} = \text{`apple`} | w_t = \text{`apricot`}) \\
+  \\
+  \vdots \\
+  \\
+  \mathbb P(w_{t+j} = \text{`zucchini`} | w_t = \text{`apricot`})
+  \end{bmatrix}
+  =  
+  \Large\begin{bmatrix}
   \frac{e^{z_1}}{\sum_{i=1}^{|V|} e^{z_{i}}} \\
   \\
   \vdots \\
@@ -253,16 +268,20 @@ Dato un centro $w_t$, vogliamo predire la parola di contesto $w_{t+j}$. Questa p
   \end{bmatrix}
   $$
 
-Così otteniamo la probabilità di ogni parola del vocabolario come contesto dato il centro.
+Così otteniamo la probabilità di ogni parola del vocabolario come contesto dato il centro $w_t$.
+
+**Remark.** L'indice della parola $w_t$ nella matrice $\mathbf{\theta}_W$ è $i$.
 
 ## Interpretazione
 
 - $\mathbf{p}$ è una distribuzione di probabilità discreta su $|V|$ parole.
 - L'elemento $\mathbb P(w_{t+j} = \text{`tablespoon`} | w_t = \text{`apricot`})$ rappresenta la probabilità che la parola "tablespoon" sia nel contesto della parola "apricot".
+- Assumiamo che $\text{`tablespoon`}$ abbia indice $g$ nella matrice $\mathbf{\theta}_C$.
+- Il vettore riga $\mathbf{\theta}_C^g$ rappresenta l'embedding di "tablespoon".
 
 ## Funzione di perdita (loss)
 
-Per addestrare il modello, abbiamo bisogno di confrontare la distribuzione predetta $\mathbf{p}$ con la parola di contesto **reale** osservata nel testo.
+Per addestrare il modello, abbiamo bisogno di confrontare la distribuzione predetta $\mathbf{p}_i$ con la parola di contesto **reale** osservata nel testo.
 
 - La parola vera di contesto è rappresentata da un vettore **one-hot** $\mathbf{y}$, che è zero per tutte le parole tranne che per l'indice della parola reale (ad esempio "tablespoon").
   
@@ -270,27 +289,27 @@ $$
 \mathbf{y} = [0, 0, ..., 1, ..., 0]
 $$
 
-- La funzione di perdita è la **cross-entropy** tra la distribuzione vera e quella predetta:
+- La funzione di loss è la **cross-entropy** tra la distribuzione vera e quella predetta:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{y}^\top \log \mathbf{p} = -\log \mathbb P(w_{t+j} | w_t; \mathbf{\theta})
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{y}^\top \log \mathbf{p}_i = -\log \mathbb P(w_{t+j} = \text{`tablespoon`} | w_t = \text{`apricot`}; \mathbf{\theta})
 $$
 
-In pratica, questa perdita penalizza il modello quando la probabilità assegnata alla parola reale di contesto è bassa.
+In pratica, questa loss penalizza il modello quando la probabilità assegnata alla parola reale di contesto è bassa.
 
 ## Forma esplicita della loss
 
-Sostituendo la definizione di $\mathbf{p}$:
+Sostituendo la definizione di $\mathbf{p}_i$:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \log \frac{\exp(\mathbb{P}(\mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T))
-}{\sum_{v=1}^{|V|} \exp(\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T))}
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \log \frac{\exp(\mathbf{\theta}_C^g \cdot {\mathbf{\theta}_W^i}^T)
+}{\sum_{v=1}^{|V|} \exp(\mathbf{\theta}_C^v \cdot {\mathbf{\theta}_W^i}^T)}
 $$
 
 che si può riscrivere come:
 
 $$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{\theta}_C[w_{t+j}] \cdot \mathbf{\theta}_W[w_t]^T + \log \sum_{v=1}^{|V|} \exp(\mathbb P(\mathbf{\theta}_C[v] \cdot \mathbf{\theta}_W[w_t]^T)
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \underbrace{\mathbf{\theta}_C^g \cdot {\mathbf{\theta}_W^i}^T}_\text{Similarità contesto-parola} + \underbrace{\log \sum_{v=1}^{|V|} \exp(\mathbf{\theta}_C^v \cdot {\mathbf{\theta}_W^i}^T)}_\text{Similarità di tutti gli altri contesti con la stessa parola}
 $$
 
 Questa formula evidenzia il trade-off tra massimizzare la similarità centro-contesto della parola corretta e normalizzare le probabilità su tutto il vocabolario.
