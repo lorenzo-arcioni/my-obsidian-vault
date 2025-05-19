@@ -15,7 +15,7 @@ Indichiamo con:
 $$\large
 \bm{\theta} =
 \begin{bmatrix}
-\bm{\theta}_W \\ \hline
+\bm{\theta}_W \\[0.3em] \hline \\[-0.9em]
 \bm{\theta}_C
 \end{bmatrix}
 \quad\text{con}\quad
@@ -272,48 +272,6 @@ Così otteniamo la probabilità di ogni parola del vocabolario come contesto dat
 
 **Remark.** L'indice della parola $w_t$ nella matrice $\mathbf{\theta}_W$ è $i$.
 
-## Interpretazione
-
-- $\mathbf{p}$ è una distribuzione di probabilità discreta su $|V|$ parole.
-- L'elemento $\mathbb P(w_{t+j} = \text{`tablespoon`} | w_t = \text{`apricot`})$ rappresenta la probabilità che la parola "tablespoon" sia nel contesto della parola "apricot".
-- Assumiamo che $\text{`tablespoon`}$ abbia indice $g$ nella matrice $\mathbf{\theta}_C$.
-- Il vettore riga $\mathbf{\theta}_C^g$ rappresenta l'embedding di "tablespoon".
-
-## Funzione di perdita (loss)
-
-Per addestrare il modello, abbiamo bisogno di confrontare la distribuzione predetta $\mathbf{p}_i$ con la parola di contesto **reale** osservata nel testo.
-
-- La parola vera di contesto è rappresentata da un vettore **one-hot** $\mathbf{y}$, che è zero per tutte le parole tranne che per l'indice della parola reale (ad esempio "tablespoon").
-  
-$$
-\mathbf{y} = [0, 0, ..., 1, ..., 0]
-$$
-
-- La funzione di loss è la **cross-entropy** tra la distribuzione vera e quella predetta:
-
-$$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \mathbf{y}^\top \log \mathbf{p}_i = -\log \mathbb P(w_{t+j} = \text{`tablespoon`} | w_t = \text{`apricot`}; \mathbf{\theta})
-$$
-
-In pratica, questa loss penalizza il modello quando la probabilità assegnata alla parola reale di contesto è bassa.
-
-## Forma esplicita della loss
-
-Sostituendo la definizione di $\mathbf{p}_i$:
-
-$$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \log \frac{\exp(\mathbf{\theta}_C^g \cdot {\mathbf{\theta}_W^i}^T)
-}{\sum_{v=1}^{|V|} \exp(\mathbf{\theta}_C^v \cdot {\mathbf{\theta}_W^i}^T)}
-$$
-
-che si può riscrivere come:
-
-$$
-\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta}) = - \underbrace{\mathbf{\theta}_C^g \cdot {\mathbf{\theta}_W^i}^T}_\text{Similarità contesto-parola} + \underbrace{\log \sum_{v=1}^{|V|} \exp(\mathbf{\theta}_C^v \cdot {\mathbf{\theta}_W^i}^T)}_\text{Similarità di tutti gli altri contesti con la stessa parola}
-$$
-
-Questa formula evidenzia il trade-off tra massimizzare la similarità centro-contesto della parola corretta e normalizzare le probabilità su tutto il vocabolario.
-
 ## Massimizzazione della likelihood su tutta la finestra
 
 Per ogni parola centrale $w_t$, la probabilità congiunta di osservare tutte le parole di contesto nella finestra è:
@@ -328,21 +286,485 @@ $$
 \mathbf{\theta}^* = \arg\max_{\mathbf{\theta}} \prod_{t=1}^T \prod_{j=-m, j \neq 0}^m \mathbb P(w_{t+j} | w_t; \mathbf{\theta})
 $$
 
-## Minimizzazione della loss totale
+## Funzione di perdita (loss) derivata dalla likelihood
 
-Si usa la funzione di perdita negativa del logaritmo della likelihood, che è equivalente a minimizzare la somma della cross-entropy su tutte le parole del corpus:
+L’obiettivo dell'addestramento è massimizzare la **likelihood** dei dati osservati, ovvero la probabilità di osservare le parole di contesto dato il centro, su tutto il corpus:
 
 $$
-\mathbf{\theta}^* = \arg\min_{\mathbf{\theta}} \mathcal{L}(\mathbf{\theta}) = -\frac{1}{T} \sum_{t=1}^T \sum_{j=-m, j \neq 0}^m \log \mathbb P(w_{t+j} | w_t; \mathbf{\theta})
+L(\mathbf{\theta}) = \prod_{t=1}^T \prod_{j=-m, j \neq 0}^{m} \mathbb P(w_{t+j} \mid w_t; \mathbf{\theta})
 $$
 
-Così il modello impara ad associare ad ogni parola centrale i vettori che predicono meglio il suo contesto.
+Lavorare direttamente con la likelihood può essere numericamente instabile, quindi passiamo al **logaritmo della likelihood** (log-likelihood), che è una trasformazione monotona e rende il prodotto una somma:
 
-## Riassunto
+$$
+\log L(\mathbf{\theta}) = \sum_{t=1}^T \sum_{j=-m, j \neq 0}^{m} \log \mathbb P(w_{t+j} \mid w_t; \mathbf{\theta})
+$$
 
-- Lo Skip-gram con softmax usa due embedding per ogni parola: uno come parola centrale, uno come contesto.
-- Il modello prevede la probabilità delle parole di contesto data una parola centrale usando prodotti scalari e softmax.
-- La funzione di perdita è la cross-entropy tra la distribuzione predetta e la parola di contesto reale.
-- L’ottimizzazione massimizza la probabilità del contesto osservato sul corpus, migliorando gli embedding.
+Il nostro obiettivo è quindi **massimizzare** questa log-likelihood:
 
-Questo approccio self-supervision permette di apprendere rappresentazioni semantiche delle parole direttamente da grandi quantità di testo non etichettato, ed è la base di modelli di embedding ampiamente usati nel NLP.
+$$
+\mathbf{\theta}^* = \arg\max_{\mathbf{\theta}} \log L(\mathbf{\theta})
+$$
+
+In pratica, però, gli algoritmi di ottimizzazione numerica (come la discesa del gradiente) lavorano meglio se formuliamo il problema come **minimizzazione**. Per questo motivo, definiamo la **funzione di perdita** come l'opposto della log-likelihood:
+
+$$
+\mathcal{L}(\mathbf{\theta}) = - \sum_{t=1}^T \sum_{j=-m, j \neq 0}^{m} \log \mathbb P(w_{t+j} \mid w_t; \mathbf{\theta})
+$$
+
+Così facendo, possiamo minimizzare la funzione $\mathcal {L}$ per ottenere i parametri $\mathbf{\theta}^*$ che massimizzano la log-likelihood.
+
+Possiamo ora esplicitare $\mathbb P(w_{t+j} \mid w_t)$ usando la softmax, come visto in precedenza. Supponiamo che:
+- $\mathbf u_{w_t}$ sia l'embedding della parola centrale $w_t$, quindi la riga corrispondente a $w_t$ della matrice $\mathbf{\theta}_W$
+- $\mathbf v_{w_{t+j}}$ sia l'embedding della parola di contesto $w_{t+j}$, quindi la riga corrispondente a $w_{t+j}$ della matrice $\mathbf{\theta}_C$
+
+Allora la probabilità predetta dal modello è:
+
+$$
+\mathbb P(w_{t+j} \mid w_t)
+= \frac{
+    \exp\!\bigl(\mathbf{v}_{\,w_{t+j}}^\top \,\mathbf{u}_{\,w_t}\bigr)
+  }{
+    \displaystyle \sum_{w' \in V}
+      \exp\!\bigl(\mathbf{v}_{\,w'}^\top \,\mathbf{u}_{\,w_t}\bigr)
+  }
+$$
+
+Sostituendo nella funzione di perdita otteniamo:
+
+$$
+\mathcal{L}(\mathbf{\theta})
+= - \sum_{t=1}^{T} \sum_{\substack{j=-m \\ j \neq 0}}^{m}
+    \log
+    \frac{
+      \exp\!\bigl(\mathbf{v}_{\,w_{t+j}}^\top \,\mathbf{u}_{\,w_t}\bigr)
+    }{
+      \displaystyle \sum_{w' \in V}
+        \exp\!\bigl(\mathbf{v}_{\,w'}^\top \,\mathbf{u}_{\,w_t}\bigr)
+    }
+$$
+
+Applicando le proprietà del logaritmo, la loss per una singola coppia $(w_t, w_{t+j})$ diventa:
+
+$$
+\mathcal{L}(w_{t+j}, w_t; \bm{\theta}) = - \log
+    \frac{
+      \exp\!\bigl(\mathbf{v}_{\,w_{t+j}}^\top \,\mathbf{u}_{\,w_t}\bigr)
+    }{
+      \displaystyle \sum_{w' \in V}
+        \exp\!\bigl(\mathbf{v}_{\,w'}^\top \,\mathbf{u}_{\,w_t}\bigr)
+    }
+$$
+
+che si può riscrivere come:
+
+$$
+\mathcal{L}(w_{t+j}, w_t; \mathbf{\theta})
+= -\,\underbrace{\mathbf{v}_{\,w_{t+j}}^\top \,\mathbf{u}_{\,w_t}}_\text{Similarità contesto-parola}
+  \;+\;
+  \underbrace{\log
+  \sum_{w' \in V}
+    \exp\!\bigl(\mathbf{v}_{\,w'}^\top \,\mathbf{u}_{\,w_t}\bigr)}_\text{Similarità di tutti gli altri contesti con la stessa parola}
+$$
+
+Questa formula evidenzia il trade-off tra massimizzare la similarità centro-contesto della parola corretta e normalizzare le probabilità su tutto il vocabolario.
+
+Infine, la **loss media** su tutto il corpus è:
+
+$$
+\mathcal{L}(\mathbf{\theta})
+= -\frac{1}{T}
+  \sum_{t=1}^{T} \sum_{\substack{j=-m \\ j \neq 0}}^{m}
+    \log \mathbb P(w_{t+j} \mid w_t; \mathbf{\theta})
+= -\frac{1}{T}
+  \sum_{t=1}^{T} \sum_{\substack{j=-m \\ j \neq 0}}^{m}
+    \log
+    \frac{
+      \exp\!\bigl(\mathbf{v}_{\,w_{t+j}}^\top \,\mathbf{u}_{\,w_t}\bigr)
+    }{
+      \displaystyle \sum_{w' \in V}
+        \exp\!\bigl(\mathbf{v}_{\,w'}^\top \,\mathbf{u}_{\,w_t}\bigr)
+    }
+$$
+
+che coincide con la cross-entropy fra la distribuzione softmax predetta e la distribuzione one-hot vera.
+
+## Ottimizzazione tramite SGD
+
+L’addestramento del modello Skip-gram con softmax consiste nell’ottimizzare i parametri $\bm{\theta} = \begin{bmatrix} \bm{\theta}_W \\ \bm{\theta}_C \end{bmatrix}$ per massimizzare la probabilità delle parole di contesto osservate, dato ciascun centro $w_t$ nel corpus.
+
+L’obiettivo è **minimizzare la loss media** dei dati, ovvero la somma della log-probabilità dei contesti osservati dato ogni parola centrale, moltiplicata per $-\frac{1}{T}$. Formalmente:
+
+$$
+\mathcal{L}(\bm{\theta}) = -\frac{1}{T} \sum_{t=1}^T \sum_{\substack{j = -m \\ j \ne 0}}^m \log \mathbb{P}(w_{t+j} \mid w_t; \bm{\theta})
+$$
+
+dove:
+
+- $T$ è il numero totale di parole nel corpus,
+- $m$ è l'ampiezza della finestra di contesto,
+- $\mathbb{P}(w_{t+j} \mid w_t; \bm{\theta})$ è la probabilità (softmax) di osservare $w_{t+j}$ dato il centro $w_t$, definita come:
+
+$$
+\mathbb{P}(w_{t+j} \mid w_t; \bm{\theta}) = \frac{\exp\left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} \right)}{\sum_{k=1}^{|V|} \exp\left( \mathbf v_{w_k} \cdot \mathbf u_{w_t} \right)}
+$$
+
+con:
+
+- $w_t$: parola centrale (indice $c$),
+- $w_{t+j}$: parola di contesto (indice $o$),
+- $\mathbf u_{w_t} \in \mathbb{R}^D$: vettore embedding della parola centro $w_t$,
+- $\mathbf v_{w_{t+j}} \in \mathbb{R}^D$: vettore embedding della parola contesto $w_{t+j}$.
+
+### Come si ottimizza?
+
+Poiché la somma al denominatore del softmax scorre su tutto il vocabolario ($|V|$ è molto grande), il calcolo diretto è troppo costoso. Tuttavia, per ora assumiamo di usare il **softmax esatto**, per chiarezza.
+
+Il modello viene ottimizzato tramite **Stochastic Gradient Descent (SGD)**, cioè:
+
+1. Si considera una coppia $(w_t, w_{t+j})$ (parola centro + parola di contesto osservata),
+2. Si calcola la **loss negativa log-likelihood** per quella coppia:
+
+$$
+\mathcal{L}(w_{t+j}, w_t; \bm{\theta}) = -\log \mathbb{P}(w_{t+j} \mid w_t; \bm{\theta}) = -\log \frac{\exp\left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} \right)}{\sum_{k=1}^{|V|} \exp\left( \mathbf v_{w_k} \cdot \mathbf u_{w_t} \right)}
+$$
+
+3. Si calcola il **gradiente** della loss rispetto a $\bm{\theta}$ (cioè i vettori coinvolti: $\bm{\theta}_W^{i}$ e tutte le righe di $\bm{\theta}_C$),
+4. Si aggiorna $\bm{\theta}$ secondo la regola standard dello SGD:
+
+$$
+\bm{\theta} \leftarrow \bm{\theta} - \eta \cdot \nabla_{\bm{\theta}}\mathcal{L}(w_{t+j}, w_t; \bm{\theta})
+$$
+
+dove $\eta$ è il learning rate.
+
+### Calcolo del gradiente
+
+Calcoliamo ora il gradiente della funzione di loss rispetto ai vettori di embedding coinvolti, assumendo l’uso del softmax esatto.
+
+Fissiamo una singola coppia $(w_t, w_{t+j})$, cioè una parola centrale e una parola di contesto. La loss associata a questa coppia è:
+
+$$
+\mathcal{L}_{(t,j)} = -\log \mathbb{P}(w_{t+j} \mid w_t; \bm{\theta})
+= -\log \left( \frac{\exp\left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} \right)}{\sum_{k=1}^{|V|} \exp\left( \mathbf v_{w_k} \cdot \mathbf u_{w_t} \right)} \right)
+$$
+
+Dove:
+
+- $\mathbf u_{w_t} \in \mathbb{R}^D$: vettore della parola **centro** (da $\bm{\theta}_W$),
+- $\mathbf v_{w_k} \in \mathbb{R}^D$: vettori delle parole **contesto** (da $\bm{\theta}_C$),
+- $|V|$: dimensione del vocabolario.
+
+---
+
+#### Gradiente rispetto al vettore della parola centro $\mathbf u_{w_t}$
+
+Vogliamo calcolare il gradiente della loss rispetto al vettore centro $\mathbf u_{w_t}$ per la coppia $(w_t, w_{t+j})$:
+
+$$
+\nabla_{\mathbf u_{w_t}} \mathcal{L}_{(t,j)} =
+- \nabla_{\mathbf u_{w_t}} \left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t}
+- \log \sum_{k=1}^{|V|} \exp\left( \mathbf v_{w_k} \cdot \mathbf u_{w_t} \right) \right)
+$$
+
+1. **Derivata del primo termine** (prodotto scalare):
+
+$$
+\nabla_{\mathbf u_{w_t}} \left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} \right)
+= \mathbf v_{w_{t+j}}
+$$
+
+Motivo: la derivata di un prodotto scalare $\mathbf a^\top \mathbf x$ rispetto a $\mathbf x$ è $\mathbf a$.
+
+1. **Derivata del secondo termine** (log-somma-esponenziali):
+
+$$
+\nabla_{\mathbf u_{w_t}} \left( \log \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right)
+$$
+
+**Passo 1** – Applichiamo la derivata del logaritmo:
+
+$$
+\nabla_{\mathbf u_{w_t}} \log f(\mathbf u_{w_t}) = \frac{1}{f(\mathbf u_{w_t})} \cdot \nabla_{\mathbf u_{w_t}} f(\mathbf u_{w_t})
+$$
+
+Dove $f(\mathbf u_{w_t}) = \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} )$
+
+**Passo 2** – Derivata della somma:
+
+$$
+\nabla_{\mathbf u_{w_t}} \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) = \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \cdot \mathbf v_{w_k}
+$$
+
+**Passo 3** – Mettiamo tutto insieme:
+
+$$
+\nabla_{\mathbf u_{w_t}} \log \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} )
+= \frac{ \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \cdot \mathbf v_{w_k} }
+{ \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) }
+= \sum_{k=1}^{|V|} \mathbb{P}(w_k \mid w_t) \cdot \mathbf v_{w_k}
+$$
+
+dove:
+
+$$
+\mathbb{P}(w_k \mid w_t) = \frac{\exp(\mathbf v_{w_k} \cdot \mathbf u_{w_t})}{\sum_{j=1}^{|V|} \exp(\mathbf v_{w_j} \cdot \mathbf u_{w_t})}
+$$
+
+**Combinazione** dei due termini:
+
+$$
+\nabla_{\mathbf u_{w_t}} \mathcal{L}_{(t,j)}
+= - \left( \mathbf v_{w_{t+j}} - \sum_{k=1}^{|V|} \mathbb{P}(w_k \mid w_t) \cdot \mathbf v_{w_k} \right)
+$$
+
+
+---
+
+#### Gradiente rispetto al vettore contesto corretto $\mathbf v_{w_{t+j}}$
+
+Calcoliamo:
+
+$$
+\nabla_{\mathbf v_{w_{t+j}}} \mathcal{L}_{(t,j)} =
+- \nabla_{\mathbf v_{w_{t+j}}} \left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t}
+- \log \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right)
+$$
+
+
+1. **Derivata del primo termine**:
+
+$$
+\nabla_{\mathbf v_{w_{t+j}}} \left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} \right)
+= \mathbf u_{w_t}
+$$
+
+
+2. **Derivata del secondo termine**:
+
+Solo il termine $k = t+j$ dipende da $\mathbf v_{w_{t+j}}$, ma deriviamo comunque la somma intera, trattando ogni termine:
+
+$$
+\nabla_{\mathbf v_{w_{t+j}}} \log \left( \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right)
+= \sum_{k=1}^{|V|} \frac{\partial}{\partial \mathbf v_{w_{t+j}}} \left[ \log \left( \sum_{k} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right) \right]
+$$
+
+Solo il termine $k = t+j$ sopravvive:
+
+$$
+= \frac{ \exp( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) \cdot \mathbf u_{w_t} }
+{ \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) }
+= \mathbb{P}(w_{t+j} \mid w_t) \cdot \mathbf u_{w_t}
+$$
+
+**Combinazione** dei due termini:
+
+$$
+\nabla_{\mathbf v_{w_{t+j}}} \mathcal{L}_{(t,j)}
+= - \left( \mathbf u_{w_t} - \mathbb{P}(w_{t+j} \mid w_t) \cdot \mathbf u_{w_t} \right)
+= \left( \mathbb{P}(w_{t+j} \mid w_t) - 1 \right) \cdot \mathbf u_{w_t}
+$$
+
+---
+
+#### Gradiente rispetto agli altri vettori contesto $\mathbf v_{w_k}$ con $k \ne t+j$
+
+Sia la loss per la coppia $(w_t, w_{t+j})$:
+
+$$
+\mathcal{L}_{(t,j)}
+= -\Bigl(\mathbf v_{w_{t+j}}\!\cdot\!\mathbf u_{w_t}\Bigr)
+  + \log \sum_{i=1}^{|V|} \exp\!\bigl(\mathbf v_{w_i}\!\cdot\!\mathbf u_{w_t}\bigr).
+$$
+
+Vogliamo calcolare 
+$\nabla_{\mathbf v_{w_k}} \mathcal{L}_{(t,j)}$
+per un indice $k\neq t+j$.
+
+1. **Derivata del primo termine**  
+   
+   Il **primo termine** dipende **solo** da $\mathbf v_{w_{t+j}}$, non da $\mathbf v_{w_k}$ quando $k\ne t+j$.  
+   
+   $$
+   \nabla_{\mathbf v_{w_k}}
+   \bigl(\mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t}\bigr)
+   = 0
+   \quad\text{per }k \ne t+j.
+   $$
+
+2. **Derivata del secondo termine**  
+
+   Il **secondo termine** è
+   $$
+   F(\mathbf v_{w_i})
+   = \log \sum_{i=1}^{|V|} \exp\!\bigl(\mathbf v_{w_i} \cdot \mathbf u_{w_t}\bigr).
+   $$
+   
+   - **Passo 2.1**: applichiamo la derivata del logaritmo:
+     $$
+     \nabla_{\mathbf v_{w_k}}\,F
+     = \frac{1}{\displaystyle \sum_{i=1}^{|V|} \exp(\mathbf v_{w_i}\!\cdot\!\mathbf u_{w_t})}
+       \;\nabla_{\mathbf v_{w_k}}
+       \sum_{i=1}^{|V|} \exp(\mathbf v_{w_i}\!\cdot\!\mathbf u_{w_t}).
+     $$
+   
+   - **Passo 2.2**: derivata della somma di esponenziali. In questa somma, ogni termine indice $i$ è
+     $\exp(\mathbf v_{w_i}\!\cdot\!\mathbf u_{w_t})$. Solo quando $i=k$ l’esponenziale dipende da $\mathbf v_{w_k}$.  
+     
+     $$
+     \nabla_{\mathbf v_{w_k}}
+     \sum_{i=1}^{|V|} \exp(\mathbf v_{w_i}\!\cdot\!\mathbf u_{w_t})
+     = \nabla_{\mathbf v_{w_k}}
+       \exp(\mathbf v_{w_k}\!\cdot\!\mathbf u_{w_t})
+     = \exp(\mathbf v_{w_k}\!\cdot\!\mathbf u_{w_t}) \;\mathbf u_{w_t}.
+     $$
+   
+   - **Passo 2.3**: sostituiamo nella regola del log:
+     $$
+     \nabla_{\mathbf v_{w_k}}\,F
+     = \frac{\exp(\mathbf v_{w_k}\!\cdot\!\mathbf u_{w_t}) \;\mathbf u_{w_t}}
+            {\displaystyle \sum_{i=1}^{|V|} \exp(\mathbf v_{w_i}\!\cdot\!\mathbf u_{w_t})}
+     = \mathbb{P}(w_k \mid w_t)\;\mathbf u_{w_t}.
+     $$
+
+3. **Combinazione dei termini**  
+
+   Sommando le due derivazioni (primo termine zero + secondo termine):
+
+   $$
+   \nabla_{\mathbf v_{w_k}} \mathcal{L}_{(t,j)}
+   = 0 + \mathbb{P}(w_k \mid w_t)\;\mathbf u_{w_t}
+   = \mathbb{P}(w_k \mid w_t)\;\mathbf u_{w_t}.
+   $$
+
+
+---
+
+#### Riassunto aggiornamenti
+
+Per ogni coppia $(w_t, w_{t+j})$, aggiorniamo:
+
+- Il vettore **centro** $\mathbf u_{w_t}$ secondo:
+
+  $$
+  \mathbf u_{w_t} \leftarrow \mathbf u_{w_t} - \eta \cdot \nabla_{\mathbf u_{w_t}} \mathcal{L}_{(t,j)}
+  $$
+
+- Il vettore **contesto corretto** $\mathbf v_{w_{t+j}}$ secondo:
+
+  $$
+  \mathbf v_{w_{t+j}} \leftarrow \mathbf v_{w_{t+j}} - \eta \cdot \nabla_{\mathbf v_{w_{t+j}}} \mathcal{L}_{(t,j)}
+  $$
+
+- Gli altri vettori **contesto** $\mathbf v_{w_k}$ con $k \ne t+j$, opzionalmente:
+
+  $$
+  \mathbf v_{w_k} \leftarrow \mathbf v_{w_k} - \eta \cdot \nabla_{\mathbf v_{w_k}} \mathcal{L}_{(t,j)}
+  $$
+
+In pratica, si usa **Negative Sampling** per evitare l'aggiornamento su tutto il vocabolario.
+
+### Negative Sampling
+
+L’**obiettivo del Negative Sampling** è approssimare in modo efficiente la funzione di perdita originale, evitando la somma sul vocabolario $|V|$ nella softmax. Invece di calcolare una distribuzione di probabilità su tutte le parole, si trasforma il problema in una serie di **classificazioni binarie**.
+
+L’idea è la seguente:
+
+- Trattare la coppia $(w_t, w_{t+j})$ come un **esempio positivo** (target $= 1$).
+- Campionare $K$ **parole negative** $w_1', \dots, w_K'$, cioè parole non realmente nel contesto di $w_t$, da trattare come esempi negativi (target $= 0$).
+
+#### Funzione di perdita per una singola coppia $(w_t, w_{t+j})$:
+
+Definiamo:
+
+- $\mathbf u_{w_t}$: embedding della parola centro
+- $\mathbf v_{w_{t+j}}$: embedding della parola contesto corretta
+- $\mathbf v_{w_k'}$: embedding delle parole negative campionate
+- $\sigma(x) = \frac{1}{1 + e^{-x}}$: funzione sigmoide
+
+La loss associata a una coppia positiva e $K$ negative diventa:
+
+$$
+\mathcal{L}_{\text{NS}}^{(t,j)} =
+- \log \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} )
+- \sum_{k=1}^K \log \sigma( - \mathbf v_{w_k'} \cdot \mathbf u_{w_t} )
+$$
+
+Dove:
+
+- Il primo termine massimizza la probabilità che $w_{t+j}$ sia un vero contesto di $w_t$
+- Il secondo termine minimizza la probabilità che le parole negative $w_k'$ siano erroneamente predette come contesto
+
+#### Gradienti:
+
+1. **Rispetto a** $\mathbf u_{w_t}$:
+
+$$
+\nabla_{\mathbf u_{w_t}} \mathcal{L}_{\text{NS}}^{(t,j)} =
+( \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) - 1 ) \cdot \mathbf v_{w_{t+j}} +
+\sum_{k=1}^K \sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf v_{w_k'}
+$$
+
+2. **Rispetto al contesto positivo** $\mathbf v_{w_{t+j}}$:
+
+$$
+\nabla_{\mathbf v_{w_{t+j}}} \mathcal{L}_{\text{NS}}^{(t,j)} =
+( \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) - 1 ) \cdot \mathbf u_{w_t}
+$$
+
+3. **Rispetto ad ogni contesto negativo** $\mathbf v_{w_k'}$:
+
+$$
+\nabla_{\mathbf v_{w_k'}} \mathcal{L}_{\text{NS}}^{(t,j)} =
+\sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf u_{w_t}
+$$
+
+#### Vantaggi:
+
+- Il costo computazionale dipende da $K \ll |V|$ e non dal vocabolario intero.
+- Possiamo scegliere $K$ (tipicamente tra 5 e 20) per bilanciare accuratezza ed efficienza.
+
+
+### Effetto dell’ottimizzazione
+
+Iterando su molte coppie $(w_t, w_{t+j})$ osservate dal corpus, il modello:
+
+- rafforza le associazioni tra centri e contesti frequenti (es. “eat” → “food”),
+- indebolisce associazioni tra parole che non co-occorrono.
+
+Alla convergenza, gli embedding $\bm{\theta}_W$ e $\bm{\theta}_C$ riflettono **strutture semantiche** e **sintattiche** apprese dai dati: parole con significati simili finiscono in regioni vicine dello spazio vettoriale.
+
+🧠 *Per approfondimenti tecnici sul funzionamento dello SGD, vedi la nota dedicata: [[Discesa del Gradiente]].*
+
+
+
+## Conclusioni
+
+Il modello **Skip-gram con softmax** rappresenta un approccio fondamentale nell'ambito dell'apprendimento non supervisionato per la rappresentazione distribuita delle parole. Utilizzando due matrici distinte — una per le parole *centro* e una per le parole *contesto* — il modello riesce a catturare in modo più preciso le relazioni semantiche e sintattiche nel linguaggio naturale.
+
+Questa separazione consente di modellare efficacemente le **asimmetrie** e i **ruoli funzionali** delle parole, migliorando la qualità degli embedding e le prestazioni in numerosi compiti downstream come il POS tagging, il parsing o il semantic similarity.
+
+La formulazione probabilistica basata su **softmax** permette di interpretare le previsioni come distribuzioni categoriali su tutto il vocabolario, sebbene a un costo computazionale elevato. Questo ha motivato lo sviluppo di tecniche più efficienti come il **Negative Sampling** e la **Hierarchical Softmax**, che estendono il framework Skip-gram per corpus di grandi dimensioni.
+
+### Risorse utili e approfondimenti
+
+- Dan Jurafsky & James H. Martin, *Speech and Language Processing*, 3rd Edition (draft):  
+  https://web.stanford.edu/~jurafsky/slp3/  
+
+- Mikolov et al. (2013), *Efficient Estimation of Word Representations in Vector Space*  
+  [https://arxiv.org/abs/1301.3781](https://arxiv.org/abs/1301.3781)
+
+- Goldberg & Levy (2014), *word2vec Explained: Deriving Mikolov et al.'s Negative-Sampling Word-Embedding Method*  
+  [https://arxiv.org/abs/1402.3722](https://arxiv.org/abs/1402.3722)
+
+- TensorFlow Tutorial: *Word2Vec Skip-gram*  
+  [https://www.tensorflow.org/tutorials/text/word2vec](https://www.tensorflow.org/tutorials/text/word2vec)
+
+- Chris McCormick, *Word2Vec Tutorial* (con codice e spiegazioni passo-passo)  
+  [https://mccormickml.com/2016/04/19/word2vec-tutorial-the-skip-gram-model/](https://mccormickml.com/2016/04/19/word2vec-tutorial-the-skip-gram-model/)
+
+- Blog di Jay Alammar, *The Illustrated Word2Vec*  
+  [https://jalammar.github.io/illustrated-word2vec/](https://jalammar.github.io/illustrated-word2vec/)
+
+Questa panoramica costituisce la base concettuale per affrontare estensioni più sofisticate e ottimizzazioni del modello, fondamentali per lavorare con corpus molto ampi o con vocabolari di grandi dimensioni.
+
