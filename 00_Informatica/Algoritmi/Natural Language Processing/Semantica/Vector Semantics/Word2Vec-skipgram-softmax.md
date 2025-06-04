@@ -447,7 +447,7 @@ Calcoliamo ora il gradiente della funzione di loss rispetto ai vettori di embedd
 Fissiamo una singola coppia $(w_t, w_{t+j})$, cioè una parola centrale e una parola di contesto. La loss associata a questa coppia è:
 
 $$
-\mathcal{L}_{(t,j)} = -\log \mathbb{P}(w_{t+j} \mid w_t; \bm{\theta})
+\underbrace{\mathcal{L}_{(t,j)}}_{\mathcal{L}(w_{t+j}, w_t; \bm{\theta})} = -\log \mathbb{P}(w_{t+j} \mid w_t; \bm{\theta})
 = -\log \left( \frac{\exp\left( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} \right)}{\sum_{k=1}^{|V|} \exp\left( \mathbf v_{w_k} \cdot \mathbf u_{w_t} \right)} \right)
 $$
 
