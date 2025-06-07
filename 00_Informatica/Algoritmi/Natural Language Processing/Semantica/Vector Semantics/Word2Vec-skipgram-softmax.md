@@ -216,6 +216,8 @@ Il modello considera una finestra di contesto di ampiezza $m$ (ad esempio $m=2$)
 |:-:|:---------:|:-----:|:-----------:|:--:|:-----------:|:---:|:--:|:--------:|
 |   |           |       |  $w_{t-2}$  | $w_{t-1}$ | **$w_t$** | $w_{t+1}$ | $w_{t+2}$ |          |
 
+È detto **self-supervision** perché non usa etichette esterne, ma sfrutta il contesto delle parole all’interno del testo come se fosse un’etichetta. 😃
+
 ## Obiettivo del modello
 
 Vogliamo modellare la probabilità congiunta di osservare le parole di contesto data la parola centrale $w_t$, ossia:
@@ -457,8 +459,6 @@ Dove:
 - $\mathbf v_{w_k} \in \mathbb{R}^D$: vettori delle parole **contesto** (da $\bm{\theta}_C$),
 - $|V|$: dimensione del vocabolario.
 
----
-
 #### Gradiente rispetto al vettore della parola centro $\mathbf u_{w_t}$
 
 Vogliamo calcolare il gradiente della loss rispetto al vettore centro $\mathbf u_{w_t}$ per la coppia $(w_t, w_{t+j})$:
@@ -521,8 +521,6 @@ $$
   $$
 
 
----
-
 #### Gradiente rispetto al vettore contesto corretto $\mathbf v_{w_{k}}$ con $k = t + j$
 
 Calcoliamo:
@@ -548,14 +546,24 @@ Solo il termine $k = t+j$ dipende da $\mathbf v_{w_{t+j}}$, ma deriviamo comunqu
 
 $$
 \nabla_{\mathbf v_{w_{t+j}}} \log \left( \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right)
-= \sum_{k=1}^{|V|} \frac{\partial}{\partial \mathbf v_{w_{t+j}}} \left[ \log \left( \sum_{k} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right) \right]
+= \frac{1}{\sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} )} \cdot 
+\nabla_{\mathbf v_{w_{t+j}}} \left( \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right)
 $$
 
 Solo il termine $k = t+j$ sopravvive:
 
 $$
-\frac{\partial}{\partial \mathbf v_{w_{t+j}}}\log \exp( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} )
-= \frac{ \exp( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) \cdot \mathbf u_{w_t} }
+\nabla_{\mathbf v_{w_{t+j}}} \left( \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right) 
+= \nabla_{\mathbf v_{w_{t+j}}} \left( \exp( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) \right)
+= \exp( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) \cdot \mathbf u_{w_t}.
+$$
+
+Mettendo quindi tutto insieme otteniamo:
+
+$$
+\nabla_{\mathbf v_{w_{t+j}}} \log \left( \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) \right)
+=
+\frac{ \exp( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) \cdot \mathbf u_{w_t} }
 { \sum_{k=1}^{|V|} \exp( \mathbf v_{w_k} \cdot \mathbf u_{w_t} ) }
 = \mathbb{P}(w_{t+j} \mid w_t) \cdot \mathbf u_{w_t}
 $$
@@ -567,8 +575,6 @@ $$
 = - \left( \mathbf u_{w_t} - \mathbb{P}(w_{t+j} \mid w_t) \cdot \mathbf u_{w_t} \right)
 = \left( \mathbb{P}(w_{t+j} \mid w_t) - 1 \right) \cdot \mathbf u_{w_t}
 $$
-
----
 
 #### Gradiente rispetto agli altri vettori contesto $\mathbf v_{w_k}$ con $k \ne t+j$
 
@@ -641,8 +647,6 @@ per un indice $k\neq t+j$.
    $$
 
 
----
-
 #### Riassunto aggiornamenti
 
 Per ogni coppia $(w_t, w_{t+j})$, aggiorniamo:
@@ -669,23 +673,36 @@ In pratica, si usa **Negative Sampling** per evitare l'aggiornamento su tutto il
 
 ### Negative Sampling
 
-L’**obiettivo del Negative Sampling** è approssimare in modo efficiente la funzione di perdita originale, evitando la somma sul vocabolario $|V|$ nella softmax. Invece di calcolare una distribuzione di probabilità su tutte le parole, si trasforma il problema in una serie di **classificazioni binarie**.
+L’obiettivo del **Negative Sampling** è approssimare in modo efficiente la funzione di perdita originale basata sulla softmax, che richiede una somma su tutto il vocabolario $|V|$ — troppo costosa per vocabolari grandi.
 
-L’idea è la seguente:
+Invece di calcolare la probabilità normalizzata per tutte le parole, si trasforma il problema in una **serie di classificazioni binarie**.
 
-- Trattare la coppia $(w_t, w_{t+j})$ come un **esempio positivo** (target $= 1$).
-- Campionare $K$ **parole negative** $w_1', \dots, w_K'$, cioè parole non realmente nel contesto di $w_t$, da trattare come esempi negativi (target $= 0$).
+#### Strategia
 
-#### Funzione di perdita per una singola coppia $(w_t, w_{t+j})$:
+- La coppia **positiva** $(w_t, w_{t+j})$ (parola centrale e parola di contesto reale) è trattata come un esempio **positivo**, con **target = 1**.
+- Si campionano $K$ parole **negative** $w_1', \dots, w_K'$ da una distribuzione rumorosa (noise distribution), e si trattano come esempi **negativi**, con **target = 0**.
 
-Definiamo:
+#### Notazione
 
-- $\mathbf u_{w_t}$: embedding della parola centro
-- $\mathbf v_{w_{t+j}}$: embedding della parola contesto corretta
-- $\mathbf v_{w_k'}$: embedding delle parole negative campionate
+- $\mathbf u_{w_t}$: vettore embedding della parola centrale (input)
+- $\mathbf v_{w_{t+j}}$: embedding della parola di contesto positiva (output)
+- $\mathbf v_{w_k'}$: embedding delle parole negative
 - $\sigma(x) = \frac{1}{1 + e^{-x}}$: funzione sigmoide
 
-La loss associata a una coppia positiva e $K$ negative diventa:
+#### Loss per una singola coppia $(w_t, w_{t+j})$ e $K$ parole negative:
+
+$$
+\mathcal{L}_{\text{NS}}^{(t,j)} =
+- \log \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} )
+- \sum_{k=1}^K \log \sigma( - \mathbf v_{w_k'} \cdot \mathbf u_{w_t} )
+$$
+
+- Il primo termine spinge $\mathbf u_{w_t}$ e $\mathbf v_{w_{t+j}}$ ad avere un **prodotto scalare alto**, quindi un’alta probabilità.
+- Il secondo termine penalizza $\mathbf u_{w_t}$ e i vettori negativi $\mathbf v_{w_k'}$ se il loro prodotto scalare è troppo alto.
+
+### Calcolo dei Gradienti
+
+La loss per una singola coppia $(w_t, w_{t+j})$ e $K$ parole negative è:
 
 $$
 \mathcal{L}_{\text{NS}}^{(t,j)} =
@@ -694,13 +711,74 @@ $$
 $$
 
 Dove:
+- $\sigma(x) = \frac{1}{1 + e^{-x}}$
+- La derivata della sigmoide: $\sigma'(x) = \sigma(x)(1 - \sigma(x))$
 
-- Il primo termine massimizza la probabilità che $w_{t+j}$ sia un vero contesto di $w_t$
-- Il secondo termine minimizza la probabilità che le parole negative $w_k'$ siano erroneamente predette come contesto
+#### 1. Derivata rispetto a $\mathbf u_{w_t}$ (embedding della parola centrale)
 
-#### Gradienti:
+Partiamo dalla derivata della loss rispetto a $\mathbf u_{w_t}$:
 
-1. **Rispetto a** $\mathbf u_{w_t}$:
+$$
+\nabla_{\mathbf u_{w_t}} \mathcal{L}_{\text{NS}}^{(t,j)} =
+\frac{\partial}{\partial \mathbf u_{w_t}} \left(
+- \log \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} )
+- \sum_{k=1}^K \log \sigma( - \mathbf v_{w_k'} \cdot \mathbf u_{w_t} )
+\right)
+$$
+
+##### Primo termine (positivo):
+
+$$
+\frac{\partial}{\partial \mathbf u_{w_t}} \left[ - \log \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) \right]
+$$
+
+Applichiamo la chain rule:
+
+1. $x = \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t}$  
+2. $\frac{d}{dx}[-\log \sigma(x)] = - \frac{\sigma'(x)}{\sigma(x)} = - (1 - \sigma(x))$
+
+3. $\frac{\partial x}{\partial \mathbf u_{w_t}} = \mathbf v_{w_{t+j}}$
+
+Quindi:
+
+$$
+= - (1 - \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} )) \cdot \mathbf v_{w_{t+j}} 
+= ( \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) - 1 ) \cdot \mathbf v_{w_{t+j}}
+$$
+
+##### Secondo termine (negativi):
+
+Ogni termine nella somma:
+
+$$
+\frac{\partial}{\partial \mathbf u_{w_t}} \left[ - \log \sigma( - \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \right]
+$$
+
+Applichiamo la regola della catena:
+
+1. $x = - \mathbf v_{w_k'} \cdot \mathbf u_{w_t}$  
+2. $\sigma(x)' = \sigma(x)(1 - \sigma(x))$  
+3. $\frac{d}{dx}[-\log \sigma(x)] = - (1 - \sigma(x))$
+
+Ma attenzione: deriviamo rispetto a $\mathbf u_{w_t}$, quindi:
+
+$$
+\frac{\partial}{\partial \mathbf u_{w_t}} \left[ - \log \sigma( - \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \right]
+= \sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf v_{w_k'}
+$$
+
+Perché:
+
+- $\sigma(-x) = 1 - \sigma(x)$
+- $\frac{d}{dx}[-\log(1 - \sigma(x))] = \sigma(x)$
+
+Sommiamo su $k$:
+
+$$
+\sum_{k=1}^K \sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf v_{w_k'}
+$$
+
+##### Totale:
 
 $$
 \nabla_{\mathbf u_{w_t}} \mathcal{L}_{\text{NS}}^{(t,j)} =
@@ -708,24 +786,85 @@ $$
 \sum_{k=1}^K \sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf v_{w_k'}
 $$
 
-2. **Rispetto al contesto positivo** $\mathbf v_{w_{t+j}}$:
+#### 2. Derivata rispetto a $\mathbf v_{w_{t+j}}$ (embedding del contesto positivo)
+
+$$
+\frac{\partial}{\partial \mathbf v_{w_{t+j}}} \left[ - \log \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) \right]
+$$
+
+Stesso ragionamento:
+
+1. $x = \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t}$
+2. $\frac{d}{dx}[-\log \sigma(x)] = - (1 - \sigma(x))$
+
+Derivata rispetto a $\mathbf v_{w_{t+j}}$:
+
+$$
+= ( \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) - 1 ) \cdot \mathbf u_{w_t}
+$$
+
+Nella somma non compare l'embedding del contesto positivo. Quindi la derivata rispetto a $\mathbf v_{w_{t+j}}$ è nulla.
+
+#### 3. Derivata rispetto ad ogni $\mathbf v_{w_k'}$ (embedding delle parole negative)
+
+$$
+\frac{\partial}{\partial \mathbf v_{w_k'}} \left[ - \log \sigma( - \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \right]
+$$
+
+Come sopra:
+
+- $\sigma(-x)' = - \sigma(x)(1 - \sigma(x))$
+- $- \log \sigma(-x) = - \log (1 - \sigma(x))$
+
+Quindi:
+
+$$
+= \sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf u_{w_t}
+$$
+
+
+#### Riepilogo dei Gradienti
+
+- **Parola centrale $\mathbf u_{w_t}$**:
+
+$$
+\nabla_{\mathbf u_{w_t}} \mathcal{L}_{\text{NS}}^{(t,j)}=
+( \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) - 1 ) \cdot \mathbf v_{w_{t+j}} 
++ \sum_{k=1}^K \sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf v_{w_k'}
+$$
+
+- **Parola positiva $\mathbf v_{w_{t+j}}$**:
 
 $$
 \nabla_{\mathbf v_{w_{t+j}}} \mathcal{L}_{\text{NS}}^{(t,j)} =
 ( \sigma( \mathbf v_{w_{t+j}} \cdot \mathbf u_{w_t} ) - 1 ) \cdot \mathbf u_{w_t}
 $$
 
-3. **Rispetto ad ogni contesto negativo** $\mathbf v_{w_k'}$:
+- **Parola negativa $\mathbf v_{w_k'}$**:
 
 $$
 \nabla_{\mathbf v_{w_k'}} \mathcal{L}_{\text{NS}}^{(t,j)} =
 \sigma( \mathbf v_{w_k'} \cdot \mathbf u_{w_t} ) \cdot \mathbf u_{w_t}
 $$
 
-#### Vantaggi:
+### Intuizione Finale
 
-- Il costo computazionale dipende da $K \ll |V|$ e non dal vocabolario intero.
-- Possiamo scegliere $K$ (tipicamente tra 5 e 20) per bilanciare accuratezza ed efficienza.
+- Il gradiente rispetto alla parola **positiva** cerca di **avvicinare** gli embedding $\mathbf u_{w_t}$ e $\mathbf v_{w_{t+j}}$.
+- I gradienti rispetto alle parole **negative** cercano di **allontanare** $\mathbf u_{w_t}$ da $\mathbf v_{w_k'}$, se sono troppo simili.
+- In questo modo, la rete impara a **distinguerle** — creando spazi semantici utili per rappresentare significato e contesto.
+
+### Perché il Negative Sampling funziona?
+
+In un training tradizionale con softmax, ogni parola nel vocabolario è considerata in ogni update: inefficiente e inutile, perché la maggior parte delle parole **non sono rilevanti** nel contesto dato.
+
+Il negative sampling funziona bene **anche campionando solo poche parole negative** perché:
+
+- La maggior parte delle parole nel vocabolario **non appaiono nel contesto locale**. È sufficiente penalizzarne alcune per rappresentare questo "mare di parole irrilevanti".
+- L’aggiornamento stocastico su $K$ parole negative scelte a caso **approssima il gradiente medio** su tutte le parole negative.
+- Il modello impara a **differenziare le parole "giuste" da quelle "sbagliate"**, non a predire ogni parola nel vocabolario.
+- Inoltre, campionando le negative da una distribuzione “disturbata” (es. proporzionale a $P(w)^{3/4}$), si aumenta l’efficacia dei campioni più informativi.
+
+➡️ **In sintesi**: invece di imparare su tutto il vocabolario, impariamo da un campione ben scelto. L'efficienza migliora enormemente senza perdita significativa in qualità. Perché, in effetti, ad ogni iterazione ci interessa molto di più la relazione tra parola **centro** e **contesto** che quella tra parola **centro** e parole **non-contesto**.
 
 
 ### Effetto dell’ottimizzazione
