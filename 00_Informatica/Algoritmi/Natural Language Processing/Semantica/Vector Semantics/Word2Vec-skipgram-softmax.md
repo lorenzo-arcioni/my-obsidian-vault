@@ -1,6 +1,8 @@
 # Skip-gram con Softmax
 
-Il modello **Skip-gram** di *word2vec* con softmax è una tecnica di apprendimento non supervisionato usata per generare vettori densi (embedding) che rappresentano parole in uno spazio continuo a dimensione $D$. Vediamo nel dettaglio tutti i passaggi e le componenti del modello.
+Il modello **Skip-gram** di *word2vec* con softmax è una tecnica di apprendimento non supervisionato usata per generare vettori densi (embedding) che rappresentano parole in uno spazio continuo a dimensione $D$.
+
+Vediamo nel dettaglio tutti i passaggi e le componenti del modello.
 
 ## Parametri da apprendere in Skip-Gram con Softmax
 
@@ -19,8 +21,8 @@ $$\large
 \bm{\theta}_C
 \end{bmatrix}
 \quad\text{con}\quad
-\bm{\theta}_W \in \mathbb{R}^{|V| \times d},\quad
-\bm{\theta}_C \in \mathbb{R}^{|V| \times d}
+\bm{\theta}_W \in \mathbb{R}^{|V| \times D},\quad
+\bm{\theta}_C \in \mathbb{R}^{|V| \times D}
 $$
 
 l'insieme dei parametri del modello, suddiviso in due matrici principali:
@@ -217,6 +219,8 @@ Il modello considera una finestra di contesto di ampiezza $m$ (ad esempio $m=2$)
 |   |           |       |  $w_{t-2}$  | $w_{t-1}$ | **$w_t$** | $w_{t+1}$ | $w_{t+2}$ |          |
 
 È detto **self-supervision** perché non usa etichette esterne, ma sfrutta il contesto delle parole all’interno del testo come se fosse un’etichetta. 😃
+
+Il modello **Skip-gram** classico (e anche il CBOW) non cattura la posizione precisa delle parole nel contesto rispetto alla parola centrale, cioè non distingue se una parola del contesto sta a sinistra o a destra, o a quale distanza esatta.
 
 ## Obiettivo del modello
 
@@ -866,6 +870,26 @@ Il negative sampling funziona bene **anche campionando solo poche parole negativ
 
 ➡️ **In sintesi**: invece di imparare su tutto il vocabolario, impariamo da un campione ben scelto. L'efficienza migliora enormemente senza perdita significativa in qualità. Perché, in effetti, ad ogni iterazione ci interessa molto di più la relazione tra parola **centro** e **contesto** che quella tra parola **centro** e parole **non-contesto**.
 
+### Negative Sampling vs Softmax: differenze chiave
+
+Con il **Negative Sampling** non si calcola più una vera distribuzione di probabilità normalizzata su tutto il vocabolario, come avviene con la softmax classica.
+
+- **Softmax classico:**  
+  Calcola la probabilità che una parola sia nel contesto dato il centro, considerando *tutte* le parole del vocabolario. Questo è costoso ma produce una distribuzione completa.
+
+- **Negative Sampling:**  
+  Trasforma il problema in una serie di classificazioni binarie:  
+  - Le coppie (parola centro, parola contesto reale) sono esempi positivi.  
+  - Le coppie con parole negative campionate casualmente sono esempi negativi.  
+
+Il modello impara a distinguere parole di contesto “vere” da parole “false”, ma non produce una distribuzione completa su tutte le parole.
+
+Con Negative Sampling, il modello cerca invece una funzione che spinge gli embeddings di coppie (centro, positivo) a essere simili (dot product alto) e quelli (centro, negativi) a essere dissimili (dot product basso).
+
+**In pratica:**  
+Negative Sampling ottimizza l’efficienza concentrandosi solo su alcune parole negative per update, ma non fornisce probabilità normalizzate su tutto il vocabolario come la softmax.
+
+Se servono probabilità vere, si usano softmax o sue varianti (hierarchical softmax), ma a costo computazionale maggiore.
 
 ### Effetto dell’ottimizzazione
 
