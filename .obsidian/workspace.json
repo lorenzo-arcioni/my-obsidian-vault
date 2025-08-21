@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "b2dc7a6f0765ddbc",
+        "id": "bf0ae563d7d59bb2",
         "type": "tabs",
         "children": [
           {
-            "id": "aec93fe64e1f7988",
+            "id": "53d61e68f4499bd8",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00_Informatica/Algoritmi/Natural Language Processing/Semantica/Vector Semantics/Word2Vec-skipgram-softmax.md",
+                "file": "01_Matematica/Ottimizzazione/Non-Lineare/Discesa del Gradiente.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Word2Vec-skipgram-softmax"
+              "title": "Discesa del Gradiente"
             }
           }
         ]
@@ -53,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "tag:#NLP",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -160,6 +160,7 @@
   },
   "left-ribbon": {
     "hiddenItems": {
+      "bases:Create new base": false,
       "switcher:Apri selezione rapida": false,
       "graph:Apri vista grafo": false,
       "canvas:Crea nuova lavagna": false,
@@ -168,10 +169,24 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "aec93fe64e1f7988",
+  "active": "53d61e68f4499bd8",
   "lastOpenFiles": [
-    "00_Informatica/Algoritmi/Natural Language Processing/Semantica/Vector Semantics/Word2Vec.md",
+    "01_Matematica/Calcolo/Calcolo Matriciale/Relazione tra derivata direzionale e gradiente.md",
+    "Senza nome.canvas",
+    "Senza nome.base",
+    "01_Matematica/Ottimizzazione/Non-Lineare/Discesa del Gradiente.md",
+    "01_Matematica/Algebra/Vettori.md",
+    "01_Matematica/Calcolo/Calcolo Matriciale/Definizione di Scalare, Vettore, Matrice e Tensore.md",
+    "01_Matematica/Algebra/Metriche, Norme e Distanze.md",
+    "01_Matematica/Algebra/Singular Value Decomposition.md",
+    "01_Matematica/Ottimizzazione/Non-Lineare/Senza nome.md",
+    "00_Informatica/Algoritmi/Natural Language Processing/Espressioni Regolari/Automi a Stati Finiti.md",
+    "01_Matematica/Ottimizzazione/Non-Lineare/Introduzione all'Ottimizzazione non Lineare.md",
+    "00_Informatica/Algoritmi/Introduzione al Machine Learning/Tipologie di Problemi/Regressione.md",
+    "00_Informatica/Algoritmi/Introduzione al Machine Learning/Regolarizzazione.md",
+    "Underfitting e Overfitting.md",
     "00_Informatica/Algoritmi/Natural Language Processing/Semantica/Vector Semantics/Word2Vec-skipgram-softmax.md",
+    "00_Informatica/Algoritmi/Natural Language Processing/Semantica/Vector Semantics/Word2Vec.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora, Tokenizzazione e Normalizzazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Part-of-Speech Tagging.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Esercizio sui Language Models.md",
@@ -184,28 +199,14 @@
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora e Normalizzazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Introduzione all'NLP.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Applicazioni Pratiche delle Regex.md",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Overfitting e Underfitting.md",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Tipologie di Problemi/Regressione.md",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Classificazione/Classificazione.md",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Tipologie di Problemi/Classificazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Tipologie di Problemi",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Linear Models/Regressione Logistica.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Classificazione",
-    "00_Informatica/Algoritmi/Ottimizzazione/Dimostrazione di Invertibilità Ridge.md",
     "index.html",
     "graph_animation.js",
     "empty.txt",
     "graph.json",
     "json_graph.sh",
     "empty.sh",
-    "01_Matematica/Algebra/Metriche, Norme e Distanze.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Norme.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Traccia.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Traccia e Norma.md",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Linear Models/Multicollinearità.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Tipi di Matrici.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Definizione di Scalare, Vettore, Matrice e Tensore.md",
-    "01_Matematica/Calcolo/Calcolo Matriciale/Introduzione",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_b.svg",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_a.svg",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/elbow-method-clustering.svg",

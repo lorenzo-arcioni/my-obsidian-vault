@@ -45,8 +45,8 @@ Spesso si tende a confondere la regressione con la classificazione, ma le differ
 Diverse tecniche possono essere utilizzate per affrontare problemi di regressione:
 
 - **[[Regressione Lineare]]**: modello base che assume una relazione lineare tra feature e output.  
-- **[Support Vector Regression (SVR)]**: versione della SVM applicata alla regressione.  
-- **[Random Forest Regressor](./Random-Forest-Regressor.md)**: metodo basato su alberi per modellare relazioni non lineari.  
+- **[[Support Vector Regression (SVR)]]**: versione della SVM applicata alla regressione.  
+- **[[Random Forest Regressor]]**: metodo basato su alberi per modellare relazioni non lineari.  
 - **[Reti Neurali per la Regressione](./Reti-Neurali-Regressione.md)**: modelli più potenti per problemi complessi con dati di grandi dimensioni.  
 
 ## Overfitting e Regolarizzazione  
