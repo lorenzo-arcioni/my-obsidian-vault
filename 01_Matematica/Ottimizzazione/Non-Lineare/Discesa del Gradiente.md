@@ -644,6 +644,12 @@ Il learning rate è **sempre positivo**: se fosse negativo, infatti, ci si muove
 
 Il valore di $\alpha$ determina **quanto grande è ogni passo** che l’algoritmo compie nella direzione opposta al gradiente. Non coincide esattamente con la lunghezza del passo (che dipende anche dalla norma del gradiente), ma è **proporzionale ad essa**.
 
+Infatti, 
+
+$$
+\|\mathbf{x}^{(t+1)} - \mathbf{x}^{(t)}\| = \|\alpha \nabla f(\mathbf{x}^{(t)})\| = \alpha \|\nabla f(\mathbf{x}^{(t)})\|.
+$$
+
 A seconda della sua scelta, il comportamento dell’algoritmo può variare notevolmente:
 
 - Se **$\alpha$ è troppo piccolo**, l’algoritmo avanza molto lentamente e richiede molte iterazioni per convergere.
