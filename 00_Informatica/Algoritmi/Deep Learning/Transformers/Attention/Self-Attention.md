@@ -1,4 +1,4 @@
-# Il Meccanismo di Attention: Una Guida Completa
+# Il Meccanismo di Self-Attention: Una Guida Completa
 
 ## Introduzione e Intuizione
 
@@ -122,7 +122,7 @@ I pesi $a_{mn}$ hanno due proprietà fondamentali:
 
 Queste condizioni garantiscono che $\mathbf{y}_n$ sia una **combinazione convessa** dei value $\mathbf{v}_m$, rendendo il modello stabile e interpretabile.
 
-<img src="../../../../images/attention-mechanism.png" alt="Self-Attention" style="display: block; margin-left: auto; margin-right: auto;">
+<img src="../../../../../images/attention-mechanism.png" alt="Self-Attention" style="display: block; margin-left: auto; margin-right: auto;">
 
 <br>
 

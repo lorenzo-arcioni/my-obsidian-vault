@@ -336,34 +336,6 @@ Questo assicura che il positional encoding non domini l'informazione semantica d
 
 Il sinusoidal encoding può essere calcolato per posizioni arbitrariamente grandi senza bisogno di riaddestramento, poiché le funzioni trigonometriche sono definite per tutti i numeri reali.
 
-## Esempio Concreto: Analisi di una Frase
-
-Consideriamo la frase: *"Il gatto dorme"* e vediamo come il positional encoding influenzi l'attention.
-
-### Senza Positional Encoding
-
-Gli embedding semantici potrebbero essere (semplificando a $\mathbb{R}^3$):
-- $\mathbf{x}_1 = [0.2, 0.8, 0.1]^T$ (Il)
-- $\mathbf{x}_2 = [0.9, 0.3, 0.7]^T$ (gatto)  
-- $\mathbf{x}_3 = [0.1, 0.5, 0.9]^T$ (dorme)
-
-I punteggi di attention (semplificati, assumendo $\mathbf{W}_q = \mathbf{W}_k = \mathbf{I}$ e ignorando il fattore di scala) sarebbero:
-- $s_{11} = \mathbf{x}_1^T \mathbf{x}_1 = 0.69$
-- $s_{12} = \mathbf{x}_1^T \mathbf{x}_2 = 0.41$
-- $s_{13} = \mathbf{x}_1^T \mathbf{x}_3 = 0.56$
-
-### Con Positional Encoding
-
-Dopo aver aggiunto il positional encoding:
-- $\mathbf{x}'_1 = \mathbf{x}_1 + \mathbf{p}_1$
-- $\mathbf{x}'_2 = \mathbf{x}_2 + \mathbf{p}_2$
-- $\mathbf{x}'_3 = \mathbf{x}_3 + \mathbf{p}_3$
-
-I nuovi punteggi di attention incorporeranno informazione posizionale:
-$$s_{12} = (\mathbf{x}_1 + \mathbf{p}_1)^T(\mathbf{x}_2 + \mathbf{p}_2) = \mathbf{x}_1^T\mathbf{x}_2 + \mathbf{x}_1^T\mathbf{p}_2 + \mathbf{p}_1^T\mathbf{x}_2 + \mathbf{p}_1^T\mathbf{p}_2$$
-
-Il termine $\mathbf{p}_1^T\mathbf{p}_2$ aggiunge un bias basato sulla distanza posizionale, mentre i termini crociati $\mathbf{x}_1^T\mathbf{p}_2$ e $\mathbf{p}_1^T\mathbf{x}_2$ creano interazioni complesse tra semantica e posizione.
-
 ## Integrazione con l'Attention Mechanism
 
 ### Formulazione Matriciale Completa
@@ -482,14 +454,20 @@ Input Embeddings → + Positional Encoding → Multi-Head Attention → ...
 
 Questo significa che **tutta l'architettura** downstream beneficia dell'informazione posizionale.
 
-### Multi-Head Attention
+### [[Multi-Head Attention]]
 
 Nel multi-head attention, il positional encoding influenza **tutte le teste** simultaneamente:
 
 $$\text{Head}_h = \text{Attention}(\mathbf{Q}_h, \mathbf{K}_h, \mathbf{V}_h)$$
 
 dove:
-$$\mathbf{Q}_h = \mathbf{W}_q^{(h)} (\mathbf{X} + \mathbf{P})$$
+$$
+\begin{align}
+\mathbf{Q}_h = \mathbf{W}_q^{(h)} (\mathbf{X} + \mathbf{P})\\
+\mathbf{K}_h = \mathbf{W}_k^{(h)} (\mathbf{X} + \mathbf{P})\\
+\mathbf{V}_h = \mathbf{W}_v^{(h)} (\mathbf{X} + \mathbf{P})
+\end{align}
+$$
 
 Ogni testa può quindi specializzarsi nel catturare diversi tipi di relazioni posizionali.
 
@@ -507,19 +485,19 @@ Questo crea una **gerarchia di informazione posizionale**:
 
 Studi di ablazione hanno dimostrato l'importanza critica del positional encoding:
 
-**Senza positional encoding**: I modelli Transformer perdono drasticamente performance su task che richiedono comprensione dell'ordine sequenziale.
+- **Senza positional encoding**: I modelli Transformer perdono drasticamente performance su task che richiedono comprensione dell'ordine sequenziale.
 
-**Con positional encoding**: Miglioramenti significativi in traduzione automatica, language modeling e task di comprensione del linguaggio.
+- **Con positional encoding**: Miglioramenti significativi in traduzione automatica, language modeling e task di comprensione del linguaggio.
 
 ### Analisi dei Pattern Appresi
 
 Visualizzazioni delle matrici di attention nei Transformer addestrati mostrano che il positional encoding permette l'emergere di pattern linguistici complessi:
 
-**Local attention**: Parole adiacenti spesso si prestano attenzione reciproca
-**Syntactic attention**: Relazioni sintattiche (soggetto-verbo, sostantivo-aggettivo) vengono catturate
-**Long-range dependencies**: Dipendenze a lungo raggio diventano più facilmente learnable
+- **Local attention**: Parole adiacenti spesso si prestano attenzione reciproca
+- **Syntactic attention**: Relazioni sintattiche (soggetto-verbo, sostantivo-aggettivo) vengono catturate
+- **Long-range dependencies**: Dipendenze a lungo raggio diventano più facilmente learnable
 
-## Considerazioni Implementation
+## Considerazioni Implementative
 
 ### Efficienza Computazionale
 
