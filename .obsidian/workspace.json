@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00_Informatica/Algoritmi/Deep Learning/Transformers/Attention.md",
-                "mode": "source",
-                "source": false
+                "file": "00_Informatica/Algoritmi/Unsupervised Learning/Dimensionality Reduction/Principal Component Analysis.md",
+                "mode": "preview",
+                "source": true
               },
               "icon": "lucide-file",
-              "title": "Attention"
+              "title": "Principal Component Analysis"
             }
           }
         ]
@@ -171,6 +171,13 @@
   },
   "active": "53d61e68f4499bd8",
   "lastOpenFiles": [
+    "images/pca-data.png",
+    "images/pca-covariance.png",
+    "images/pca-standardization.png",
+    "images/pca-datat.png",
+    "images/face_pca_levels.png",
+    "01_Matematica/Algebra/Singular Value Decomposition.md",
+    "00_Informatica/Algoritmi/Unsupervised Learning/Dimensionality Reduction/Principal Component Analysis.md",
     "01_Matematica/Ottimizzazione/Non-Lineare/Discesa del Gradiente.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Relazione tra derivata direzionale e gradiente.md",
     "Senza nome.canvas",
@@ -178,7 +185,6 @@
     "01_Matematica/Algebra/Vettori.md",
     "01_Matematica/Calcolo/Calcolo Matriciale/Definizione di Scalare, Vettore, Matrice e Tensore.md",
     "01_Matematica/Algebra/Metriche, Norme e Distanze.md",
-    "01_Matematica/Algebra/Singular Value Decomposition.md",
     "01_Matematica/Ottimizzazione/Non-Lineare/Senza nome.md",
     "00_Informatica/Algoritmi/Natural Language Processing/Espressioni Regolari/Automi a Stati Finiti.md",
     "01_Matematica/Ottimizzazione/Non-Lineare/Introduzione all'Ottimizzazione non Lineare.md",
@@ -198,7 +204,6 @@
     "tmp_graph.txt",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Parole, Corpora e Normalizzazione.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Introduzione all'NLP.md",
-    "00_Informatica/Algoritmi/Intelligenza Artificiale/Natural Language Processing/Applicazioni Pratiche delle Regex.md",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Tipologie di Problemi",
     "00_Informatica/Algoritmi/Intelligenza Artificiale/Classificazione",
     "index.html",
@@ -213,10 +218,6 @@
     "01_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_a.svg",
     "01_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/nome.svg",
     "01_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/silhouette_b.svg",
-    "silhouette_b.svg",
-    "01_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/boh.svg",
-    "01_Informatica/Algoritmi/Intelligenza Artificiale/Clustering/imgs/elbow-method-clustering.svg",
-    "boh.svg",
     "Untitled 1.canvas",
     "Untitled.canvas"
   ]
