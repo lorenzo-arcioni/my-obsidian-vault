@@ -16,7 +16,7 @@ La **differenziazione automatica** (Automatic Differentiation, AD) è una tecnic
 
 ## Teorema Fondamentale dell'AD
 
-**Teorema**: Ogni programma che calcola una funzione numerica può essere decomposto in una sequenza di operazioni elementari. Se conosciamo le derivate di queste operazioni elementari, possiamo calcolare la derivata dell'intera funzione applicando ripetutamente la **chain rule**.
+**Teorema**: Ogni programma che calcola una funzione numerica può essere decomposto in una sequenza di operazioni elementari. Se conosciamo le derivate di queste operazioni elementari, possiamo calcolare la derivata dell'intera funzione applicando ripetutamente la **[[Chain Rule]]**.
 
 **Formalizzazione**: Se $f = f_m \circ f_{m-1} \circ \cdots \circ f_1$, allora:
 $$\frac{df}{dx} = \frac{df_m}{dx_{m-1}} \cdot \frac{df_{m-1}}{dx_{m-2}} \cdot \ldots \cdot \frac{df_1}{dx}$$
@@ -37,15 +37,34 @@ Il **forward mode** calcola derivate propagando **perturbazioni infinitesimali**
 
 **Esempio**: Calcolare $\frac{d}{dx}[x^2 + \sin(x)]$ in $x = \pi/4$
 
-```
-Inizializzazione: x = (π/4, 1)  # valore e derivata seme
+$$
 
-v₁ = x * x = (π/4 · π/4, 2 · π/4 · 1) = (π²/16, π/2)
-v₂ = sin(x) = (sin(π/4), cos(π/4) · 1) = (√2/2, √2/2)
-f = v₁ + v₂ = (π²/16 + √2/2, π/2 + √2/2)
+\begin{align*}
+\textbf{Inizializzazione:} \quad
+x   &= \left(\tfrac{\pi}{4}, 1\right) 
+      && \text{(valore e derivata seme).}\\[2ex]
 
-Risultato: f'(π/4) = π/2 + √2/2
-```
+\textbf{Primo passo:} \quad
+v_{1} &= x \cdot x \\[0.5ex]
+      &= \left(\tfrac{\pi}{4}, 1\right) \cdot \left(\tfrac{\pi}{4}, 1\right) \\[0.5ex]
+      &= \Bigl(\tfrac{\pi}{4}\cdot\tfrac{\pi}{4}, \;\tfrac{\pi}{4}\cdot 1 + \tfrac{\pi}{4}\cdot 1\Bigr) \\[0.5ex]
+      &= \left(\tfrac{\pi^{2}}{16}, \tfrac{\pi}{2}\right). \\[2ex]
+
+\textbf{Secondo passo:} \quad
+v_{2} &= \sin(x) \\[0.5ex]
+      &= \left(\sin\!\left(\tfrac{\pi}{4}\right), \;\cos\!\left(\tfrac{\pi}{4}\right)\cdot 1\right) \\[0.5ex]
+      &= \left(\tfrac{\sqrt{2}}{2}, \tfrac{\sqrt{2}}{2}\right). \\[2ex]
+
+\textbf{Combinazione finale:} \quad
+f     &= v_{1} + v_{2} \\[0.5ex]
+      &= \left(\tfrac{\pi^{2}}{16} + \tfrac{\sqrt{2}}{2}, \;\tfrac{\pi}{2} + \tfrac{\sqrt{2}}{2}\right). \\[2ex]
+
+\textbf{Risultato:} \quad
+f'\!\left(\tfrac{\pi}{4}\right) &= \tfrac{\pi}{2} + \tfrac{\sqrt{2}}{2}.
+\end{align*}
+
+
+$$
 
 ### Reverse Mode (Backpropagation)
 
@@ -61,6 +80,57 @@ Il **reverse mode** calcola derivate propagando **moltiplicatori di Lagrange** d
 - Se $w = u + v$, allora $\bar{u} += \bar{w}$ e $\bar{v} += \bar{w}$
 - Se $w = u \cdot v$, allora $\bar{u} += v \cdot \bar{w}$ e $\bar{v} += u \cdot \bar{w}$
 - Se $w = \sin(u)$, allora $\bar{u} += \cos(u) \cdot \bar{w}$
+**Esempio**: Calcolare $\frac{d}{dx}[x^2 + \sin(x)]$ in $x = \pi/4$  
+
+#### Forward pass
+$$
+x = \tfrac{\pi}{4}, 
+\qquad
+v_{1} = x^2 = \tfrac{\pi^2}{16}, 
+\qquad
+v_{2} = \sin(x) = \tfrac{\sqrt{2}}{2},
+\qquad
+f = v_{1} + v_{2} = \tfrac{\pi^2}{16} + \tfrac{\sqrt{2}}{2}.
+$$
+
+---
+
+#### Backward pass
+
+- Inizializzazione sull’output:
+$$
+\bar{f} = 1
+$$
+
+- Per la somma $f = v_{1} + v_{2}$:
+$$
+\bar{v}_{1} += \bar{f} = 1,
+\qquad
+\bar{v}_{2} += \bar{f} = 1.
+$$
+
+- Per il quadrato $v_{1} = x^2$:
+$$
+\bar{x} += \frac{\partial v_{1}}{\partial x} \cdot \bar{v}_{1} 
+= (2x) \cdot 1 
+= 2 \cdot \tfrac{\pi}{4} = \tfrac{\pi}{2}.
+$$
+
+- Per il seno $v_{2} = \sin(x)$:
+$$
+\bar{x} += \frac{\partial v_{2}}{\partial x} \cdot \bar{v}_{2} 
+= \cos(x) \cdot 1 
+= \cos\!\left(\tfrac{\pi}{4}\right) 
+= \tfrac{\sqrt{2}}{2}.
+$$
+
+---
+
+#### Risultato
+$$
+\frac{df}{dx}\Big|_{x=\pi/4} = \bar{x} = \tfrac{\pi}{2} + \tfrac{\sqrt{2}}{2}.
+$$
+
 
 ### Confronto Computazionale
 
@@ -303,89 +373,7 @@ Il **computational graph** è un grafo diretto aciclico (DAG) che rappresenta le
 
 Per il reverse mode, è essenziale attraversare il grafo in **ordine topologico inverso**.
 
-```python
-def topological_sort_reverse(node, visited=None, stack=None):
-    """Ordinamento topologico per reverse mode"""
-    if visited is None:
-        visited = set()
-        stack = []
-    
-    if node.id in visited:
-        return stack
-    
-    visited.add(node.id)
-    
-    # Visita prima i figli
-    for child in node.children:
-        topological_sort_reverse(child, visited, stack)
-    
-    # Aggiungi nodo corrente
-    stack.append(node)
-    return stack
-
-# Esempio di visualizzazione del grafo
-def visualize_computation_graph():
-    import matplotlib.pyplot as plt
-    import networkx as nx
-    
-    # Esempio: f = x² + xy
-    x = Variable(2.0, name='x')
-    y = Variable(3.0, name='y')
-    
-    x_squared = x**2
-    xy = x * y  
-    f = x_squared + xy
-    
-    # Costruzione del grafo
-    G = nx.DiGraph()
-    
-    # Aggiungi nodi
-    nodes = [
-        (x.id, {'label': 'x=2.0', 'type': 'input'}),
-        (y.id, {'label': 'y=3.0', 'type': 'input'}),
-        (x_squared.id, {'label': 'x²=4.0', 'type': 'op'}),
-        (xy.id, {'label': 'xy=6.0', 'type': 'op'}),
-        (f.id, {'label': 'f=10.0', 'type': 'output'})
-    ]
-    
-    for node_id, attrs in nodes:
-        G.add_node(node_id, **attrs)
-    
-    # Aggiungi archi
-    G.add_edge(x.id, x_squared.id)
-    G.add_edge(x.id, xy.id)
-    G.add_edge(y.id, xy.id)
-    G.add_edge(x_squared.id, f.id)
-    G.add_edge(xy.id, f.id)
-    
-    # Visualizzazione
-    plt.figure(figsize=(10, 6))
-    pos = nx.spring_layout(G, seed=42)
-    
-    # Colori per tipi di nodi
-    node_colors = []
-    for node in G.nodes():
-        if G.nodes[node]['type'] == 'input':
-            node_colors.append('lightblue')
-        elif G.nodes[node]['type'] == 'op':
-            node_colors.append('lightgreen')
-        else:
-            node_colors.append('lightcoral')
-    
-    # Disegna grafo
-    nx.draw(G, pos, node_color=node_colors, node_size=1500, 
-            font_size=8, font_weight='bold', arrows=True)
-    
-    # Etichette
-    labels = {node: G.nodes[node]['label'] for node in G.nodes()}
-    nx.draw_networkx_labels(G, pos, labels, font_size=8)
-    
-    plt.title('Computational Graph: f = x² + xy')
-    plt.axis('off')
-    plt.show()
-
-visualize_computation_graph()
-```
+<img src="https://upload.wikimedia.org/wikipedia/commons/5/5d/Computational_graph.svg" alt="Computational Graph" style="width: 50%; height: 50%;">
 
 ## Analisi della Complessità
 
