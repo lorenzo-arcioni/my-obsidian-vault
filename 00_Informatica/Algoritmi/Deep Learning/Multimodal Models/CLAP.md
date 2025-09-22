@@ -78,13 +78,17 @@ con $T_{frames} = \lfloor L_{samples}/H \rfloor = 469$ e $F_{bins} = 513$. La ST
 Poiché la STFT produce valori complessi, si calcola il **power spectrogram** per ottenere una rappresentazione reale e positiva:
 
 Calcolo del modulo quadrato per ogni elemento complesso:
+
 $$
 \mathbf{S} = |\mathbf{X}_{STFT}|^2 = \text{Re}(\mathbf{X}_{STFT})^2 + \text{Im}(\mathbf{X}_{STFT})^2 \in \mathbb{R}^{B \times 1 \times 469 \times 513}
 $$
+
 Dove per ogni elemento:
+
 $$
 S[b, 1, t, f] = (\text{Re}(X_{STFT}[b, 1, t, f]))^2 + (\text{Im}(X_{STFT}[b, 1, t, f]))^2
 $$
+
 Questa operazione element-wise converte i valori complessi della STFT in valori reali positivi che rappresentano l'energia del segnale.
 
 Le dimensioni rimangono le stesse:
@@ -103,6 +107,7 @@ $$
 $$
 
 dove:
+
 - $H_j[k]$ sono filtri triangolari Mel,
 - $\mathbf{H} \in \mathbb{R}^{64 \times 513}$ è la matrice dei filtri Mel triangolari
 - Moltiplicazione lungo la dimensione delle frequenze: $(469 \times 513) \times (513 \times 64) = (469 \times 64)$
@@ -160,6 +165,7 @@ x_1 = \text{AvgPool2d}(\text{ReLU}(\text{BN}(\text{Conv2d}(\text{ReLU}(\text{BN}
 $$
 
 Dimensioni risultanti:  
+
 $$
 x_1 \in \mathbb{R}^{B \times 64 \times 234 \times 32}
 $$
