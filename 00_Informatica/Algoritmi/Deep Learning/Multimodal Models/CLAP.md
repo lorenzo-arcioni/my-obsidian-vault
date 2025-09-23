@@ -57,7 +57,7 @@ Dopo aver normalizzato e preparato il segnale audio grezzo, il passo successivo 
 Per ogni batch $b$, frame temporale $m$ e bin di frequenza $k$:
 
 $$
-\mathbf{X}_{STFT} = \text{STFT}(\mathbf{X}_{raw}) = \mathbf{X}_{STFT}[b, m, k] = \sum_{n=0}^{N-1} \mathbf{X}_{raw}[b, n + mH] \cdot w[n] \cdot e^{-j 2 \pi k n / N}
+\mathbf{X}_{STFT} = \text{STFT}(\mathbf{X}_{raw}) \implies \mathbf{X}_{STFT}[b, m, k] = \sum_{n=0}^{N-1} \mathbf{X}_{raw}[b, n + mH] \cdot w[n] \cdot e^{-j 2 \pi k n / N}
 $$
 
 dove:  
@@ -103,7 +103,7 @@ Il power spectrogram evidenzia l’energia presente in ciascun bin di frequenza 
 Per avvicinare la rappresentazione all’orecchio umano, il power spectrogram viene filtrato tramite **bande Mel**. Per ciascun filtro $H_j[k]$:
 
 $$
-\mathbf{M} = \log(\mathbf{S}\mathbf{H}^T + \epsilon) \implies M[b, m, j] = \log \Bigg( \sum_k S[b, m, k] \cdot H_j[k] + \epsilon \Bigg)
+\mathbf{M} = \underbrace{\log^{\odot}}_\text{Logaritmo element-wise}(\mathbf{S}\mathbf{H}^T + \epsilon) \implies M[b, m, j] = \log \Bigg( \sum_k S[b, m, k] \cdot H_j[k] + \epsilon \Bigg)
 $$
 
 dove:
