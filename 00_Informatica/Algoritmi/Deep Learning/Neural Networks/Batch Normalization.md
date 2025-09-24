@@ -462,26 +462,26 @@ $$
 
 % Primo layer lineare
 \node[linear, right=of input] (z1) {
-    \textbf{Linear 1}\$$2pt]
+    \textbf{Linear 1}\\[2pt]
     $\mathbf{z}^{(1)} = W^{(1)\top}\mathbf{x} + \mathbf{b}^{(1)}$
 };
 
 % Batch Normalization (nodo principale)
 \node[batchnorm, right=of z1] (bn) {
-    \textbf{Batch Normalization}\$$4pt]
-    $\hat{\mathbf{z}}^{(1)} = \frac{\mathbf{z}^{(1)}-\mu_B}{\sqrt{\sigma_B^2+\epsilon}}$\$$2pt]
+    \textbf{Batch Normalization}\\[4pt]
+    $\hat{\mathbf{z}}^{(1)} = \frac{\mathbf{z}^{(1)}-\mu_B}{\sqrt{\sigma_B^2+\epsilon}}$\\[2pt]
     $\mathbf{y}^{(1)} = \gamma \odot \hat{\mathbf{z}}^{(1)} + \boldsymbol{\beta}$
 };
 
 % Activation function
 \node[activation, right=of bn] (act) {
-    \textbf{Activation}\$$2pt]
+    \textbf{Activation}\\[2pt]
     $\mathbf{a}^{(1)} = \phi(\mathbf{y}^{(1)})$
 };
 
 % Secondo layer lineare
 \node[linear, right=of act] (z2) {
-    \textbf{Linear 2}\$$2pt]
+    \textbf{Linear 2}\\[2pt]
     $\mathbf{z}^{(2)} = W^{(2)\top}\mathbf{a}^{(1)} + \mathbf{b}^{(2)}$
 };
 
@@ -778,15 +778,52 @@ $$\frac{\partial L}{\partial \hat{x}_i} = \frac{\partial L}{\partial y_i} \gamma
 
 #### Derivata rispetto alla varianza
 
-$$\frac{\partial L}{\partial \sigma_B^2} = \sum_{i=1}^{m} \frac{\partial L}{\partial \hat{x}_i} (x_i - \mu_B) \frac{-1}{2}(\sigma_B^2 + \epsilon)^{-3/2}$$
+$$
+\begin{align*}
+\frac{\partial L}{\partial \sigma_B^2} 
+&= \sum_{i=1}^m \frac{\partial L}{\partial \hat{x}_i}\cdot \frac{\partial \hat{x}_i}{\partial \sigma_B^2} \\[0.75em]
+&= \sum_{i=1}^m \frac{\partial L}{\partial \hat{x}_i} (x_i - \mu_B)\cdot \frac{\partial}{\partial \sigma_B^2}(\sigma_B^2 + \epsilon)^{-1/2} \\[0.75em]
+&= \sum_{i=1}^m \frac{\partial L}{\partial \hat{x}_i} (x_i - \mu_B)\left(-\tfrac{1}{2}\right)(\sigma_B^2 + \epsilon)^{-3/2} \\[0.75em]
+&= \sum_{i=1}^m \frac{\partial L}{\partial \hat{x}_i} (x_i - \mu_B)\,\frac{-1}{2}(\sigma_B^2 + \epsilon)^{-3/2}
+\end{align*}
+$$
 
 #### Derivata rispetto alla media
 
-$$\frac{\partial L}{\partial \mu_B} = \sum_{i=1}^{m} \frac{\partial L}{\partial \hat{x}_i} \frac{-1}{\sqrt{\sigma_B^2 + \epsilon}} + \frac{\partial L}{\partial \sigma_B^2} \frac{-2\sum_{i=1}^{m}(x_i - \mu_B)}{m}$$
+$$
+\begin{align*}
+\frac{\partial L}{\partial \mu_B} 
+&= \sum_{i=1}^{m} \frac{\partial L}{\partial \hat{x}_i} \cdot \frac{\partial \hat{x}_i}{\partial \mu_B} 
+    + \frac{\partial L}{\partial \sigma_B^2} \cdot \frac{\partial \sigma_B^2}{\partial \mu_B} \\[0.75em]
+&= \sum_{i=1}^{m} \frac{\partial L}{\partial \hat{x}_i} \cdot \left(-\frac{1}{\sqrt{\sigma_B^2 + \epsilon}}\right) 
+    + \frac{\partial L}{\partial \sigma_B^2} \cdot \left(\frac{-2}{m}\sum_{i=1}^m (x_i - \mu_B)\right) \\[0.75em]
+&= \sum_{i=1}^{m} \frac{\partial L}{\partial \hat{x}_i}\,\frac{-1}{\sqrt{\sigma_B^2 + \epsilon}} 
+    + \frac{\partial L}{\partial \sigma_B^2}\,\frac{-2}{m}\sum_{i=1}^m (x_i - \mu_B)
+\end{align*}
+$$
 
 #### Derivata rispetto all'input originale
 
-$$\frac{\partial L}{\partial x_i} = \frac{\partial L}{\partial \hat{x}_i} \frac{1}{\sqrt{\sigma_B^2 + \epsilon}} + \frac{\partial L}{\partial \sigma_B^2} \frac{2(x_i - \mu_B)}{m} + \frac{\partial L}{\partial \mu_B} \frac{1}{m}$$
+$$
+\begin{align*}
+\frac{\partial L}{\partial x_i} 
+&= \frac{1}{\sqrt{\sigma_B^2 + \epsilon}}
+\left[
+    \frac{\partial L}{\partial \hat{x}_i} 
+    - \frac{1}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j} 
+    - \frac{\hat{x}_i}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\hat{x}_j
+\right] \\[0.75em]
+&= \frac{1}{\sqrt{\sigma_B^2 + \epsilon}} \frac{\partial L}{\partial \hat{x}_i} 
+   - \frac{1}{m\sqrt{\sigma_B^2 + \epsilon}} \sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j} 
+   - \frac{\hat{x}_i}{m\sqrt{\sigma_B^2 + \epsilon}} \sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\hat{x}_j \\[0.75em]
+&= \frac{1}{\sqrt{\sigma_B^2 + \epsilon}} \frac{\partial L}{\partial \hat{x}_i} 
+   + \left(-\frac{1}{\sqrt{\sigma_B^2 + \epsilon}}\right)\frac{1}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j} 
+   + \left(-\tfrac{1}{2}(\sigma_B^2 + \epsilon)^{-\tfrac{3}{2}}\right)\frac{2\hat{x}_i}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\hat{x}_j \\[0.75em]
+&= \frac{1}{\sqrt{\sigma_B^2 + \epsilon}} \frac{\partial L}{\partial \hat{x}_i} 
+   + \frac{1}{m}\frac{\partial L}{\partial \mu_B} 
+   + \frac{2(x_i - \mu_B)}{m}\frac{\partial L}{\partial \sigma_B^2}.
+\end{align*}
+$$
 
 ## Batch Normalization durante l'Inferenza
 
@@ -808,11 +845,18 @@ $$\hat{x} = \frac{x - \mu_{pop}}{\sqrt{\sigma_{pop}^2 + \epsilon}}$$
 
 $$y = \gamma \hat{x} + \beta$$
 
+### Perché è importante
+
+Usare le statistiche di popolazione durante l'inferenza è cruciale perché:
+- **Stabilizza le attivazioni**: evita che la normalizzazione dipenda da un batch di test troppo piccolo o non rappresentativo.  
+- **Garantisce coerenza**: i dati vengono trasformati nello stesso modo indipendentemente dalla dimensione del batch o dal singolo esempio.  
+- **Preserva le prestazioni**: senza questo accorgimento, la rete si troverebbe a elaborare input con distribuzioni diverse rispetto a quelle viste in addestramento, causando un forte degrado della qualità delle predizioni.  
+
 ## Effetti della Batch Normalization
 
 ### Stabilizzazione del Training
 
-La batch normalization riduce la sensitività all'inizializzazione dei pesi. Matematicamente, questo può essere compreso osservando che la normalizzazione limita la magnitudine degli input a ogni layer, indipendentemente dall'inizializzazione precedente.
+La batch normalization riduce la sensibilità all'inizializzazione dei pesi. Matematicamente, questo può essere compreso osservando che la normalizzazione limita la magnitudine degli input a ogni layer, indipendentemente dall'inizializzazione precedente.
 
 ### Regolarizzazione Implicita
 
@@ -822,20 +866,49 @@ La batch normalization ha un effetto regolarizzante implicito. Questo avviene pe
 
 2. **Normalizzazione**: La normalizzazione riduce l'overfitting forzando la rete a essere meno dipendente da valori specifici degli input.
 
-### Enabling Higher Learning Rates
+### Learning Rates più Elevati
 
-La batch normalization permette l'uso di learning rate più elevati perché:
+La batch normalization permette l'uso di learning rate più elevati attraverso un meccanismo molto efficace: il **ricentramento automatico dei gradienti**.
 
-1. **Gradienti Stabili**: I gradienti hanno magnitudini più prevedibili.
-2. **Distribuzione Input Stabile**: Gli input a ogni layer hanno statistiche più stabili.
+#### Ricentramento Automatico dei Gradienti
 
-Matematicamente, questo può essere visto dal fatto che i gradienti rispetto agli input normalizzati sono limitati:
+Dalla formula del gradiente della batch normalization:
 
-$$\left\|\frac{\partial L}{\partial \hat{x}}\right\| \leq \|\gamma\| \left\|\frac{\partial L}{\partial y}\right\|$$
+$$\frac{\partial L}{\partial x_i} = \frac{1}{\sqrt{\sigma^2 + \epsilon}}\left[\frac{\partial L}{\partial \hat{x}_i} - \frac{1}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j} - \frac{\hat{x}_i}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\hat{x}_j\right]$$
+
+**Teorema (Ricentramento)**: La somma dei gradienti su un batch è sempre zero:
+
+$$\boxed{\sum_{i=1}^m \frac{\partial L}{\partial x_i} = 0}$$
+
+**Dimostrazione**: 
+$$\begin{align*}
+\sum_{i=1}^m \frac{\partial L}{\partial x_i} &= \frac{1}{\sqrt{\sigma^2 + \epsilon}} \sum_{i=1}^m \left[\frac{\partial L}{\partial \hat{x}_i} - \frac{1}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j} - \frac{\hat{x}_i}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\hat{x}_j\right]\\
+&= \frac{1}{\sqrt{\sigma^2 + \epsilon}} \left[\sum_{i=1}^m\frac{\partial L}{\partial \hat{x}_i} - \sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j} - \frac{1}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\hat{x}_j \sum_{i=1}^m\hat{x}_i\right]
+\end{align*}$$
+
+Poiché per costruzione della batch normalization: $\frac{1}{m}\sum_{i=1}^m\hat{x}_i = 0 \implies \sum_{i=1}^m\hat{x}_i = 0$, otteniamo:
+
+$$\sum_{i=1}^m \frac{\partial L}{\partial x_i} = \frac{1}{\sqrt{\sigma^2 + \epsilon}} \left[\sum_{i=1}^m\frac{\partial L}{\partial \hat{x}_i} - \sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\right] = 0$$
+
+#### Proprietà di Stabilità
+
+**Teorema (Decorrelazione)**: Il termine correttivo $-\frac{\hat{x}_i}{m}\sum_{j=1}^{m}\frac{\partial L}{\partial \hat{x}_j}\hat{x}_j$ rimuove automaticamente la componente del gradiente correlata con l'input normalizzato.
+
+**Conseguenza per l'Ottimizzazione**: Questo ricentramento garantisce che i gradienti non abbiano un bias sistematico in una direzione specifica, riducendo le oscillazioni durante l'ottimizzazione e permettendo l'uso di learning rate più elevati senza instabilità.
+
+#### Implicazioni Pratiche
+
+Il ricentramento automatico fornisce una garanzia algebrica che:
+
+1. **Elimina bias direzionali**: $\sum_{i=1}^m \frac{\partial L}{\partial x_i} = 0$ sempre
+2. **Riduce correlazioni**: I gradienti sono decorrelati rispetto agli input normalizzati
+3. **Stabilizza l'aggiornamento**: Le oscillazioni sono naturalmente attenuate
+
+Questa proprietà matematica rigorosa è l'unico meccanismo con dimostrazione completa che spiega perché la batch normalization permette learning rate più elevati in modo affidabile e prevedibile.
 
 ## Varianti della Batch Normalization
 
-### Layer Normalization
+### [[Layer Normalization]]
 
 Invece di normalizzare across il batch, la layer normalization normalizza across le features:
 
@@ -845,13 +918,13 @@ $$\sigma_i^2 = \frac{1}{H} \sum_{j=1}^{H} (x_{i,j} - \mu_i)^2$$
 
 dove $H$ è il numero di features per ogni esempio.
 
-### Instance Normalization
+### [[Instance Normalization]]
 
 Normalizza ogni feature map indipendentemente:
 
 $$\mu_{i,j} = \frac{1}{HW} \sum_{h=1}^{H} \sum_{w=1}^{W} x_{i,j,h,w}$$
 
-### Group Normalization
+### [[Group Normalization]]
 
 Divide le features in gruppi e normalizza all'interno di ogni gruppo:
 
