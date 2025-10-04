@@ -132,7 +132,7 @@ $$
 quindi
 
 $$
-M_{norm}[b, 1, t, f] = \gamma_f \frac{M[b, 1, t, f] - \mu_f}{\sqrt{\sigma_f^2 + \epsilon}} + \beta_f
+\mathbf{M}_{norm}[b, 1, t, f] = \gamma_f \frac{M[b, 1, t, f] - \mu_f}{\sqrt{\sigma_f^2 + \epsilon}} + \beta_f
 $$
 
 dove $\mu_f$ e $\sigma_f^2$ sono media e varianza calcolate sul batch per la frequenza $f$, e $\gamma_f, \beta_f$ sono parametri apprendibili.  
