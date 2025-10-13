@@ -1,4 +1,4 @@
-# Swin Transformer: Guida Completa e Dettagliata
+# Swin Transformer: Shifted Window Transformers
 
 ## Introduzione
 
@@ -11,6 +11,8 @@ In generale, Swin Transformer trasforma un'immagine in una sequenza di token (co
 ## Architettura Generale
 
 L'architettura di Swin Transformer si compone di quattro fasi principali, ognuna con una risoluzione spaziale progressivamente ridotta (simile alle CNN), creando una **gerarchia di rappresentazioni**.
+
+<img src="https://user-images.githubusercontent.com/24825165/121768619-038e6d80-cb9a-11eb-8cb7-daa827e7772b.png" alt="Immagine di un Transformer" style="display: block; margin-left: auto; margin-right: auto;">
 
 ### Input e Parametri
 
@@ -44,9 +46,10 @@ $$
 $$
 
 Parametri della convoluzione:
-- Kernel size: $4 \times 4$
-- Stride: $4$
-- Output channels: $96$
+- Kernel size: $4 \times 4 \implies K = 4$
+- Stride: $S = 4$
+- Output channels: $C_{out} = 96$
+
 
 Questo produce:
 
@@ -57,6 +60,24 @@ $$
 $$
 W_1 = \frac{W_0}{P} = \frac{224}{4} = 56
 $$
+
+La convoluzione 2D che genera gli embedding è definita come:
+
+$$
+Y_{c_{\text{out}}, h, w} =
+\sum_{c_{\text{in}}=1}^{C_{\text{in}}}
+\sum_{i=0}^{K-1} \sum_{j=0}^{K-1}
+W_{c_{\text{out}}, c_{\text{in}}, i, j} \cdot
+X_{c_{\text{in}},\, h \cdot S + i,\, w \cdot S + j}
++ b_{c_{\text{out}}} = \sum_{d=1}^{3} \sum_{r=0}^{3} \sum_{s=0}^{3}
+W_{c_{out},d,r,s} \cdot X_{d,\, h\cdot4 + r,\, w\cdot4 + s} + b_{c_{out}}
+$$
+
+Dove:
+
+- $c_{out} \in \{1, \ldots, C_{out}\}$, $h \in \{1, \ldots, H_1\}$, $w \in \{1, \ldots, W_1\}$
+- $W \in \mathbb{R}^{96 \times 3 \times 4 \times 4}$ dove ogni $W_c$ è un **filtro** che rileva un pattern visivo locale (bordi, texture, colori…)
+- I valori di $W$ **sono parametri appresi** durante il training mediante backpropagation
 
 Il numero totale di patch è:
 
@@ -74,7 +95,7 @@ $$
 
 **Normalizzazione (opzionale):**
 
-Se `patch_norm=True`, si applica Layer Normalization:
+Se `patch_norm=True`, si applica [[Layer Normalization]]:
 
 $$
 \mathbf{X}_{\text{norm}} = \text{LayerNorm}(\mathbf{X}_{\text{embed}})
@@ -82,7 +103,7 @@ $$
 
 con $\mathbf{X}_{\text{norm}} \in \mathbb{R}^{B \times 3136 \times 96}$
 
-### Absolute Position Embedding (opzionale)
+### [[Absolute Position Embedding]] (opzionale)
 
 Se il parametro `ape=True` è attivato, viene aggiunto un embedding posizionale assoluto:
 
