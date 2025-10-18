@@ -27,7 +27,7 @@ dove:
 - $3$ = numero di canali (RGB)
 - $H_0 = W_0 = 224$ (tipicamente, dimensione immagine standard)
 
-## Fase 1: Patch Embedding
+## Fase 1: Patch Partition and Embedding
 
 ### Suddivisione in Patch
 
@@ -93,6 +93,8 @@ $$
 \mathbf{X}_{\text{embed}} \in \mathbb{R}^{B \times 96 \times 56 \times 56} \rightarrow \mathbb{R}^{B \times 3136 \times 96}
 $$
 
+Questo permette di elaborare i patch come sequenze di token. È quindi più comodo per applicare LayerNorm / dropout / pos embedding.
+
 **Normalizzazione (opzionale):**
 
 Se `patch_norm=True`, si applica [[Layer Normalization]]:
@@ -119,13 +121,15 @@ $$
 \mathbf{X}_0 = \text{Dropout}(\mathbf{X}_{\text{pos}}) \in \mathbb{R}^{B \times 3136 \times 96}
 $$
 
+**Remark:** Il Dropout ovviamente viene appplicato solamente durante la fase di training.
+
 ## Stage 1: Primo Livello della Gerarchia
 
 Lo Stage 1 processa le patch con la massima risoluzione spaziale.
 
 ### Parametri dello Stage 1
 
-- Risoluzione input: $H_1 \times W_1 = 56 \times 56$
+- Risoluzione input: $H_1 \times W_1 = 56 \times 56 = 3136$
 - Dimensione canali: $C_1 = 96$
 - Numero di blocchi: $\text{depth}_1 = 2$
 - Numero di head di attenzione: $\text{heads}_1 = 3$
@@ -136,6 +140,8 @@ Lo Stage 1 processa le patch con la massima risoluzione spaziale.
 Ogni stage contiene una sequenza di **Swin Transformer Blocks**. Ogni blocco alterna tra:
 1. **W-MSA** (Window-based Multi-head Self Attention)
 2. **SW-MSA** (Shifted Window-based Multi-head Self Attention)
+
+<img src="https://www.researchgate.net/publication/375432550/figure/fig3/AS:11431281212044866@1702536170969/Two-consecutive-Swin-transformer-blocks.tif" alt="Swin Transformer Block" style="display: block; margin-left: auto; margin-right: auto; height: 500px;">
 
 ## W-MSA: Window-based Multi-head Self Attention
 
@@ -154,6 +160,8 @@ $$
 Per lo Stage 1: $H = W = 56$, $C = 96$
 
 **Reshape spaziale:**
+
+Dato che per calcolare l'attenzione si lavora su finestre di dimensione $M \times M$, l'immagine viene riorganizzata da sequenza di patch a "immagine" di patch. In questo modo, è possibile calcolare l'attenzione localmente.
 
 $$
 \mathbf{X} \rightarrow \mathbb{R}^{B \times H \times W \times C} = \mathbb{R}^{B \times 56 \times 56 \times 96}
@@ -175,11 +183,18 @@ $$
 
 **Reshape per l'attenzione:**
 
+Dopo aver suddiviso l'immagine in finestre per il **Window-based Multi-Head Self Attention (W-MSA)**, otteniamo:
+
+
 $$
 \mathbf{X}_{\text{windows}} \in \mathbb{R}^{(B \times 64) \times 49 \times 96}
 $$
 
-Quindi abbiamo $B \times 64$ finestre indipendenti, ognuna con 49 patch.
+**Perché `(B × 64)`?**  
+
+- Ogni finestra è trattata come un piccolo "mini-batch" indipendente.  
+- Appiattendo batch e finestre in una singola dimensione `(B × 64)`, possiamo **calcolare l'attenzione su tutte le finestre in parallelo** senza fare loop immagine per immagine.  
+- In pratica: tutti gli esempi del batch e tutte le finestre diventano un unico batch “virtuale” per l’attenzione.
 
 ### Layer Normalization
 
@@ -208,15 +223,23 @@ $$
 Le query, key e value vengono generate con una proiezione lineare:
 
 $$
-\mathbf{QKV} = \mathbf{X}_{\text{norm}} \mathbf{W}_{qkv}
+[\mathbf{Q} \;|\; \mathbf{K} \;|\; \mathbf{V}]
+ = \mathbf{X}_{\text{norm}} \mathbf{W}_{qkv}
 $$
 
-dove $\mathbf{W}_{qkv} \in \mathbb{R}^{96 \times 288}$ (288 = 3 × 96 per Q, K, V)
+dove $\mathbf{W}_{qkv} \in \mathbb{R}^{96 \times 288} (288 = 3 \times 96$ per $\mathbf Q, \mathbf K, \mathbf V)$
 
 Risultato:
 
 $$
-\mathbf{QKV} \in \mathbb{R}^{(B \times 64) \times 49 \times 288}
+[\mathbf{Q} \;|\; \mathbf{K} \;|\; \mathbf{V}]
+ \in \mathbb{R}^{(B \times 64) \times 49 \times 288}
+$$
+
+L'ultima dimensione è una concatenazione di $\mathbf Q, \mathbf K, \mathbf V$:
+
+$$
+[\mathbf{Q} \in \mathbb{R}^{(B \times 64) \times 49 \times 96} \; | \; \mathbf{K} \in \mathbb{R}^{(B \times 64) \times 49 \times 96} \; | \; \mathbf{V} \in \mathbb{R}^{(B \times 64) \times 49 \times 96}].
 $$
 
 **Separazione e Reshape:**
@@ -225,7 +248,7 @@ $$
 \mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{(B \times 64) \times 49 \times 96}
 $$
 
-Reshape per multi-head:
+Reshape per multi-head ($\text{heads} = 3$):
 
 $$
 \mathbf{Q} \rightarrow \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 32}
@@ -239,38 +262,118 @@ $$
 \mathbf{V} \rightarrow \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 32}
 $$
 
+In pratica, dividiamo i 96 canali in 32 canali per ogni head.
+
 ### Calcolo dell'Attenzione
-
 **Scaled Dot-Product Attention:**
-
 $$
 \mathbf{A} = \frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d_h}} + \mathbf{B}
 $$
-
 dove:
 - $\mathbf{Q} \mathbf{K}^T \in \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 49}$ (matrice di attenzione)
+- Ci dice, per ogni finestra e per ogni immagine, quanto ogni patch è legata a tutte le altre.
 - $\sqrt{d_h} = \sqrt{32} \approx 5.66$ (fattore di scala)
 - $\mathbf{B} \in \mathbb{R}^{3 \times 49 \times 49}$ (relative position bias)
 
 ### Relative Position Bias
-
+Il tensore $\mathbf{B} \in \mathbb{R}^{3 \times 49 \times 49}$ è ottenuto a partire dalla **tabella dei bias**.
 Swin Transformer usa un **bias posizionale relativo** apprendibile invece di embedding posizionali assoluti per ogni token.
 
 **Tabella dei bias:**
+Consideriamo la head $q$. Siano $(y_i, x_i)$ e $(y_j, x_j)$ le coordinate del patch $p_i$ (query) e $p_j$ (key) rispettivamente (rispetto alla finestra $w$), dove $y$ indica la riga e $x$ la colonna. Sia $B_{\text{table}} \in \mathbb{R}^{(2M-1) \times (2M-1)}$ la tabella dei bias relativa all'head $q$.
+
+La tabella dei bias contiene un valore di bias per ogni coppia di $(\Delta y, \Delta x)$. Quindi, per ogni coppia di patch $(y_i, x_i)$ e $(y_j, x_j)$, il valore di $B_{\text{table}}$ corrispondente all'offset $(y_j - y_i, x_j - x_i)$ viene recuperato dalla tabella.
+
+#### Esempio
+Assumiamo per semplicità $M = 2$.
+$$
+w = \begin{bmatrix}
+p_{0, 0} & p_{0, 1} \\
+p_{1, 0} & p_{1, 1}
+\end{bmatrix}
+$$
+
+La $B_{\text{table}}$ ha dimensione $(2M-1) \times (2M-1)$, quindi $B_{\text{table}} \in \mathbb{R}^{3 \times 3}$.
 
 $$
-\mathbf{B}_{\text{table}} \in \mathbb{R}^{(2M-1) \times (2M-1) \times h}
+B_{\text{table}} =
+\begin{array}{c|ccc}
+\Delta y \backslash \Delta x & -1 & 0 & +1 \\
+\hline
+-1 & 0.1 & 0.2 & 0.3 \\
+0 & 0.4 & 0.5 & 0.6 \\
++1 & 0.7 & 0.8 & 0.9 \\
+\end{array}
+\quad
+\text{con } \Delta y, \Delta x \in \{-1, 0, +1\}
 $$
 
-Per $M = 7$, $h = 3$:
+Questa è la tabella dei bias relativa all'head $q$ appresa durante il training. Questa tabella ci sta dicendo che abbiamo un bias per ogni posizione relativa tra due patch. In particolare, abbiamo un bias per tutte le posizioni relative $(\Delta y, \Delta x)$ della key rispetto alla query:
+- **Stessa posizione:** $(0, 0)$
+- **Key più a destra:**
+  - Direttamente a destra: $(0, +1)$
+  - In alto a destra: $(-1, +1)$
+  - In basso a destra: $(+1, +1)$
+- **Key più a sinistra:**
+  - Direttamente a sinistra: $(0, -1)$
+  - In alto a sinistra: $(-1, -1)$
+  - In basso a sinistra: $(+1, -1)$
+- **Key sulla stessa colonna:**
+  - Sopra: $(-1, 0)$
+  - Sotto: $(+1, 0)$
+
+Consideriamo le coordinate di due patch: query $(y_i, x_i) = (0, 0)$ e key $(y_j, x_j) = (1, 1)$:
+$$
+(y_j - y_i, x_j - x_i) = (1 - 0, 1 - 0) = (+1, +1)
+$$
+
+quindi la key $p_{1, 1}$ è in basso a destra rispetto alla query $p_{0, 0}$. E così per tutte le combinazioni di patch $(y_i, x_i)$ e $(y_j, x_j)$.
+
+Quindi, nel calcolo dell'attenzione per ogni coppia di patch, in totale avremo $M^2 \times M^2 = 4 \times 4 = 16$ coppie. Ogni coppia avrà un bias associato in base alla loro posizione relativa.
+
+Assumendo che la patch in prima posizione sia la patch query e che la seconda sia la patch key $(Q, K)$:
+- **Stessa posizione:** $(p_{0, 0}, p_{0, 0})$, $(p_{0, 1}, p_{0, 1})$, $(p_{1, 0}, p_{1, 0})$, $(p_{1, 1}, p_{1, 1})$ → offset $(0, 0)$
+- **Key a destra:** $(p_{0, 0}, p_{0, 1})$, $(p_{1, 0}, p_{1, 1})$ → offset $(0, +1)$
+- **Key a sinistra:** $(p_{0, 1}, p_{0, 0})$, $(p_{1, 1}, p_{1, 0})$ → offset $(0, -1)$
+- **Key sotto:** $(p_{0, 0}, p_{1, 0})$, $(p_{0, 1}, p_{1, 1})$ → offset $(+1, 0)$
+- **Key sopra:** $(p_{1, 0}, p_{0, 0})$, $(p_{1, 1}, p_{0, 1})$ → offset $(-1, 0)$
+- **Key in basso a destra:** $(p_{0, 0}, p_{1, 1})$ → offset $(+1, +1)$
+- **Key in alto a sinistra:** $(p_{1, 1}, p_{0, 0})$ → offset $(-1, -1)$
+- **Key in basso a sinistra:** $(p_{0, 1}, p_{1, 0})$ → offset $(+1, -1)$
+- **Key in alto a destra:** $(p_{1, 0}, p_{0, 1})$ → offset $(-1, +1)$
+
+Nell'immagine in basso è presente uno schema a colori che renderà sicuramente meglio l'idea molto semplice alla base di questo approccio.
+
+<img src="">
+
+#### Costruzione della matrice di bias estesa
+
+Per ottenere la matrice dei bias con dimensioni $M^2 \times M^2$ (nel nostro esempio $4 \times 4$), che è quella che verrà poi utilizzata nel calcolo dell'attenzione, si procede come segue:
+
+1. Per ogni coppia di patch $(p_i, p_j)$ nella finestra, con coordinate $(y_i, x_i)$ e $(y_j, x_j)$
+2. Si calcola l'offset relativo: $(\Delta y, \Delta x) = (y_j - y_i, x_j - x_i)$
+3. Si recupera il valore corrispondente dalla tabella $B_{\text{table}}[\Delta y, \Delta x]$
+4. Si inserisce questo valore nella posizione $(i, j)$ della matrice estesa
+
+Per il nostro esempio con $M = 2$, la matrice dei bias ${B} \in \mathbb{R}^{4 \times 4}$ sarà:
 
 $$
-\mathbf{B}_{\text{table}} \in \mathbb{R}^{13 \times 13 \times 3}
+{B} = \begin{bmatrix}
+0.5 & 0.6 & 0.8 & 0.9 \\
+0.4 & 0.5 & 0.7 & 0.8 \\
+0.2 & 0.3 & 0.5 & 0.6 \\
+0.1 & 0.2 & 0.4 & 0.5
+\end{bmatrix}
 $$
 
-**Indicizzazione:**
+dove ogni riga corrisponde a una patch query e ogni colonna a una patch key. Ad esempio:
+- L'elemento $(0, 3)$ corrisponde alla coppia $(p_{0,0}, p_{1,1})$ con offset $(+1, +1)$, quindi ha valore $0.9$
+- L'elemento $(0, 1)$ corrisponde alla coppia $(p_{0,0}, p_{0,1})$ con offset $(0, +1)$, quindi ha valore $0.6$
+- L'elemento $(3, 0)$ corrisponde alla coppia $(p_{1,1}, p_{0,0})$ con offset $(-1, -1)$, quindi ha valore $0.1$
 
-Per ogni coppia di posizioni $(i, j)$ all'interno della finestra, si calcola l'offset relativo e si recupera il bias corrispondente dalla tabella.
+Nel caso generale con $M = 7$ (finestre $7 \times 7$ con 49 patch), avremo $B_{\text{table}} \in \mathbb{R}^{13 \times 13}$ e ${B} \in \mathbb{R}^{49 \times 49}$ per ciascuna delle 3 heads.
+
+Questo meccanismo permette al modello di apprendere quanto sia importante la posizione relativa tra patch durante l'attenzione, rendendo il bias condiviso per tutte le coppie di patch con la stessa distanza relativa.
 
 **Applicazione Softmax:**
 
