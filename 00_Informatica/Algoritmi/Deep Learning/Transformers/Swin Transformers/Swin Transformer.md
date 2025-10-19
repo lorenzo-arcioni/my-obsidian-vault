@@ -210,12 +210,12 @@ $$
 
 ### Multi-Head Self Attention
 
-**Numero di head:** $h = 3$ (per Stage 1)
+**Numero di head:** $3$ (per Stage 1)
 
 **Dimensione per head:**
 
 $$
-d_h = \frac{C}{h} = \frac{96}{3} = 32
+d_h = \frac{C}{\text{heads}} = \frac{96}{3} = 32
 $$
 
 **Proiezioni QKV:**
@@ -239,7 +239,7 @@ $$
 L'ultima dimensione è una concatenazione di $\mathbf Q, \mathbf K, \mathbf V$:
 
 $$
-[\mathbf{Q} \in \mathbb{R}^{(B \times 64) \times 49 \times 96} \; | \; \mathbf{K} \in \mathbb{R}^{(B \times 64) \times 49 \times 96} \; | \; \mathbf{V} \in \mathbb{R}^{(B \times 64) \times 49 \times 96}].
+\mathbf{Q} \in \mathbb{R}^{(B \times 64) \times 49 \times 96} , \mathbf{K} \in \mathbb{R}^{(B \times 64) \times 49 \times 96} , \mathbf{V} \in \mathbb{R}^{(B \times 64) \times 49 \times 96}].
 $$
 
 **Separazione e Reshape:**
@@ -375,7 +375,9 @@ Nel caso generale con $M = 7$ (finestre $7 \times 7$ con 49 patch), avremo $B_{\
 
 Questo meccanismo permette al modello di apprendere quanto sia importante la posizione relativa tra patch durante l'attenzione, rendendo il bias condiviso per tutte le coppie di patch con la stessa distanza relativa.
 
-**Applicazione Softmax:**
+### Applicazione Softmax
+
+Dopo aver calcolato i punteggi di attenzione grezzi e aggiunto il relative position bias, otteniamo la matrice $\mathbf{A}$. Ora dobbiamo normalizzare questi punteggi per ottenere delle probabilità che indichino quanto ogni patch dovrebbe "prestare attenzione" alle altre patch nella finestra.
 
 $$
 \mathbf{A}_{\text{norm}} = \text{Softmax}(\mathbf{A})
@@ -385,7 +387,29 @@ $$
 \mathbf{A}_{\text{norm}} \in \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 49}
 $$
 
-**Applicazione ai Values:**
+**Cosa fa la Softmax:**
+
+La funzione softmax viene applicata **lungo l'ultima dimensione** (le 49 colonne, corrispondenti alle patch key). Per ogni patch query (riga), la softmax trasforma i punteggi grezzi in una distribuzione di probabilità che somma a 1:
+
+$$
+\text{Softmax}(a_i) = \frac{e^{a_i}}{\sum_{j=1}^{49} e^{a_j}}
+$$
+
+**Significato:**
+- Ogni riga di $\mathbf{A}_{\text{norm}}$ ora rappresenta una distribuzione di probabilità
+- I valori sono compresi tra 0 e 1
+- La somma di ogni riga è esattamente 1
+- Valori più alti indicano che la patch query dovrebbe "prestare più attenzione" a quella specifica patch key
+
+**Perché è necessaria:**
+La softmax serve a:
+1. **Normalizzare** i punteggi in un range interpretabile (0-1)
+2. **Amplificare** le differenze tra punteggi alti e bassi (grazie alla funzione esponenziale)
+3. **Creare una distribuzione di probabilità** che può essere usata come sistema di pesi per combinare i values
+
+### Applicazione ai Values
+
+Ora che abbiamo i pesi di attenzione normalizzati, possiamo usarli per aggregare le informazioni dai values:
 
 $$
 \mathbf{O} = \mathbf{A}_{\text{norm}} \mathbf{V}
@@ -395,27 +419,174 @@ $$
 \mathbf{O} \in \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 32}
 $$
 
-**Concatenazione delle head:**
+**Operazione matriciale:**
+
+Stiamo moltiplicando:
+- $\mathbf{A}_{\text{norm}} \in \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 49}$ (pesi di attenzione)
+- $\mathbf{V} \in \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 32}$ (values)
+
+Risultato: $\mathbf{O} \in \mathbb{R}^{(B \times 64) \times 3 \times 49 \times 32}$
+
+**Cosa succede concretamente:**
+
+Per ogni head e per ogni patch query (49 patch totali):
+1. Prendiamo la riga corrispondente di $\mathbf{A}_{\text{norm}}$ (i suoi pesi di attenzione verso tutte le 49 patch)
+2. Usiamo questi pesi per fare una **media ponderata** di tutti i 49 values
+3. Il risultato è un nuovo vettore di dimensione 32 (dimensione per head) che rappresenta l'informazione aggregata
+
+**Interpretazione:**
+
+Ogni patch nel risultato $\mathbf{O}$ è ora una combinazione pesata di tutte le patch della finestra. I pesi sono determinati dall'attenzione:
+- Se la patch query $i$ ha alta attenzione verso la patch $j$, il value della patch $j$ contribuirà maggiormente al risultato finale della patch $i$
+- Questo permette a ogni patch di "raccogliere" informazioni contestuali dalle patch vicine in base alla loro rilevanza.
+
+### Concatenazione delle Head
+
+Le 3 head hanno processato l'informazione in parallelo, ciascuna con la propria prospettiva (parametri $\mathbf{W}_{qkv}$ diversi). Ora dobbiamo ricombinare i loro output:
 
 $$
 \mathbf{O} \rightarrow \mathbb{R}^{(B \times 64) \times 49 \times 96}
 $$
 
-**Proiezione finale:**
+**Operazione di reshape:**
 
-$$
+Passiamo da:
+- $\mathbb{R}^{(B \times 64) \times 3 \times 49 \times 32}$
+
+A:
+- $\mathbb{R}^{(B \times 64) \times 49 \times 96}$
+
+**Come funziona:**
+
+Per ogni patch (delle 49), concateniamo gli output delle 3 head:
+- Head 1: vettore di 32 dimensioni
+- Head 2: vettore di 32 dimensioni  
+- Head 3: vettore di 32 dimensioni
+- **Concatenazione:** vettore di $32 + 32 + 32 = 96$ dimensioni
+
+**Motivazione del multi-head:**
+
+Ogni head ha imparato a catturare aspetti diversi delle relazioni tra patch:
+- Una head potrebbe specializzarsi in relazioni spaziali locali
+- Un'altra potrebbe catturare pattern di texture
+- Una terza potrebbe rilevare strutture globali
+
+Concatenando i loro output, otteniamo una rappresentazione ricca che combina tutte queste prospettive.
+
+### Proiezione Finale
+
+L'output concatenato delle head viene trasformato attraverso un'ultima proiezione lineare:
+
+$
 \mathbf{O}_{\text{proj}} = \mathbf{O} \mathbf{W}_{\text{proj}}
-$$
+$
 
 dove $\mathbf{W}_{\text{proj}} \in \mathbb{R}^{96 \times 96}$
 
-**Merge delle finestre:**
+**Perché serve questa proiezione finale?**
 
-Le finestre vengono ricomposte nell'immagine originale:
+A questo punto del processo, abbiamo concatenato gli output delle 3 head ottenendo per ogni patch un vettore di 96 dimensioni. Tuttavia, questa concatenazione è semplicemente un "affiancamento" dei risultati delle diverse head, senza alcuna interazione tra loro. Ogni blocco di 32 dimensioni proviene da una head specifica e rimane isolato dagli altri.
+
+La proiezione finale è essenziale per **integrare e miscelare** le informazioni che le diverse head hanno estratto in modo indipendente. Pensiamo a questa operazione come a un "strato di fusione" che permette al modello di imparare come combinare al meglio le diverse prospettive catturate dalle head.
+
+**Il concetto di mixing delle informazioni:**
+
+Consideriamo un esempio concreto. Supponiamo che durante il training, il modello abbia scoperto che:
+- La **head 1** è brava a identificare bordi verticali
+- La **head 2** è specializzata nel riconoscere texture
+- La **head 3** cattura relazioni spaziali a lungo raggio
+
+Dopo la concatenazione, abbiamo tutte queste informazioni presenti nel vettore da 96 dimensioni, ma sono separate in tre blocchi distinti. La proiezione finale, attraverso la matrice $\mathbf{W}_{\text{proj}}$, permette di creare nuove feature che sono **combinazioni** di queste informazioni. 
+
+Per esempio, potrebbe imparare che per riconoscere un particolare oggetto serve combinare informazioni dai bordi verticali (head 1) con informazioni sulla texture (head 2), creando una nuova feature che rappresenta questa combinazione. Questo non sarebbe possibile con la semplice concatenazione.
+
+**Apprendimento di rappresentazioni più ricche:**
+
+La matrice $\mathbf{W}_{\text{proj}} \in \mathbb{R}^{96 \times 96}$ contiene parametri apprendibili. Durante il training con backpropagation, il modello impara quali combinazioni delle feature estratte dalle head sono più utili per il task finale (classificazione, object detection, etc.). 
+
+In pratica, ogni riga di $\mathbf{W}_{\text{proj}}$ definisce come costruire una nuova dimensione dell'output combinando linearmente tutte le 96 dimensioni dell'input concatenato. Questo significa che ogni dimensione dell'output può dipendere da qualsiasi dimensione di qualsiasi head, permettendo interazioni complesse.
+
+**Preparazione per la residual connection:**
+
+Un altro aspetto fondamentale è che questa proiezione trasforma l'output del meccanismo di attenzione in uno spazio di rappresentazione che è compatibile con l'input originale $\mathbf{X}$. Ricordiamo che alla fine di questo blocco dovremo sommare questo output all'input originale (residual connection):
+
+$
+\mathbf{X}_{\text{attn}} = \mathbf{X} + \text{DropPath}(\mathbf{O}_{\text{proj}})
+$
+
+Per poter effettuare questa somma in modo significativo, l'output deve trovarsi nello stesso spazio di rappresentazione dell'input. La proiezione finale garantisce questa compatibilità, mappando le feature elaborate dall'attenzione in uno spazio dove possono essere integrate con le feature originali.
+
+**Controllo della capacità del modello:**
+
+Inoltre, questa proiezione aggiunge un ulteriore strato di parametri apprendibili al modello. Mentre il numero di parametri nella proiezione QKV è determinato dalla necessità di creare query, key e value, la proiezione finale offre al modello una capacità aggiuntiva di apprendere trasformazioni complesse. Questo è particolarmente importante perché il meccanismo di attenzione da solo potrebbe non essere sufficiente a catturare tutte le relazioni necessarie.
+
+**Dettagli dimensionali:**
+
+Osserviamo più nel dettaglio cosa succede numericamente:
+
+Input: $\mathbf{O} \in \mathbb{R}^{(B \times 64) \times 49 \times 96}$
+
+Moltiplicazione per $\mathbf{W}_{\text{proj}} \in \mathbb{R}^{96 \times 96}$
+
+Output: $\mathbf{O}_{\text{proj}} \in \mathbb{R}^{(B \times 64) \times 49 \times 96}$
+
+Per ogni patch (una delle 49 in ogni finestra), prendiamo il suo vettore di 96 dimensioni e lo moltiplichiamo per la matrice $\mathbf{W}_{\text{proj}}$. Questo produce un nuovo vettore di 96 dimensioni dove ciascuna componente è una combinazione lineare pesata di tutte le 96 componenti originali.
+
+La dimensionalità rimane invariata (96 → 96), ma la **qualità** e il **contenuto informativo** delle feature sono stati arricchiti attraverso questa trasformazione apprendibile. Non è un semplice passaggio di dati, ma un vero e proprio step di elaborazione che il modello ottimizza durante il training per massimizzare le performance sul task specifico.
+
+### Merge delle Finestre
+
+Finora abbiamo lavorato su finestre separate. Ora dobbiamo ricostruire l'immagine completa ricomponendo tutte le finestre:
 
 $$
 \mathbf{O}_{\text{proj}} \in \mathbb{R}^{(B \times 64) \times 49 \times 96} \rightarrow \mathbb{R}^{B \times 56 \times 56 \times 96} \rightarrow \mathbb{R}^{B \times 3136 \times 96}
 $$
+
+**Processo di ricostruzione:**
+
+**Passo 1: Da finestre piatte a finestre spaziali**
+
+Da $\mathbb{R}^{(B \times 64) \times 49 \times 96}$ a $\mathbb{R}^{B \times 64 \times 49 \times 96}$
+
+Separiamo la dimensione batch dalle finestre.
+
+**Passo 2: Reshape delle patch in ogni finestra**
+
+Ogni finestra contiene 49 patch disposte in una griglia $7 \times 7$:
+
+$\mathbb{R}^{B \times 64 \times 49 \times 96} \rightarrow \mathbb{R}^{B \times 64 \times 7 \times 7 \times 96}$
+
+Ora ogni finestra ha una struttura spaziale bidimensionale.
+
+**Passo 3: Ricomposizione della griglia di finestre**
+
+Le 64 finestre erano disposte in una griglia $8 \times 8$ (ricordiamo che $8 \times 8 = 64$ finestre):
+
+$\mathbb{R}^{B \times 64 \times 7 \times 7 \times 96} \rightarrow \mathbb{R}^{B \times 8 \times 8 \times 7 \times 7 \times 96}$
+
+**Passo 4: Riorganizzazione in feature map**
+
+Riorganizziamo le dimensioni per ottenere un'unica feature map continua:
+
+$\mathbb{R}^{B \times 8 \times 8 \times 7 \times 7 \times 96} \rightarrow \mathbb{R}^{B \times (8 \times 7) \times (8 \times 7) \times 96} = \mathbb{R}^{B \times 56 \times 56 \times 96}$
+
+Ogni finestra $7 \times 7$ viene posizionata nella sua posizione originale nella griglia $8 \times 8$, ricreando la feature map completa $56 \times 56$.
+
+**Passo 5: Flatten finale**
+
+Per compatibilità con le operazioni successive, appiattiamo le dimensioni spaziali:
+
+$\mathbb{R}^{B \times 56 \times 56 \times 96} \rightarrow \mathbb{R}^{B \times 3136 \times 96}$
+
+dove $3136 = 56 \times 56$ è il numero totale di patch nell'immagine.
+
+**Significato del merge:**
+
+Questo processo è l'operazione inversa del windowing iniziale:
+- Abbiamo diviso l'immagine in finestre per applicare l'attenzione locale in modo efficiente
+- Ora ricomponiamo le finestre per recuperare la struttura spaziale completa dell'immagine
+- Ogni patch mantiene le informazioni aggregate dalla sua finestra locale
+- La struttura gerarchica è preservata per i layer successivi.
 
 ### Residual Connection
 
