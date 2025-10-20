@@ -510,9 +510,9 @@ In pratica, ogni riga di $\mathbf{W}_{\text{proj}}$ definisce come costruire una
 
 Un altro aspetto fondamentale è che questa proiezione trasforma l'output del meccanismo di attenzione in uno spazio di rappresentazione che è compatibile con l'input originale $\mathbf{X}$. Ricordiamo che alla fine di questo blocco dovremo sommare questo output all'input originale (residual connection):
 
-$
+$$
 \mathbf{X}_{\text{attn}} = \mathbf{X} + \text{DropPath}(\mathbf{O}_{\text{proj}})
-$
+$$
 
 Per poter effettuare questa somma in modo significativo, l'output deve trovarsi nello stesso spazio di rappresentazione dell'input. La proiezione finale garantisce questa compatibilità, mappando le feature elaborate dall'attenzione in uno spazio dove possono essere integrate con le feature originali.
 
@@ -640,7 +640,25 @@ $$
 
 ## SW-MSA: Shifted Window Multi-head Self Attention
 
-Il secondo blocco di ogni stage usa **finestre spostate** per permettere la comunicazione tra finestre diverse.
+Il secondo blocco di ogni stage usa **finestre spostate** (shifted window) per permettere la comunicazione tra finestre diverse.
+
+### Input Processing
+
+Prima di applicare lo shift, l'output del primo blocco viene normalizzato:
+
+$$
+\mathbf{X}_{\text{norm1}} = \text{LayerNorm}(\mathbf{X}_{\text{out}})
+$$
+
+$$
+\mathbf{X}_{\text{norm1}} \in \mathbb{R}^{B \times 3136 \times 96}
+$$
+
+**Reshape spaziale per lo shift:**
+
+$$
+\mathbf{X}_{\text{norm1}} \rightarrow \mathbb{R}^{B \times 56 \times 56 \times 96}
+$$
 
 ### Cyclic Shift
 
@@ -655,19 +673,19 @@ $$
 L'immagine viene shiftata ciclicamente di $s$ pixel sia in altezza che in larghezza:
 
 $$
-\mathbf{X}_{\text{shifted}}[i, j] = \mathbf{X}[(i - s) \mod H, (j - s) \mod W]
+\mathbf{X}_{\text{shifted}}[i, j] = \mathbf{X}_{\text{norm1}}[(i - s) \mod H, (j - s) \mod W]
 $$
 
 In notazione tensoriale usando `torch.roll`:
 
 $$
-\mathbf{X}_{\text{shifted}} = \text{roll}(\mathbf{X}, \text{shifts}=(-3, -3), \text{dims}=(1, 2))
+\mathbf{X}_{\text{shifted}} = \text{roll}(\mathbf{X}_{\text{norm1}}, \text{shifts}=(-3, -3), \text{dims}=(1, 2))
 $$
 
 **Dimensioni:**
 
 $$
-\mathbf{X} \in \mathbb{R}^{B \times 56 \times 56 \times 96} \rightarrow \mathbf{X}_{\text{shifted}} \in \mathbb{R}^{B \times 56 \times 56 \times 96}
+\mathbf{X}_{\text{norm1}} \in \mathbb{R}^{B \times 56 \times 56 \times 96} \rightarrow \mathbf{X}_{\text{shifted}} \in \mathbb{R}^{B \times 56 \times 56 \times 96}
 $$
 
 ### Partizionamento e Mascheramento
