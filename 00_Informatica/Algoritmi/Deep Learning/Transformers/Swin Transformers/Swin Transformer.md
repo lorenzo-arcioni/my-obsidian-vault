@@ -590,12 +590,20 @@ Questo processo è l'operazione inversa del windowing iniziale:
 
 ### Residual Connection
 
+Infine, abbiamo una connessione residuale:
+
 $$
 \mathbf{X}_{\text{attn}} = \mathbf{X} + \text{DropPath}(\mathbf{O}_{\text{proj}})
 $$
 
 $$
 \mathbf{X}_{\text{attn}} \in \mathbb{R}^{B \times 3136 \times 96}
+$$
+
+Da notare che la $\text{DropPath}$ viene applicata solo durante il processo di training del modello. Questo significa che durante l'inferenza, avremo semplicemente:
+
+$$
+\mathbf{X}_{\text{attn}} = \mathbf{X} + \mathbf{O}_{\text{proj}}.
 $$
 
 ## Feed-Forward Network (MLP)
@@ -616,6 +624,7 @@ $$
 
 dove:
 - $\mathbf{W}_1 \in \mathbb{R}^{96 \times 384}$ (espansione con ratio 4)
+- $\mathbf{b}_1 \in \mathbb{R}^{384}$
 - $\mathbf{W}_2 \in \mathbb{R}^{384 \times 96}$ (proiezione al numero di canali originale)
 
 **Dimensioni intermediate:**
@@ -640,7 +649,15 @@ $$
 
 ## SW-MSA: Shifted Window Multi-head Self Attention
 
-Il secondo blocco di ogni stage usa **finestre spostate** (shifted window) per permettere la comunicazione tra finestre diverse.
+Nel Swin Transformer, l’idea è di applicare l’attenzione non su tutta l’immagine (troppo costoso), ma su piccole finestre locali — ad esempio blocchi di $7×7$ pixel.
+
+**👉 Problema:**
+Se ogni finestra è indipendente, i pixel in finestre diverse non comunicano mai.
+Quindi, un pixel nell’angolo di una finestra non “vede” nulla fuori da quella finestra.
+
+**👉 Soluzione:**
+Il secondo blocco di ogni stage (swin transformer block) sposta le finestre di metà finestra ($M/2$) in entrambe le direzioni.
+Così, le nuove finestre contengono parti di quelle vecchie, permettendo scambio di informazioni tra regioni diverse.
 
 ### Input Processing
 
@@ -661,6 +678,8 @@ $$
 $$
 
 ### Cyclic Shift
+
+Prima di tutto calcoliamo il fattore di **shift**. Ricordiamo che $M$ rappresenta la dimensione della finestra e consideriamo la parte intera della divisione per $2$.
 
 **Shift Amount:**
 
@@ -701,6 +720,10 @@ $$
 $$
 
 dove $\mathbf{M}_{\text{mask}}$ contiene $-100$ per coppie di posizioni che non dovrebbero interagire e $0$ altrove.
+
+<img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*uEzhdlu2GppknurQZ7k82A.png" alt="Immagine di un Transformer" style="display: block; margin-left: auto; margin-right: auto;">
+
+<img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ptVDLGO3fLPkjLNCNZHs-Q.png" alt="Immagine di un Transformer" style="display: block; margin-left: auto; margin-right: auto;">
 
 **Calcolo dell'attenzione con maschera:**
 
