@@ -27,6 +27,8 @@ L'architettura elabora l'audio attraverso una pipeline che:
 8. **Blocchi Swin Transformer** - elaborazione gerarchica con attention
 9. **Pooling e Classificazione** - aggregazione e predizione
 
+<img src="https://ar5iv.labs.arxiv.org/html/2202.00874/assets/x1.png" alt="Panoramica del Pipeline" style="display: block; margin-left: auto; margin-right: auto;">
+
 ## 1. Input: Forma d'Onda Audio
 
 L'input è un segnale audio campionato digitalmente:
