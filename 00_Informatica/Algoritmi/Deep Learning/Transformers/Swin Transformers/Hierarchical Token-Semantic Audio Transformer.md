@@ -457,6 +457,7 @@ dove $\mathbf{P}_{abs} \in \mathbb{R}^{1 \times 4096 \times 96}$ è un parametro
 - In HTS-AT, l'uso è opzionale perché i Swin Transformer usano **relative position bias** intrinseco
 
 ### 8.2 Position Dropout
+Applicato sia durante il training che durante l'inferenza.
 
 ```python
 self.pos_drop = nn.Dropout(p=self.drop_rate)
@@ -479,6 +480,8 @@ dpr = [x.item() for x in torch.linspace(0, self.drop_path_rate, sum(self.depths)
 - `dpr = [0.000, 0.009, 0.018, 0.027, 0.036, 0.045, 0.055, 0.064, 0.073, 0.082, 0.091, 0.100]`
 
 **Intuizione**: La probabilità di drop aumenta linearmente con la profondità del layer. Questo migliora la regolarizzazione e facilita il training di reti profonde.
+
+Quindi, durante training: Drop Path attivo con probabilità crescente nei layer più profondi.Mentre durante inferenza: Drop Path completamente disabilitato.
 
 ## 10. Architettura Gerarchica: BasicLayer
 
@@ -697,6 +700,48 @@ def forward(self, x):
 7. **Residual connection 1** con DropPath
 8. **Layer Norm 2** + **MLP**
 9. **Residual connection 2** con DropPath
+
+### 12.3 Forward Pass (concettuale)
+
+Flusso chiave (concettuale, senza codice):
+1. LayerNorm su x_in
+2. (eventuale) cyclic shift per SW-MSA
+3. partition in finestre
+4. window-attention su ogni finestra
+5. merge delle finestre e reverse shift
+6. residual connection + DropPath (output dell'attenzione)
+7. LayerNorm + MLP
+8. residual connection + DropPath (output finale del blocco)
+
+### 12.4 Formula semplificata (versione leggibile)
+
+Versione con dettagli di normalizzazione e DropPath:
+
+$$
+\boxed{%
+x_{\text{out}} = x_{\text{in}} \;+\; \text{DropPath}\big(\text{SW-MSA}(\text{LN}(x_{\text{in}}))\big)
+\;+\; \text{DropPath}\big(\text{MLP}(\text{LN}(x_{\text{in}} + \text{SW-MSA}(\text{LN}(x_{\text{in}}))))\big)
+}
+$$
+
+Versione ancora più sintetica e intuitiva:
+
+$$
+\boxed{%
+x_{\text{out}} = x_{\text{in}} \;+\; \text{Attn}(x_{\text{in}}) \;+\; \text{MLP}\big(x_{\text{in}} + \text{Attn}(x_{\text{in}})\big)
+}
+$$
+
+**Dove:**
+- $\text{LN}$ = Layer Normalization
+- $\text{SW-MSA}$ = Shifted Window Multi-Head Self-Attention (o W-MSA quando non c'è shift)
+- $\text{Attn}(x_{\text{in}})$ è una abbreviazione per $\text{SW-MSA}(\text{LN}(x_{\text{in}}))$
+- $\text{DropPath}(\cdot)$ = stochastic depth (residual dropout)
+- $\text{MLP}(\cdot)$ = feed-forward (due linear + attivazione)
+
+Queste formule riassumono il comportamento operativo del blocco: l'output è la somma residua dell'input più l'aggiornamento apportato dall'attenzione locale e dal successivo MLP di raffinamento.
+
+
 
 ## 13. Window Partition e Reverse
 
