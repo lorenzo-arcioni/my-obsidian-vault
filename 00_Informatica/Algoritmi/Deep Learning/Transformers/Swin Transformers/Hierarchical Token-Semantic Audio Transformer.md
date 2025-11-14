@@ -481,7 +481,7 @@ dpr = [x.item() for x in torch.linspace(0, self.drop_path_rate, sum(self.depths)
 
 **Intuizione**: La probabilità di drop aumenta linearmente con la profondità del layer. Questo migliora la regolarizzazione e facilita il training di reti profonde.
 
-Quindi, durante training: Drop Path attivo con probabilità crescente nei layer più profondi.Mentre durante inferenza: Drop Path completamente disabilitato.
+Quindi, durante training: Drop Path attivo con probabilità crescente nei layer più profondi. Mentre durante inferenza: Drop Path *completamente disabilitato*.
 
 ## 10. Architettura Gerarchica: BasicLayer
 
@@ -583,6 +583,8 @@ def forward(self, x):
 4. Restituisce output e attention maps aggregate
 
 ## 12. SwinTransformerBlock: Il Cuore dell'Architettura
+
+<img src="../../../../../images/sw-mha.png" alt="Immagine di un SwinTransformerBlock" style="display: block; margin-left: auto; margin-right: auto;">
 
 Il `SwinTransformerBlock` è l'unità fondamentale di elaborazione, che implementa:
 1. **Window-based Multi-head Self-Attention (W-MSA)** o **Shifted Window MSA (SW-MSA)**
@@ -1249,6 +1251,8 @@ Output: $\mathbf{x}_{out} \in \mathbb{R}^{B \times \frac{HW}{4} \times 2C}$
 - Permette elaborazione gerarchica: feature più astratte a risoluzioni più basse
 
 ## 18. Elaborazione Completa attraverso i 4 Stage
+
+<img src="../../../../../images/HTS-AT-swin.png" alt="Elaborazione attraverso i 4 Stage" style="display: block; margin-left: auto; margin-right: auto;">
 
 Riassumiamo il flusso attraverso l'intera architettura con un esempio concreto.
 
