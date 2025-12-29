@@ -2,780 +2,516 @@
 
 ## 1. Introduzione
 
-La valutazione di modelli di classificazione richiede metriche specifiche che quantifichino la qualità delle predizioni. Questo documento presenta una trattazione completa e rigorosa delle principali metriche utilizzate nel machine learning.
+La valutazione di modelli di classificazione richiede metriche specifiche che quantifichino la qualità delle predizioni. Questo documento presenta una trattazione completa e rigorosa delle principali metriche utilizzate nel machine learning, con particolare enfasi sulla teoria delle decisioni bayesiane e sulla minimizzazione del rischio.
+
+### 1.1 Contesto Teorico: Bayesian Decision Theory
+
+Nel contesto della teoria delle decisioni, un problema di classificazione può essere formalizzato come un **gioco contro la natura**. In questo scenario:
+
+1. La natura sceglie uno stato (label) $y \in \mathcal{Y}$, sconosciuto a noi
+2. Genera un'osservazione $x \in \mathcal{X}$, che possiamo osservare
+3. Dobbiamo scegliere un'azione $a$ da uno spazio di azioni $\mathcal{A}$
+4. Incorriamo in una perdita $L(y, a)$ che misura quanto la nostra azione sia compatibile con lo stato reale
+
+L'obiettivo è trovare una **policy di decisione** o **decision rule** $\delta: \mathcal{X} \rightarrow \mathcal{A}$ che minimizzi la perdita attesa:
+
+$$\delta(x) = \arg\min_{a \in \mathcal{A}} \mathbb{E}[L(y, a)]$$
+
+Nell'approccio **bayesiano**, l'azione ottimale dopo aver osservato $x$ è quella che minimizza la **perdita attesa a posteriori**:
+
+$$\rho(a|x) = \mathbb{E}_{p(y|x)}[L(y, a)] = \sum_{y} L(y, a) p(y|x)$$
+
+Quindi, il **Bayes estimator** (o **Bayes decision rule**) è dato da:
+
+$$\delta^*(x) = \arg\min_{a \in \mathcal{A}} \rho(a|x)$$
+
+### 1.2 Principio di Utilità Attesa Massima
+
+In economia, è più comune parlare di **funzione di utilità** $U(y, a) = -L(y, a)$, trasformando il problema in:
+
+$$\delta(x) = \arg\max_{a \in \mathcal{A}} \mathbb{E}[U(y, a)]$$
+
+Questo è noto come **principio di utilità attesa massima** ed è l'essenza del comportamento razionale.
 
 ## 2. Matrice di Confusione
 
-La **matrice di confusione** è la base per calcolare tutte le metriche di classificazione. Per un problema binario:
+La **matrice di confusione** è la struttura fondamentale per calcolare tutte le metriche di classificazione. Per un problema binario:
 
-|                    | **Predetto Positivo (P)** | **Predetto Negativo (N)** |
+|                    | **Predetto Positivo ($\hat{y}=1$)** | **Predetto Negativo ($\hat{y}=0$)** |
 |--------------------|---------------------------|---------------------------|
-| **Reale Positivo** | TP (True Positive)        | FN (False Negative)       |
-| **Reale Negativo** | FP (False Positive)       | TN (True Negative)        |
+| **Reale Positivo ($y=1$)** | TP (True Positive)        | FN (False Negative)       |
+| **Reale Negativo ($y=0$)** | FP (False Positive)       | TN (True Negative)        |
 
 ### 2.1 Definizioni Rigorose
 
-- **TP (True Positive)**: Istanze positive correttamente classificate come positive
-- **TN (True Negative)**: Istanze negative correttamente classificate come negative
-- **FP (False Positive)**: Istanze negative erroneamente classificate come positive (Errore di Tipo II)
-- **FN (False Negative)**: Istanze positive erroneamente classificate come negative (Errore di Tipo I)
+Definiamo formalmente le quattro quantità:
 
-### 2.2 Visualizzazione della Matrice di Confusione
+- **True Positive (TP)**: $|\{i: y_i = 1 \land \hat{y}_i = 1\}|$ - Istanze positive correttamente classificate
+- **True Negative (TN)**: $|\{i: y_i = 0 \land \hat{y}_i = 0\}|$ - Istanze negative correttamente classificate
+- **False Positive (FP)**: $|\{i: y_i = 0 \land \hat{y}_i = 1\}|$ - Istanze negative erroneamente classificate come positive (**Errore di Tipo I**)
+- **False Negative (FN)**: $|\{i: y_i = 1 \land \hat{y}_i = 0\}|$ - Istanze positive erroneamente classificate come negative (**Errore di Tipo II**)
 
-```python
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-import matplotlib.pyplot as plt
-import numpy as np
+*Nota*: Per ricordarle bene, osserviamo che la prima lettera si riferisce alla realtà e la seconda alla predizione; es. $TP$ corrisponde al numero di esempi che nella realtà sono positivi e nella predizione sono stati predetti come positivi.
 
-X, y = make_classification(n_samples=1000, n_features=20, n_informative=15, 
-                          n_redundant=5, random_state=42)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-clf = RandomForestClassifier(random_state=42)
-clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
+### 2.2 Relazioni Fondamentali
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+Dalla matrice di confusione derivano alcune identità fondamentali:
 
-# Matrice assoluta
-cm = confusion_matrix(y_test, y_pred)
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Negativo', 'Positivo'])
-disp.plot(cmap='Blues', ax=axes[0])
-axes[0].set_title('Matrice di Confusione (Valori Assoluti)')
+$$N = TP + TN + FP + FN$$
 
-# Matrice normalizzata
-cm_norm = confusion_matrix(y_test, y_pred, normalize='true')
-disp_norm = ConfusionMatrixDisplay(confusion_matrix=cm_norm, display_labels=['Negativo', 'Positivo'])
-disp_norm.plot(cmap='Greens', ax=axes[1], values_format='.2%')
-axes[1].set_title('Matrice di Confusione (Normalizzata)')
+dove $N$ è il numero totale di esempi. Inoltre:
 
-plt.tight_layout()
-plt.show()
-
-tn, fp, fn, tp = cm.ravel()
-print(f"True Positives (TP): {tp}")
-print(f"True Negatives (TN): {tn}")
-print(f"False Positives (FP): {fp}")
-print(f"False Negatives (FN): {fn}")
-```
+$$N_+ = TP + FN \quad \text{(numero reale di positivi)}$$
+$$N_- = TN + FP \quad \text{(numero reale di negativi)}$$
+$$\hat{N}_+ = TP + FP \quad \text{(numero predetto di positivi)}$$
+$$\hat{N}_- = TN + FN \quad \text{(numero predetto di negativi)}$$
 
 ### 2.3 Interpretazione Probabilistica
 
-Dato un sistema di classificazione con soglia $\tau$, possiamo definire due ipotesi:
+Dato un sistema di classificazione con soglia $\tau$, definiamo:
 
-- **$H_0$**: L'istanza appartiene alla classe negativa
-- **$H_1$**: L'istanza appartiene alla classe positiva
+**Ipotesi**:
 
-E due possibili decisioni:
+- $H_0$: L'istanza appartiene alla classe negativa ($y=0$)
+- $H_1$: L'istanza appartiene alla classe positiva ($y=1$)
 
-- **$D_0$**: Classificare come negativo
-- **$D_1$**: Classificare come positivo
+**Decisioni**:
 
-Allora:
-- **False Positive Rate (FPR)** = $P(D_1 | H_0)$ = Probabilità di classificare come positivo quando è negativo
-- **False Negative Rate (FNR)** = $P(D_0 | H_1)$ = Probabilità di classificare come negativo quando è positivo
+- $D_0$: Classificare come negativo ($\hat{y}=0$)
+- $D_1$: Classificare come positivo ($\hat{y}=1$)
 
-```python
-from scipy import stats
+Allora le probabilità di errore condizionate sono:
 
-fig, ax = plt.subplots(figsize=(12, 6))
+$$\text{FPR} = P(D_1 | H_0) = P(\hat{y}=1 | y=0)$$
 
-# Simula distribuzioni positive vs negative
-positive_scores = np.random.beta(8, 2, 1000)
-negative_scores = np.random.beta(2, 8, 1000)
+$$\text{FNR} = P(D_0 | H_1) = P(\hat{y}=0 | y=1)$$
 
-ax.hist(negative_scores, bins=50, alpha=0.6, label='Classe Negativa ($H_0$)', 
-        color='red', density=True)
-ax.hist(positive_scores, bins=50, alpha=0.6, label='Classe Positiva ($H_1$)', 
-        color='green', density=True)
+## 3. Loss Functions e Bayes Estimators
 
-threshold = 0.5
-ax.axvline(threshold, color='black', linestyle='--', linewidth=2, 
-          label=f'Soglia $\\tau$ = {threshold}')
+### 3.1 0-1 Loss e Stima MAP
 
-# Area FPR e FNR
-x_fp = np.linspace(threshold, 1, 100)
-x_fn = np.linspace(0, threshold, 100)
+La **0-1 loss** è definita come:
 
-ax.fill_between(x_fp, 0, stats.beta.pdf(x_fp, 2, 8), alpha=0.3, color='red', 
-                label='FPR (Errore Tipo II)')
-ax.fill_between(x_fn, 0, stats.beta.pdf(x_fn, 8, 2), alpha=0.3, color='orange', 
-                label='FNR (Errore Tipo I)')
+$$L(y, a) = \mathbb{I}(y \neq a) = \begin{cases} 0 & \text{se } a = y \\ 1 & \text{se } a \neq y \end{cases}$$
 
-ax.set_xlabel('Score di Classificazione')
-ax.set_ylabel('Densità di Probabilità')
-ax.set_title('Distribuzioni delle Classi e Errori al Variare della Soglia')
-ax.legend()
-ax.grid(alpha=0.3)
-plt.show()
-```
+**Teorema**: La 0-1 loss è minimizzata dalla stima **MAP (Maximum A Posteriori)**.
 
-## 3. Metriche Fondamentali
+**Dimostrazione**:
 
-### 3.1 Accuracy (Accuratezza)
+La perdita attesa a posteriori è:
 
-L'**accuracy** misura la proporzione di predizioni corrette sul totale:
+$$\rho(a|x) = \sum_{y} L(y,a) p(y|x) = \sum_{y \neq a} p(y|x) = 1 - p(a|x)$$
 
-$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}$$
+Per minimizzare $\rho(a|x)$, dobbiamo massimizzare $p(a|x)$, quindi:
 
-**Vantaggi**: Intuitiva e semplice  
-**Svantaggi**: Inadeguata per dataset sbilanciati (può essere alta anche con un modello che predice sempre la classe maggioritaria)
+$$\delta^*(x) = \arg\min_a \rho(a|x) = \arg\max_a p(a|x) = \arg\max_{y \in \mathcal{Y}} p(y|x)$$
 
-```python
-from sklearn.metrics import accuracy_score
+che è esattamente la **stima MAP**. $\square$
 
-accuracy = accuracy_score(y_test, y_pred)
-print(f'Accuracy: {accuracy:.4f}')
+#### 3.1.1 Matrice di Loss Generalizzata
 
-# Visualizzazione impatto dello sbilanciamento
-class_ratios = [0.5, 0.7, 0.9, 0.95, 0.99]
-dummy_accuracies = class_ratios
+Per problemi binari, possiamo rappresentare la loss come matrice:
 
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.plot(class_ratios, dummy_accuracies, 'o-', linewidth=2, markersize=8, 
-        label='Accuracy modello "dummy" (predice sempre classe maggioritaria)')
-ax.axhline(accuracy, color='red', linestyle='--', linewidth=2, 
-          label=f'Accuracy modello reale: {accuracy:.3f}')
-ax.set_xlabel('Proporzione Classe Maggioritaria', fontsize=12)
-ax.set_ylabel('Accuracy', fontsize=12)
-ax.set_title('Accuracy può essere ingannevole con dataset sbilanciati!', fontsize=14)
-ax.legend()
-ax.grid(alpha=0.3)
-plt.show()
-```
+|            | $\hat{y}=1$ | $\hat{y}=0$ |
+|------------|------------|------------|
+| $y=1$      | $0$        | $L_{FN}$   |
+| $y=0$      | $L_{FP}$   | $0$        |
 
-### 3.2 Precision (Precisione)
+dove $L_{FN}$ è il costo di un falso negativo e $L_{FP}$ è il costo di un falso positivo.
 
-La **precision** misura la proporzione di predizioni positive che sono effettivamente corrette:
+**Teorema (Regola di Decisione Ottimale)**: Dovremmo scegliere $\hat{y}=1$ se e solo se:
 
-$$\text{Precision} = \frac{TP}{TP + FP}$$
+$$\frac{p(y=1|x)}{p(y=0|x)} > \frac{L_{FP}}{L_{FN}}$$
 
-Risponde alla domanda: *"Tra tutti i casi predetti come positivi, quanti sono realmente positivi?"*
+**Dimostrazione**:
 
-**Quando è critica**: Alto costo dei falsi positivi (es. spam detection, diagnosi mediche che richiedono trattamenti invasivi)
+Le perdite attese per le due azioni sono:
 
-```python
-from sklearn.metrics import precision_score
+$$\rho(\hat{y}=0|x) = L_{FN} \cdot p(y=1|x)$$
+$$\rho(\hat{y}=1|x) = L_{FP} \cdot p(y=0|x)$$
 
-precision = precision_score(y_test, y_pred)
-print(f'Precision: {precision:.4f}')
+Scegliamo $\hat{y}=1$ quando $\rho(\hat{y}=1|x) < \rho(\hat{y}=0|x)$:
 
-# Visualizzazione interpretazione
-fig, ax = plt.subplots(figsize=(10, 6))
-categories = ['Predetti\nPositivi', 'di cui Veri\nPositivi (TP)', 'di cui Falsi\nPositivi (FP)']
-values = [tp + fp, tp, fp]
-colors = ['lightblue', 'green', 'red']
+$$L_{FP} \cdot p(y=0|x) < L_{FN} \cdot p(y=1|x)$$
 
-bars = ax.bar(categories, values, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
-ax.set_ylabel('Numero di Campioni', fontsize=12)
-ax.set_title(f'Precision = TP / (TP + FP) = {tp}/{tp+fp} = {precision:.3f}', fontsize=14)
+$$\frac{p(y=1|x)}{p(y=0|x)} > \frac{L_{FP}}{L_{FN}}$$
 
-for bar, val in zip(bars, values):
-    height = bar.get_height()
-    ax.text(bar.get_x() + bar.get_width()/2., height,
-            f'{val}', ha='center', va='bottom', fontsize=12, fontweight='bold')
+Se $L_{FN} = c \cdot L_{FP}$, la regola diventa: scegliere $\hat{y}=1$ se $p(y=1|x) > \tau$ dove $\tau = \frac{c}{1+c}$. $\square$
 
-plt.tight_layout()
-plt.show()
-```
+#### 3.1.2 Reject Option
 
-### 3.3 Recall (Sensibilità, True Positive Rate, TPR)
+In domini ad alto rischio (medicina, finanza), potrebbe essere preferibile **rifiutare** di classificare esempi incerti. Formalizziamo l'azione di rifiuto come $a = C+1$ con costo $\lambda_r$, mentre gli errori di sostituzione hanno costo $\lambda_s$.
 
-Il **recall** misura la proporzione di istanze positive che sono state correttamente identificate:
+**Teorema**: L'azione ottimale è rifiutare se:
 
-$$\text{Recall} = \text{TPR} = \text{Sensitivity} = \frac{TP}{TP + FN}$$
+$$\max_{i \in \{1,\ldots,C\}} p(y=i|x) < 1 - \frac{\lambda_r}{\lambda_s}$$
 
-Risponde alla domanda: *"Tra tutti i casi realmente positivi, quanti sono stati identificati?"*
+altrimenti scegliere la classe con probabilità massima.
 
-**Quando è critico**: Alto costo dei falsi negativi (es. rilevamento tumori, frodi finanziarie, sistemi di sicurezza)
+### 3.2 Quadratic Loss ($\ell_2$) e Posterior Mean
 
-```python
-from sklearn.metrics import recall_score
+La **quadratic loss** o **squared error** è definita come:
 
-recall = recall_score(y_test, y_pred)
-print(f'Recall: {recall:.4f}')
+$$L(y, a) = (y - a)^2$$
 
-# Visualizzazione interpretazione
-fig, ax = plt.subplots(figsize=(10, 6))
-categories = ['Reali\nPositivi', 'di cui Identificati\n(TP)', 'di cui Mancati\n(FN)']
-values = [tp + fn, tp, fn]
-colors = ['lightblue', 'green', 'orange']
+**Teorema**: La $\ell_2$ loss è minimizzata dalla **media a posteriori**.
 
-bars = ax.bar(categories, values, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
-ax.set_ylabel('Numero di Campioni', fontsize=12)
-ax.set_title(f'Recall = TP / (TP + FN) = {tp}/{tp+fn} = {recall:.3f}', fontsize=14)
+**Dimostrazione**:
 
-for bar, val in zip(bars, values):
-    height = bar.get_height()
-    ax.text(bar.get_x() + bar.get_width()/2., height,
-            f'{val}', ha='center', va='bottom', fontsize=12, fontweight='bold')
+La perdita attesa a posteriori è:
 
-plt.tight_layout()
-plt.show()
-```
+$$\rho(a|x) = \mathbb{E}[(y-a)^2|x] = \mathbb{E}[y^2|x] - 2a\mathbb{E}[y|x] + a^2$$
 
-### 3.4 Specificity (Specificità, True Negative Rate)
+Derivando rispetto ad $a$ e ponendo uguale a zero:
 
-La **specificity** misura la proporzione di istanze negative correttamente identificate:
+$$\frac{\partial \rho(a|x)}{\partial a} = -2\mathbb{E}[y|x] + 2a = 0$$
 
-$$\text{Specificity} = \text{TNR} = \frac{TN}{TN + FP}$$
+$$\Rightarrow \hat{y} = \mathbb{E}[y|x] = \int y \, p(y|x) \, dy$$
+
+Questa è la **stima MMSE (Minimum Mean Squared Error)**. $\square$
+
+Per regressione lineare con $p(y|x,\theta) = \mathcal{N}(y|x^T w, \sigma^2)$, abbiamo:
+
+$$\mathbb{E}[y|x, \mathcal{D}] = x^T \mathbb{E}[w|\mathcal{D}]$$
+
+cioè, basta usare la media a posteriori dei parametri.
+
+### 3.3 Absolute Loss ($\ell_1$) e Posterior Median
+
+La **absolute loss** è:
+
+$$L(y, a) = |y - a|$$
+
+**Teorema**: La $\ell_1$ loss è minimizzata dalla **mediana a posteriori**.
+
+**Dimostrazione**:
+
+La perdita attesa è:
+
+$$\rho(a|x) = \int |y-a| p(y|x) dy = \int_{-\infty}^{a} (a-y) p(y|x) dy + \int_{a}^{\infty} (y-a) p(y|x) dy$$
+
+Derivando rispetto ad $a$:
+
+$$\frac{\partial \rho(a|x)}{\partial a} = \int_{-\infty}^{a} p(y|x) dy - \int_{a}^{\infty} p(y|x) dy = P(y \leq a|x) - P(y > a|x)$$
+
+Ponendo uguale a zero:
+
+$$P(y \leq a|x) = P(y > a|x) = 0.5$$
+
+che è la definizione di **mediana**. $\square$
+
+La $\ell_1$ loss è più robusta agli outlier rispetto alla $\ell_2$ loss perché penalizza linearmente (anziché quadraticamente) le deviazioni.
+
+## 4. Metriche Fondamentali
+
+### 4.1 Accuracy (Accuratezza)
+
+L'**accuracy** misura la proporzione di predizioni corrette:
+
+$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} = \frac{TP + TN}{N}$$
+
+**Interpretazione**: Rappresenta $P(\hat{y} = y)$, la probabilità che la predizione sia corretta.
+
+**Proprietà**:
+
+- Range: $[0, 1]$, dove $1$ indica predizioni perfette
+- Simmetrica rispetto alle classi
+- **Limitazione critica**: Inadeguata per dataset sbilanciati
+
+**Esempio**: Con prevalenza $p(y=1) = 0.01$, un classificatore "dummy" che predice sempre $\hat{y}=0$ ottiene accuracy $0.99$, pur essendo completamente inutile per identificare i positivi.
+
+### 4.2 Precision (Precisione, Positive Predictive Value)
+
+La **precision** misura la proporzione di predizioni positive corrette:
+
+$$\text{Precision} = \frac{TP}{TP + FP} = \frac{TP}{\hat{N}_+} = P(y=1|\hat{y}=1)$$
+
+**Interpretazione**: "Tra tutti i casi che ho predetto come positivi, quanti sono realmente positivi?"
+
+**Quando è critica**: Scenari dove i falsi positivi sono costosi:
+
+- **Spam detection**: Classificare email legittime come spam
+- **Diagnosi mediche**: Prescrivere trattamenti invasivi non necessari
+- **Sistemi di raccomandazione**: Raccomandare prodotti irrilevanti
+
+**Complemento**: $\text{FDR} = 1 - \text{Precision} = \frac{FP}{TP+FP}$ (False Discovery Rate)
+
+### 4.3 Recall (Sensibilità, True Positive Rate)
+
+Il **recall** misura la proporzione di positivi reali correttamente identificati:
+
+$$\text{Recall} = \text{TPR} = \text{Sensitivity} = \frac{TP}{TP + FN} = \frac{TP}{N_+} = P(\hat{y}=1|y=1)$$
+
+**Interpretazione**: "Tra tutti i casi realmente positivi, quanti ne ho identificati?"
+
+**Quando è critico**: Scenari dove i falsi negativi sono costosi:
+
+- **Rilevamento tumori**: Non diagnosticare un cancro presente
+- **Rilevamento frodi**: Non bloccare transazioni fraudolente
+- **Sistemi di sicurezza**: Non rilevare intrusioni
+
+**Complemento**: $\text{FNR} = 1 - \text{Recall} = \frac{FN}{TP+FN}$ (False Negative Rate, Miss Rate)
+
+### 4.4 Specificity (True Negative Rate)
+
+La **specificity** misura la proporzione di negativi correttamente identificati:
+
+$$\text{Specificity} = \text{TNR} = \frac{TN}{TN + FP} = \frac{TN}{N_-} = P(\hat{y}=0|y=0)$$
+
+**Interpretazione**: Capacità di identificare correttamente i negativi.
 
 **Relazione con FPR**:
-$$\text{FPR} = 1 - \text{Specificity} = \frac{FP}{FP + TN}$$
 
-```python
-specificity = tn / (tn + fp)
-fpr = fp / (fp + tn)
-print(f'Specificity: {specificity:.4f}')
-print(f'FPR (1-Specificity): {fpr:.4f}')
-```
+$$\text{FPR} = 1 - \text{Specificity} = \frac{FP}{FP + TN} = P(\hat{y}=1|y=0)$$
 
-### 3.5 Trade-off Precision vs Recall
+Il FPR è la probabilità di **falso allarme** (Errore di Tipo I).
 
-Precision e Recall sono tipicamente in trade-off: migliorare una peggiora l'altra.
+### 4.5 Trade-off Precision vs Recall
 
-```python
-from sklearn.metrics import precision_recall_curve
+Precision e Recall sono tipicamente in **trade-off**: aumentare una tende a diminuire l'altra.
 
-y_proba = clf.predict_proba(X_test)[:, 1]
-precisions, recalls, thresholds = precision_recall_curve(y_test, y_proba)
+**Intuizione**:
 
-fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+- Per aumentare il recall (catturare più positivi), abbassiamo la soglia → più predizioni positive → ma aumentano anche i falsi positivi → precision diminuisce
+- Per aumentare la precision (evitare falsi positivi), alziamo la soglia → solo predizioni molto confidenti → ma perdiamo alcuni veri positivi → recall diminuisce
 
-# Curva Precision-Recall
-axes[0].plot(recalls, precisions, linewidth=2, color='purple')
-axes[0].scatter([recall], [precision], color='red', s=200, zorder=5, 
-               label=f'Soglia attuale\nP={precision:.3f}, R={recall:.3f}')
-axes[0].set_xlabel('Recall', fontsize=12)
-axes[0].set_ylabel('Precision', fontsize=12)
-axes[0].set_title('Trade-off Precision-Recall', fontsize=14)
-axes[0].grid(alpha=0.3)
-axes[0].legend()
+Formalmente, variando la soglia $\tau$ nella regola $\hat{y} = \mathbb{I}(p(y=1|x) > \tau)$:
 
-# Precision e Recall vs Soglia
-axes[1].plot(thresholds, precisions[:-1], label='Precision', linewidth=2)
-axes[1].plot(thresholds, recalls[:-1], label='Recall', linewidth=2)
-axes[1].set_xlabel('Soglia di Classificazione', fontsize=12)
-axes[1].set_ylabel('Valore Metrica', fontsize=12)
-axes[1].set_title('Precision e Recall al variare della Soglia', fontsize=14)
-axes[1].legend()
-axes[1].grid(alpha=0.3)
+- $\tau \to 0$: Recall $\to 1$, Precision $\to$ prevalenza
+- $\tau \to 1$: Precision $\to 1$, Recall $\to 0$
 
-plt.tight_layout()
-plt.show()
-```
+### 4.6 F-Scores: Combinare Precision e Recall
 
-### 3.6 F1-Score
+#### 4.6.1 F1-Score
 
-L'**F1-score** è la media armonica di precision e recall, bilanciando i due aspetti:
+L'**F1-score** è la **media armonica** di precision e recall:
 
 $$F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TP}{2TP + FP + FN}$$
 
-La media armonica penalizza valori estremi: se Precision o Recall è bassa, anche F1 sarà bassa.
+**Perché media armonica?**
 
-**Perché media armonica?** 
-$$\text{Media Aritmetica} = \frac{P + R}{2} \quad \text{vs} \quad \text{Media Armonica} = \frac{2}{\frac{1}{P} + \frac{1}{R}}$$
+La media armonica $H(a,b) = \frac{2ab}{a+b}$ è più severa della media aritmetica $A(a,b) = \frac{a+b}{2}$ quando i valori sono sbilanciati.
 
-La media armonica è più severa con valori sbilanciati.
+**Esempio**: Se $P = 0.9$ e $R = 0.1$:
 
-```python
-from sklearn.metrics import f1_score
+- Media aritmetica: $\frac{0.9 + 0.1}{2} = 0.5$
+- Media armonica (F1): $\frac{2 \cdot 0.9 \cdot 0.1}{0.9 + 0.1} = 0.18$
 
-f1 = f1_score(y_test, y_pred)
-print(f'F1-Score: {f1:.4f}')
+L'F1 penalizza fortemente sistemi con precision o recall molto bassi.
 
-# Confronto medie
-test_cases = [(0.9, 0.9), (0.9, 0.5), (0.9, 0.1), (0.5, 0.5)]
-fig, ax = plt.subplots(figsize=(10, 6))
+**Proprietà**:
 
-for i, (p, r) in enumerate(test_cases):
-    harmonic = 2 * p * r / (p + r) if (p + r) > 0 else 0
-    arithmetic = (p + r) / 2
-    
-    x_pos = [i*3, i*3+1]
-    ax.bar(x_pos, [arithmetic, harmonic], width=0.8, 
-           color=['lightblue', 'orange'], alpha=0.7,
-           label=['Media Aritmetica', 'Media Armonica (F1)'] if i == 0 else '')
-    ax.text(i*3 + 0.5, max(arithmetic, harmonic) + 0.05, 
-           f'P={p}, R={r}', ha='center', fontsize=10, fontweight='bold')
+- Range: $[0, 1]$
+- $F_1 = 1$ solo se $P = R = 1$
+- $F_1 \geq H(P, R) \geq G(P, R)$ dove $G$ è la media geometrica
 
-ax.set_xticks([i*3 + 0.5 for i in range(len(test_cases))])
-ax.set_xticklabels([f'Caso {i+1}' for i in range(len(test_cases))])
-ax.set_ylabel('Valore', fontsize=12)
-ax.set_title('F1 (Media Armonica) penalizza valori sbilanciati', fontsize=14)
-ax.legend()
-ax.grid(axis='y', alpha=0.3)
-plt.tight_layout()
-plt.show()
-```
+#### 4.6.2 F-Beta Score
 
-### 3.7 F-Beta Score
-
-Generalizzazione dell'F1-score che permette di pesare diversamente precision e recall:
+Generalizzazione che pesa diversamente precision e recall:
 
 $$F_\beta = (1 + \beta^2) \cdot \frac{\text{Precision} \cdot \text{Recall}}{\beta^2 \cdot \text{Precision} + \text{Recall}}$$
 
-- **$\beta < 1$**: Maggior peso alla precision
-- **$\beta > 1$**: Maggior peso al recall
-- **$\beta = 1$**: F1-score standard (bilanciamento)
-- **$\beta = 2$**: F2-score (recall conta il doppio)
-- **$\beta = 0.5$**: F0.5-score (precision conta il doppio)
+**Interpretazione di $\beta$**:
 
-```python
-from sklearn.metrics import fbeta_score
+- $\beta < 1$: Recall pesa meno → maggior enfasi su Precision
+- $\beta = 1$: F1-score (bilanciamento equo)
+- $\beta > 1$: Recall pesa di più → maggior enfasi su Recall
+- $\beta = 2$: F2-score (recall vale il doppio)
+- $\beta = 0.5$: F0.5-score (precision vale il doppio)
 
-betas = [0.5, 1, 2, 3]
-f_scores = [fbeta_score(y_test, y_pred, beta=b) for b in betas]
+**Derivazione del peso**: Il parametro $\beta$ rappresenta quanto il recall è più importante della precision. Se scriviamo:
 
-fig, ax = plt.subplots(figsize=(10, 6))
-bars = ax.bar([f'F{b}' for b in betas], f_scores, color=['red', 'purple', 'blue', 'green'], alpha=0.7)
-ax.axhline(precision, color='red', linestyle='--', label=f'Precision: {precision:.3f}')
-ax.axhline(recall, color='blue', linestyle='--', label=f'Recall: {recall:.3f}')
-ax.set_ylabel('Score', fontsize=12)
-ax.set_title('F-Beta Score: Bilanciamento tra Precision e Recall', fontsize=14)
-ax.legend()
-ax.grid(axis='y', alpha=0.3)
+$$F_\beta = \frac{(1+\beta^2) \cdot TP}{(1+\beta^2) \cdot TP + \beta^2 \cdot FN + FP}$$
 
-for bar, score in zip(bars, f_scores):
-    ax.text(bar.get_x() + bar.get_width()/2, score + 0.01,
-           f'{score:.3f}', ha='center', va='bottom', fontweight='bold')
+vediamo che $FN$ è pesato per $\beta^2$ rispetto a $FP$, quindi $\beta^2$ è il rapporto di importanza.
 
-plt.tight_layout()
-plt.show()
-
-print(f'F0.5-Score (favorisce Precision): {f_scores[0]:.4f}')
-print(f'F1-Score (bilanciato): {f_scores[1]:.4f}')
-print(f'F2-Score (favorisce Recall): {f_scores[2]:.4f}')
-```
-
-## 4. Tassi di Errore (Error Rates)
-
-### 4.1 False Positive Rate (FPR) - Fall-out
-
-Il **FPR** misura la proporzione di istanze negative erroneamente classificate come positive:
-
-$$\text{FPR} = \frac{FP}{FP + TN} = 1 - \text{Specificity}$$
-
-Se FPR = 0.1% → 1 su 1000 negativi viene erroneamente classificato come positivo
-
-### 4.2 False Negative Rate (FNR) - Miss Rate
-
-Il **FNR** misura la proporzione di istanze positive erroneamente classificate come negative:
-
-$$\text{FNR} = \frac{FN}{FN + TP} = 1 - \text{Recall}$$
-
-Se FNR = 0.05% → 1 su 2000 positivi viene erroneamente classificato come negativo
-
-### 4.3 False Discovery Rate (FDR)
-
-Il **FDR** misura la proporzione di predizioni positive che sono errate:
-
-$$\text{FDR} = \frac{FP}{FP + TP} = 1 - \text{Precision}$$
-
-### 4.4 Visualizzazione Completa dei Tassi di Errore
-
-```python
-# Calcolo di tutti i tassi
-fpr = fp / (fp + tn)
-fnr = fn / (fn + tp)
-fdr = fp / (fp + tp)
-tpr = tp / (tp + fn)  # = Recall
-tnr = tn / (tn + fp)  # = Specificity
-
-fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-
-# Grafico 1: FPR vs TNR
-rates_neg = [tnr, fpr]
-labels_neg = ['TNR\n(Specificity)', 'FPR\n(Fall-out)']
-colors_neg = ['green', 'red']
-axes[0, 0].bar(labels_neg, rates_neg, color=colors_neg, alpha=0.7, edgecolor='black', linewidth=2)
-axes[0, 0].set_ylabel('Tasso', fontsize=12)
-axes[0, 0].set_title('Classi Negative: TNR + FPR = 1', fontsize=14)
-axes[0, 0].set_ylim([0, 1.1])
-for i, (label, rate) in enumerate(zip(labels_neg, rates_neg)):
-    axes[0, 0].text(i, rate + 0.02, f'{rate:.3f}', ha='center', fontsize=11, fontweight='bold')
-axes[0, 0].axhline(1.0, color='black', linestyle='--', alpha=0.5)
-axes[0, 0].grid(axis='y', alpha=0.3)
-
-# Grafico 2: FNR vs TPR
-rates_pos = [tpr, fnr]
-labels_pos = ['TPR\n(Recall)', 'FNR\n(Miss Rate)']
-colors_pos = ['green', 'orange']
-axes[0, 1].bar(labels_pos, rates_pos, color=colors_pos, alpha=0.7, edgecolor='black', linewidth=2)
-axes[0, 1].set_ylabel('Tasso', fontsize=12)
-axes[0, 1].set_title('Classi Positive: TPR + FNR = 1', fontsize=14)
-axes[0, 1].set_ylim([0, 1.1])
-for i, (label, rate) in enumerate(zip(labels_pos, rates_pos)):
-    axes[0, 1].text(i, rate + 0.02, f'{rate:.3f}', ha='center', fontsize=11, fontweight='bold')
-axes[0, 1].axhline(1.0, color='black', linestyle='--', alpha=0.5)
-axes[0, 1].grid(axis='y', alpha=0.3)
-
-# Grafico 3: Tutte le metriche complementari
-all_rates = [tpr, fnr, tnr, fpr, precision, fdr]
-all_labels = ['TPR\n(Recall)', 'FNR', 'TNR\n(Spec)', 'FPR', 'Precision', 'FDR']
-all_colors = ['green', 'orange', 'green', 'red', 'blue', 'purple']
-bars = axes[1, 0].bar(range(len(all_rates)), all_rates, color=all_colors, alpha=0.7, 
-                      edgecolor='black', linewidth=2)
-axes[1, 0].set_xticks(range(len(all_rates)))
-axes[1, 0].set_xticklabels(all_labels, fontsize=10)
-axes[1, 0].set_ylabel('Valore', fontsize=12)
-axes[1, 0].set_title('Panoramica Completa delle Metriche', fontsize=14)
-axes[1, 0].set_ylim([0, 1.1])
-for bar, rate in zip(bars, all_rates):
-    axes[1, 0].text(bar.get_x() + bar.get_width()/2, rate + 0.02,
-                    f'{rate:.3f}', ha='center', fontsize=10, fontweight='bold')
-axes[1, 0].grid(axis='y', alpha=0.3)
-
-# Grafico 4: Relazioni complementari
-axes[1, 1].axis('off')
-relations = [
-    'TPR + FNR = 1',
-    'TNR + FPR = 1',
-    'Precision + FDR = 1',
-    '',
-    'TPR = Recall = Sensitivity',
-    'FPR = 1 - Specificity = Fall-out',
-    'FNR = 1 - Recall = Miss Rate',
-    '',
-    'FPR: tasso errori su negativi',
-    'FNR: tasso errori su positivi'
-]
-y_start = 0.95
-for i, rel in enumerate(relations):
-    if rel:
-        axes[1, 1].text(0.1, y_start - i*0.08, rel, fontsize=11, 
-                       family='monospace')
-axes[1, 1].set_title('Relazioni e Equivalenze', fontsize=14, fontweight='bold')
-
-plt.tight_layout()
-plt.show()
-```
-
-## 5. Curve ROC e AUC
+## 5. ROC Curves e AUC
 
 ### 5.1 Curva ROC (Receiver Operating Characteristic)
 
-La **curva ROC** visualizza il trade-off tra TPR (Recall/Sensitivity) e FPR (Fall-out) al variare della soglia di classificazione:
+La **curva ROC** visualizza il trade-off tra True Positive Rate e False Positive Rate al variare della soglia $\tau$:
 
-- **Asse Y**: True Positive Rate (TPR) = Recall = Sensitivity
-- **Asse X**: False Positive Rate (FPR) = Fall-out = 1 - Specificity
+- **Asse Y**: $\text{TPR}(\tau) = \frac{TP(\tau)}{TP(\tau) + FN(\tau)}$
+- **Asse X**: $\text{FPR}(\tau) = \frac{FP(\tau)}{FP(\tau) + TN(\tau)}$
 
-$$\text{TPR}(\tau) = \frac{TP(\tau)}{TP(\tau) + FN(\tau)}$$
+**Costruzione**: 
+1. Per ogni possibile soglia $\tau \in [0,1]$, calcoliamo TPR e FPR
+2. Plottiamo il punto $(FPR(\tau), TPR(\tau))$
+3. Colleghiamo i punti per formare la curva
 
-$$\text{FPR}(\tau) = \frac{FP(\tau)}{FP(\tau) + TN(\tau)}$$
+**Punti Notevoli**:
 
-**Interpretazione**:
-- Punto (0, 0): Tutto classificato come negativo (soglia infinita)
-- Punto (1, 1): Tutto classificato come positivo (soglia zero)
-- Punto (0, 1): Classificatore perfetto
-- Diagonale: Classificatore casuale
+- $(0, 0)$: Soglia $\tau = 1$ → tutto classificato come negativo
+- $(1, 1)$: Soglia $\tau = 0$ → tutto classificato come positivo
+- $(0, 1)$: Classificatore perfetto
+- Diagonale $TPR = FPR$: Classificatore casuale
 
-```python
-from sklearn.metrics import roc_curve, auc
-
-fpr_roc, tpr_roc, thresholds_roc = roc_curve(y_test, y_proba)
-roc_auc = auc(fpr_roc, tpr_roc)
-
-fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-# Curva ROC standard
-axes[0].plot(fpr_roc, tpr_roc, color='darkorange', lw=3, 
-            label=f'ROC curve (AUC = {roc_auc:.3f})')
-axes[0].plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', 
-            label='Random Classifier (AUC = 0.5)')
-axes[0].fill_between(fpr_roc, tpr_roc, alpha=0.3, color='orange')
-axes[0].scatter([0], [1], s=200, c='green', marker='*', zorder=5, 
-               label='Classificatore Perfetto')
-axes[0].set_xlim([0.0, 1.0])
-axes[0].set_ylim([0.0, 1.05])
-axes[0].set_xlabel('False Positive Rate (FPR = 1 - Specificity)', fontsize=12)
-axes[0].set_ylabel('True Positive Rate (TPR = Recall = Sensitivity)', fontsize=12)
-axes[0].set_title('Receiver Operating Characteristic (ROC)', fontsize=14, fontweight='bold')
-axes[0].legend(loc="lower right")
-axes[0].grid(alpha=0.3)
-
-# ROC con annotazioni
-axes[1].plot(fpr_roc, tpr_roc, color='darkorange', lw=3)
-axes[1].plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-axes[1].fill_between(fpr_roc, tpr_roc, alpha=0.2, color='orange', label='AUC')
-
-# Annotazioni interpretative
-axes[1].annotate('Soglia Alta\n(Conservativo)\nFPR↓ FNR↑', 
-                xy=(0.1, 0.5), fontsize=10, ha='center',
-                bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
-axes[1].annotate('Soglia Bassa\n(Permissivo)\nFPR↑ FNR↓', 
-                xy=(0.7, 0.9), fontsize=10, ha='center',
-                bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.7))
-
-axes[1].set_xlim([0.0, 1.0])
-axes[1].set_ylim([0.0, 1.05])
-axes[1].set_xlabel('FPR (False Positive Rate)', fontsize=12)
-axes[1].set_ylabel('TPR (True Positive Rate)', fontsize=12)
-axes[1].set_title('ROC: Interpretazione delle Zone', fontsize=14, fontweight='bold')
-axes[1].legend(loc="lower right")
-axes[1].grid(alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-```
+**Interpretazione Geometrica**: Una curva ROC che "abbraccia" l'angolo superiore sinistro indica un buon classificatore.
 
 ### 5.2 AUC (Area Under the ROC Curve)
 
 L'**AUC** quantifica l'area sotto la curva ROC:
 
-$$\text{AUC} = \int_0^1 \text{TPR}(t) \, d(\text{FPR}(t)) = P(\text{score}_{\text{positive}} > \text{score}_{\text{negative}})$$
+$$\text{AUC} = \int_0^1 \text{TPR}(t) \, d(\text{FPR}(t))$$
 
-L'AUC rappresenta la **probabilità che il classificatore assegni uno score più alto a un esempio positivo casuale rispetto a uno negativo casuale**.
+**Teorema (Interpretazione Probabilistica dell'AUC)**: 
 
-**Interpretazione Rigorosa**:
-- **AUC = 1.0**: Classificatore perfetto (separa completamente le classi)
-- **AUC = 0.5**: Classificatore casuale (nessun potere discriminante)
-- **AUC < 0.5**: Peggio del caso (predizioni invertite)
-- **0.5 < AUC < 0.7**: Scarso
-- **0.7 ≤ AUC < 0.8**: Accettabile  
-- **0.8 ≤ AUC < 0.9**: Eccellente
-- **AUC ≥ 0.9**: Outstanding
+$$\text{AUC} = P(f(x_+) > f(x_-))$$
 
-**Proprietà matematiche**:
-- Invariante alla scala (dipende solo dall'ordinamento)
-- Robusta a classi sbilanciate (confronta distribuzioni)
-- Equivale al test di Wilcoxon-Mann-Whitney
+dove $x_+ \sim p(x|y=1)$ e $x_- \sim p(x|y=0)$ sono campioni casuali dalle classi positiva e negativa, e $f(x)$ è lo score del classificatore.
 
-```python
-from sklearn.metrics import roc_auc_score
+**Dimostrazione** (sketch):
 
-auc_score = roc_auc_score(y_test, y_proba)
+Sia $S_+ = \{f(x_i) : y_i = 1\}$ e $S_- = \{f(x_j) : y_j = 0\}$ gli insiemi di score per positivi e negativi.
 
-# Visualizzazione interpretazione AUC
-fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+L'AUC può essere calcolata come:
 
-# Simulazione diversi classificatori
-np.random.seed(42)
-classifiers = {
-    'Perfetto': (np.random.beta(9, 1, 500), np.random.beta(1, 9, 500)),
-    'Eccellente': (np.random.beta(7, 2, 500), np.random.beta(2, 7, 500)),
-    'Buono': (np.random.beta(5, 3, 500), np.random.beta(3, 5, 500)),
-    'Casuale': (np.random.uniform(0, 1, 500), np.random.uniform(0, 1, 500))
-}
+$$\text{AUC} = \frac{1}{|S_+| \cdot |S_-|} \sum_{i \in S_+} \sum_{j \in S_-} \mathbb{I}(f(x_i) > f(x_j))$$
 
-for idx, (name, (pos_scores, neg_scores)) in enumerate(classifiers.items()):
-    ax = axes[idx // 2, idx % 2]
-    
-    # Distribuzioni
-    ax.hist(neg_scores, bins=30, alpha=0.6, label='Negativi', color='red', density=True)
-    ax.hist(pos_scores, bins=30, alpha=0.6, label='Positivi', color='green', density=True)
-    
-    # Calcola AUC
-    y_true = np.concatenate([np.ones(len(pos_scores)), np.zeros(len(neg_scores))])
-    y_scores = np.concatenate([pos_scores, neg_scores])
-    auc_val = roc_auc_score(y_true, y_scores)
-    
-    ax.set_xlabel('Score', fontsize=11)
-    ax.set_ylabel('Densità', fontsize=11)
-    ax.set_title(f'{name}: AUC = {auc_val:.3f}', fontsize=12, fontweight='bold')
-    ax.legend()
-    ax.grid(alpha=0.3)
+Questa è esattamente la frazione di coppie $(x_+, x_-)$ per cui lo score del positivo supera quello del negativo, cioè una stima di $P(f(x_+) > f(x_-))$. $\square$
 
-plt.suptitle('AUC e Separabilità delle Distribuzioni', fontsize=14, fontweight='bold', y=1.02)
-plt.tight_layout()
-plt.show()
+**Equivalenza con test di Wilcoxon-Mann-Whitney**: L'AUC è equivalente alla statistica U del test non parametrico di Wilcoxon-Mann-Whitney.
 
-print(f'AUC Score del modello: {auc_score:.4f}')
-```
+**Scala di Interpretazione**:
 
-### 5.3 Proprietà e Vantaggi della ROC/AUC
+- $\text{AUC} = 1.0$: Separazione perfetta
+- $\text{AUC} = 0.5$: Nessun potere discriminante (casuale)
+- $\text{AUC} < 0.5$: Performance peggiore del caso (predizioni invertite)
+- $0.5 < \text{AUC} < 0.7$: Scarso
+- $0.7 \leq \text{AUC} < 0.8$: Accettabile
+- $0.8 \leq \text{AUC} < 0.9$: Eccellente
+- $\text{AUC} \geq 0.9$: Outstanding
 
-```python
-# Dimostrazione robustezza a classi sbilanciate
-from sklearn.metrics import precision_recall_curve, average_precision_score
+**Proprietà Chiave**:
 
-# Crea dataset sbilanciato
-imbalance_ratios = [0.5, 0.7, 0.9, 0.95]
-aucs = []
-aps = []
+1. **Invarianza alla scala**: Dipende solo dall'ordinamento relativo degli score
+2. **Robustezza allo sbilanciamento**: Non dipende dalla prevalenza delle classi
+3. **Interpretazione come ranking metric**: Misura quanto bene il modello ordina esempi positivi prima dei negativi
 
-fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+### 5.3 Equal Error Rate (EER)
 
-for idx, ratio in enumerate(imbalance_ratios):
-    # Genera dati sbilanciati
-    n_samples = 1000
-    n_positive = int(n_samples * (1 - ratio))
-    n_negative = n_samples - n_positive
-    
-    X_imb, y_imb = make_classification(n_samples=n_samples, n_features=20,
-                                       n_informative=15, weights=[ratio, 1-ratio],
-                                       random_state=42)
-    X_tr, X_te, y_tr, y_te = train_test_split(X_imb, y_imb, test_size=0.3, random_state=42)
-    
-    clf_imb = RandomForestClassifier(random_state=42)
-    clf_imb.fit(X_tr, y_tr)
-    y_prob_imb = clf_imb.predict_proba(X_te)[:, 1]
-    
-    # ROC
-    fpr_imb, tpr_imb, _ = roc_curve(y_te, y_prob_imb)
-    auc_imb = auc(fpr_imb, tpr_imb)
-    aucs.append(auc_imb)
-    
-    # Precision-Recall
-    prec_imb, rec_imb, _ = precision_recall_curve(y_te, y_prob_imb)
-    ap_imb = average_precision_score(y_te, y_prob_imb)
-    aps.append(ap_imb)
-    
-    ax = axes[idx // 2, idx % 2]
-    ax.plot(fpr_imb, tpr_imb, lw=2, label=f'ROC (AUC={auc_imb:.3f})')
-    ax.plot([0, 1], [0, 1], 'k--', lw=1)
-    ax.set_xlabel('FPR', fontsize=11)
-    ax.set_ylabel('TPR', fontsize=11)
-    ax.set_title(f'Classe Pos: {(1-ratio)*100:.0f}% (Ratio 1:{ratio/(1-ratio):.1f})', 
-                fontsize=12, fontweight='bold')
-    ax.legend()
-    ax.grid(alpha=0.3)
+L'**Equal Error Rate** è il punto dove:
 
-plt.suptitle('ROC-AUC è robusta a classi sbilanciate', fontsize=14, fontweight='bold', y=1.02)
-plt.tight_layout()
-plt.show()
+$$\text{FPR}(\tau^*) = \text{FNR}(\tau^*) = \text{EER}$$
 
-print("\nRobustezza AUC vs Sbilanciamento:")
-for ratio, auc_val, ap_val in zip(imbalance_ratios, aucs, aps):
-    print(f"  Positivi: {(1-ratio)*100:5.1f}% | AUC: {auc_val:.4f} | AP: {ap_val:.4f}")
-```
+Poiché $\text{FNR} = 1 - \text{TPR}$, questo corrisponde al punto sulla curva ROC dove la linea $\text{TPR} = 1 - \text{FPR}$ interseca la curva.
 
-## 6. Curva Precision-Recall
+**Interpretazione**: Rappresenta il punto di bilanciamento ottimale tra i due tipi di errore. EER più basso indica performance migliore.
 
-La **curva Precision-Recall** è particolarmente utile per dataset sbilanciati dove la classe positiva è rara:
+## 6. Precision-Recall Curves
 
-```python
-precision_curve, recall_curve, thresholds_pr = precision_recall_curve(y_test, y_proba)
-avg_precision = average_precision_score(y_test, y_proba)
+### 6.1 Motivazione per Dataset Sbilanciati
 
-fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+Quando la classe positiva è rara (e.g., $p(y=1) \ll 0.5$), la curva ROC può essere poco informativa perché:
 
-# Curva PR
-axes[0].plot(recall_curve, precision_curve, color='blue', lw=3,
-            label=f'PR curve (AP = {avg_precision:.3f})')
-axes[0].fill_between(recall_curve, precision_curve, alpha=0.3, color='blue')
+1. Il numero di veri negativi $N_-$ è molto grande
+2. Anche un piccolo FPR corrisponde a molti falsi positivi in termini assoluti
+3. Tutta l'"azione" nella curva ROC si concentra vicino all'origine
 
-baseline = np.sum(y_test) / len(y_test)
-axes[0].axhline(baseline, color='red', linestyle='--', lw=2,
-               label=f'Baseline (prevalenza = {baseline:.3f})')
+La **curva Precision-Recall** risolve questo problema focalizzandosi solo sui positivi.
 
-axes[0].set_xlabel('Recall (TPR)', fontsize=12)
-axes[0].set_ylabel('Precision (PPV)', fontsize=12)
-axes[0].set_title('Precision-Recall Curve', fontsize=14, fontweight='bold')
-axes[0].legend(loc="lower left")
-axes[0].grid(alpha=0.3)
-axes[0].set_xlim([0.0, 1.0])
-axes[0].set_ylim([0.0, 1.05])
+### 6.2 Definizione
 
-# Confronto ROC vs PR per dataset sbilanciato
-axes[1].plot(fpr_roc, tpr_roc, 'r-', lw=2, label=f'ROC (AUC={roc_auc:.3f})', alpha=0.7)
-axes[1].set_xlabel('FPR / Recall*', fontsize=12)
-axes[1].set_ylabel('TPR / Precision*', fontsize=12)
+La curva PR plotta:
 
-# Sovrapponi PR (scalata)
-recall_scaled = recall_curve
-precision_scaled = precision_curve  
-axes[1].plot(recall_scaled, precision_scaled, 'b-', lw=2, 
-            label=f'PR (AP={avg_precision:.3f})', alpha=0.7)
+- **Asse X**: Recall $= \frac{TP}{TP + FN}$
+- **Asse Y**: Precision $= \frac{TP}{TP + FP}$
 
-axes[1].set_title('ROC vs PR: Visualizzazione Comparativa', fontsize=14, fontweight='bold')
-axes[1].legend()
-axes[1].grid(alpha=0.3)
-axes[1].set_xlim([0, 1])
-axes[1].set_ylim([0, 1.05])
+al variare della soglia $\tau$.
 
-plt.tight_layout()
-plt.show()
-```
+**Baseline**: Un classificatore casuale ottiene precision pari alla prevalenza: $P = p(y=1)$.
 
-### 6.1 Average Precision (AP)
+### 6.3 Average Precision (AP)
 
-L'**Average Precision** riassume la curva PR come la media pesata delle precision a ogni soglia:
+L'**Average Precision** riassume la curva PR come media pesata delle precision:
 
-$$\text{AP} = \sum_n (R_n - R_{n-1}) \cdot P_n$$
+$$\text{AP} = \sum_{n=1}^{N} (R_n - R_{n-1}) \cdot P_n$$
 
-dove $P_n$ e $R_n$ sono precision e recall alla soglia $n$.
+dove $(P_n, R_n)$ sono precision e recall alla soglia $n$-esima, ordinati per recall crescente.
 
-**Differenza con AUC**:
-- AUC-ROC: Buona per dataset bilanciati, mostra trade-off TPR/FPR
-- AUC-PR (AP): Preferibile per dataset sbilanciati, focus su classe positiva
+**Interpretazione**: Approssima l'area sotto la curva PR.
 
-```python
-print(f"Average Precision: {avg_precision:.4f}")
-print(f"ROC-AUC: {roc_auc:.4f}")
-print(f"\nPer dataset sbilanciato (classe positiva {baseline*100:.1f}%):")
-print(f"  → AP è più informativa di AUC")
-```
+**Differenze AUC-ROC vs AUC-PR**:
+
+| Aspetto | AUC-ROC | AUC-PR |
+|---------|---------|--------|
+| Focus | Bilanciamento TPR/FPR | Classe positiva |
+| Dataset | Bilanciati | Sbilanciati |
+| Sensibilità | Meno sensibile a sbilanciamento | Più sensibile |
+| Uso | Classificazione generale | Rilevamento eventi rari |
+
+### 6.4 Precision@K e Average Precision@K
+
+In information retrieval e sistemi di ranking:
+
+**Precision@K**: Precision calcolata sui primi $K$ elementi recuperati:
+
+$$P@K = \frac{|\{i \in \text{top-}K : y_i = 1\}|}{K}$$
+
+**Average Precision@K**: Media delle precision calcolate ad ogni posizione dove compare un elemento rilevante, fino a $K$:
+
+$$AP@K = \frac{1}{\min(m, K)} \sum_{k=1}^{K} P(k) \cdot \text{rel}(k)$$
+
+dove $\text{rel}(k) = 1$ se l'item in posizione $k$ è rilevante, $0$ altrimenti, e $m$ è il numero totale di item rilevanti.
 
 ## 7. Metriche Avanzate
 
 ### 7.1 Matthews Correlation Coefficient (MCC)
 
-Il **MCC** è considerato una delle migliori metriche per classificazione binaria, specialmente con classi sbilanciate:
+Il **MCC** è un coefficiente di correlazione tra predizioni e valori reali:
 
 $$\text{MCC} = \frac{TP \cdot TN - FP \cdot FN}{\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN + FN)}}$$
 
+**Derivazione**: Il MCC è il coefficiente di correlazione di Pearson $\phi$ tra due variabili binarie $y$ e $\hat{y}$:
+
+$$\phi = \frac{n_{11}n_{00} - n_{10}n_{01}}{\sqrt{n_{1\cdot}n_{0\cdot}n_{\cdot1}n_{\cdot0}}}$$
+
+dove $n_{ij}$ è la frequenza congiunta di $y=i$ e $\hat{y}=j$.
+
 **Proprietà**:
-- Range: $[-1, 1]$
-- MCC = 1: Predizione perfetta
-- MCC = 0: Predizione casuale
-- MCC = -1: Totale disaccordo
-- Simmetrico rispetto a classi positive/negative
-- Robusto a sbilanciamenti
 
-```python
-from sklearn.metrics import matthews_corrcoef
+- Range: $[-1, +1]$
+- $\text{MCC} = +1$: Predizione perfetta
+- $\text{MCC} = 0$: Predizione casuale (non correlata)
+- $\text{MCC} = -1$: Disaccordo totale (predizioni invertite)
+- **Simmetrico** rispetto alle classi: $\text{MCC}(y, \hat{y}) = \text{MCC}(\hat{y}, y)$
+- **Invariante** al bilanciamento: Non favorisce la classe maggioritaria
 
-mcc = matthews_corrcoef(y_test, y_pred)
-print(f'Matthews Correlation Coefficient: {mcc:.4f}')
+**Teorema (Invarianza)**: MCC è invariante rispetto a scambi di classe (scambiare positivi con negativi).
 
-# Comparazione MCC con altre metriche su dataset sbilanciati
-imbalance_ratios = [0.5, 0.7, 0.9, 0.95, 0.99]
-metrics_comparison = {'Accuracy': [], 'F1': [], 'MCC': []}
+**Dimostrazione**: Sotto lo scambio $y \leftrightarrow (1-y)$ e $\hat{y} \leftrightarrow (1-\hat{y})$:
 
-fig, ax = plt.subplots(figsize=(12, 6))
+- $TP \leftrightarrow TN$
+- $FP \leftrightarrow FN$
 
-for ratio in imbalance_ratios:
-    X_imb, y_imb = make_classification(n_samples=1000, n_features=20,
-                                       weights=[ratio, 1-ratio], random_state=42)
-    X_tr, X_te, y_tr, y_te = train_test_split(X_imb, y_imb, test_size=0.3, random_state=42)
-    
-    clf_imb = RandomForestClassifier(random_state=42)
-    clf_imb.fit(X_tr, y_tr)
-    y_pred_imb = clf_imb.predict(X_te)
-    
-    metrics_comparison['Accuracy'].append(accuracy_score(y_te, y_pred_imb))
-    metrics_comparison['F1'].append(f1_score(y_te, y_pred_imb))
-    metrics_comparison['MCC'].append(matthews_corrcoef(y_te, y_pred_imb))
+Quindi il numeratore diventa $TN \cdot TP - FN \cdot FP = TP \cdot TN - FP \cdot FN$ (stesso valore).
 
-for metric, values in metrics_comparison.items():
-    ax.plot(imbalance_ratios, values, marker='o', markersize=8, lw=2, label=metric)
-
-ax.set_xlabel('Proporzione Classe Maggioritaria', fontsize=12)
-ax.set_ylabel('Valore Metrica', fontsize=12)
-ax.set_title('MCC è più stabile con dataset sbilanciati rispetto ad Accuracy', 
-            fontsize=14, fontweight='bold')
-ax.legend(fontsize=11)
-ax.grid(alpha=0.3)
-ax.set_ylim([0, 1.05])
-
-plt.tight_layout()
-plt.show()
-```
+Il denominatore è simmetrico per costruzione. $\square$
 
 ### 7.2 Cohen's Kappa
 
-Il **Cohen's Kappa** misura l'accordo tra predizioni e valori reali, correggendo per l'accordo casuale:
+Il **Cohen's Kappa** misura l'accordo tra predizioni e valori reali, corretto per l'accordo casuale:
 
 $$\kappa = \frac{p_o - p_e}{1 - p_e}$$
 
 dove:
-- $p_o = \frac{TP + TN}{TP + TN + FP + FN}$ : Accuratezza osservata
-- $p_e = \frac{(TP+FP)(TP+FN) + (TN+FP)(TN+FN)}{(TP+TN+FP+FN)^2}$ : Accordo casuale atteso
+
+- $p_o = \frac{TP + TN}{N}$ è l'**accuratezza osservata**
+- $p_e = \frac{(TP+FP)(TP+FN) + (TN+FP)(TN+FN)}{N^2}$ è l'**accordo casuale atteso**
+
+**Derivazione di $p_e$**: Se $y$ e $\hat{y}$ fossero indipendenti ma con le stesse distribuzioni marginali:
+
+$$p_e = P(y = \hat{y}) = P(y=1)P(\hat{y}=1) + P(y=0)P(\hat{y}=0)$$
+
+$$= \frac{N_+}{N} \cdot \frac{\hat{N}_+}{N} + \frac{N_-}{N} \cdot \frac{\hat{N}_-}{N}$$
 
 **Interpretazione**:
+
+- $\kappa = 1$: Accordo perfetto
+- $\kappa = 0$: Accordo pari al caso
+- $\kappa < 0$: Accordo peggiore del caso
+
+**Scala di Landis e Koch**:
 - $\kappa < 0$: Accordo peggiore del caso
 - $0 \leq \kappa < 0.20$: Accordo lieve
 - $0.20 \leq \kappa < 0.40$: Accordo discreto
@@ -783,291 +519,531 @@ dove:
 - $0.60 \leq \kappa < 0.80$: Accordo sostanziale
 - $0.80 \leq \kappa \leq 1.00$: Accordo quasi perfetto
 
-```python
-from sklearn.metrics import cohen_kappa_score
+**Relazione con MCC**: Per problemi binari, MCC e Kappa sono strettamente correlati ma non identici. Il MCC è generalmente preferito perché:
+1. Ha interpretazione come coefficiente di correlazione
+2. È più stabile numericamente
+3. Ha migliori proprietà sotto campionamento
 
-kappa = cohen_kappa_score(y_test, y_pred)
-print(f"Cohen's Kappa: {kappa:.4f}")
+### 7.3 Balanced Accuracy
 
-# Visualizzazione interpretazione
-kappa_ranges = [
-    (0, 0.20, 'Lieve', 'lightcoral'),
-    (0.20, 0.40, 'Discreto', 'lightyellow'),
-    (0.40, 0.60, 'Moderato', 'lightblue'),
-    (0.60, 0.80, 'Sostanziale', 'lightgreen'),
-    (0.80, 1.00, 'Quasi Perfetto', 'darkgreen')
-]
+La **balanced accuracy** è la media delle accuratezze per classe, utile per dataset sbilanciati:
 
-fig, ax = plt.subplots(figsize=(12, 3))
+$\text{Balanced Accuracy} = \frac{1}{2}\left(\frac{TP}{TP+FN} + \frac{TN}{TN+FP}\right) = \frac{\text{TPR} + \text{TNR}}{2}$
 
-for start, end, label, color in kappa_ranges:
-    ax.barh(0, end - start, left=start, height=0.5, color=color, 
-           edgecolor='black', linewidth=2, alpha=0.7)
-    ax.text((start + end) / 2, 0, f'{label}\n[{start:.1f}-{end:.1f}]', 
-           ha='center', va='center', fontsize=10, fontweight='bold')
+**Motivazione**: L'accuracy standard può essere dominata dalla classe maggioritaria. La balanced accuracy dà peso uguale a ciascuna classe.
 
-ax.plot([kappa, kappa], [-0.3, 0.3], 'r-', linewidth=4, label=f'Kappa={kappa:.3f}')
-ax.scatter([kappa], [0], s=200, c='red', marker='v', zorder=5, edgecolor='black', linewidth=2)
+**Esempio**: Dataset con 95% negativi, 5% positivi.
+- Classificatore che predice sempre negativo: Accuracy = 95%, Balanced Accuracy = 50%
+- Balanced Accuracy rivela che il modello è equivalente al caso per la classe positiva
 
-ax.set_xlim([0, 1])
-ax.set_ylim([-0.4, 0.4])
-ax.set_xlabel("Cohen's Kappa", fontsize=12)
-ax.set_yticks([])
-ax.set_title("Interpretazione Cohen's Kappa", fontsize=14, fontweight='bold')
-ax.legend(loc='upper left')
+**Generalizzazione multi-classe**:
 
-plt.tight_layout()
-plt.show()
-```
+$\text{Balanced Accuracy} = \frac{1}{C} \sum_{c=1}^{C} \frac{TP_c}{TP_c + FN_c}$
 
-### 7.3 Log Loss (Cross-Entropy Loss)
+dove $C$ è il numero di classi.
 
-La **Log Loss** valuta la qualità delle probabilità predette, penalizzando fortemente predizioni con alta confidenza ma errate:
+## 8. Metriche Probabilistiche e Calibrazione
 
-$$\text{Log Loss} = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(p_i) + (1 - y_i) \log(1 - p_i) \right]$$
+### 8.1 Log Loss (Cross-Entropy Loss)
 
-dove $p_i$ è la probabilità predetta per la classe positiva.
+La **log loss** o **cross-entropy** valuta la qualità delle probabilità predette:
+
+$\text{Log Loss} = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(p_i) + (1 - y_i) \log(1 - p_i) \right]$
+
+dove $p_i = P(y_i = 1|x_i)$ è la probabilità predetta per il campione $i$.
+
+**Derivazione dall'entropia incrociata**: La log loss è l'entropia incrociata tra la distribuzione empirica $q(y|x)$ e la distribuzione predetta $p(y|x)$:
+
+$H(q, p) = -\mathbb{E}_{y \sim q}[\log p(y|x)] = -\sum_{y} q(y|x) \log p(y|x)$
+
+Per classificazione binaria con $q(y=1|x) = y$ (0 o 1):
+
+$H = -y \log p - (1-y) \log(1-p)$
 
 **Proprietà**:
-- Range: $[0, \infty)$, valori più bassi sono migliori
-- Log Loss = 0: Predizioni probabilistiche perfette
-- Penalizza errori con alta confidenza più di altri
+- Range: $[0, +\infty)$, dove 0 indica probabilità perfette
+- **Penalizzazione esponenziale**: Predizioni confidenti ma sbagliate sono penalizzate pesantemente
+- **Proper scoring rule**: Minimizzata dalle vere probabilità
 
-```python
-from sklearn.metrics import log_loss
+**Esempio di penalizzazione**:
+- Vera classe: $y=1$
+- Predizione confidante errata: $p=0.01$ → Loss $= -\log(0.01) \approx 4.6$
+- Predizione incerta: $p=0.5$ → Loss $= -\log(0.5) \approx 0.69$
+- Predizione corretta confidante: $p=0.99$ → Loss $= -\log(0.99) \approx 0.01$
 
-logloss = log_loss(y_test, y_proba)
-print(f'Log Loss: {logloss:.4f}')
+**Collegamento con likelihood**: Minimizzare la log loss equivale a massimizzare la log-likelihood:
 
-# Dimostrazione penalizzazione
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+$\arg\min_\theta \text{Log Loss} = \arg\max_\theta \sum_{i=1}^{N} \log p(y_i|x_i, \theta)$
 
-# Grafico 1: Log Loss per diverse predizioni
-true_label = 1
-predicted_probs = np.linspace(0.01, 0.99, 100)
-log_losses = [-np.log(p) if true_label == 1 else -np.log(1-p) for p in predicted_probs]
+### 8.2 Brier Score
 
-axes[0].plot(predicted_probs, log_losses, 'b-', lw=3)
-axes[0].axvline(0.5, color='gray', linestyle='--', alpha=0.5, label='Incertezza (p=0.5)')
-axes[0].set_xlabel('Probabilità Predetta (per classe positiva)', fontsize=12)
-axes[0].set_ylabel('Log Loss', fontsize=12)
-axes[0].set_title('Log Loss penalizza predizioni sbagliate con alta confidenza\n(Vera classe: Positiva)', 
-                 fontsize=13, fontweight='bold')
-axes[0].set_ylim([0, 5])
-axes[0].grid(alpha=0.3)
-axes[0].legend()
+Il **Brier score** misura l'errore quadratico medio delle probabilità predette:
 
-# Annotazioni
-axes[0].annotate('Predizione corretta\ncon alta confidenza\n(Loss → 0)', 
-                xy=(0.95, 0.1), fontsize=10, ha='center',
-                bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
-axes[0].annotate('Predizione sbagliata\ncon alta confidenza\n(Loss → ∞)', 
-                xy=(0.05, 4), fontsize=10, ha='center',
-                bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.7))
+$\text{Brier Score} = \frac{1}{N} \sum_{i=1}^{N} (p_i - y_i)^2$
 
-# Grafico 2: Esempi concreti
-scenarios = [
-    ('Corretto\nconfidente', 1, 0.95, 'green'),
-    ('Corretto\nincerto', 1, 0.55, 'lightgreen'),
-    ('Sbagliato\nincerto', 1, 0.45, 'orange'),
-    ('Sbagliato\nconfidente', 1, 0.05, 'red')
-]
+**Derivazione**: È semplicemente il MSE tra probabilità predette e label binari.
 
-losses_scenarios = []
-for _, true, pred, _ in scenarios:
-    loss = -np.log(pred) if true == 1 else -np.log(1-pred)
-    losses_scenarios.append(loss)
+**Decomposizione di Murphy**: Il Brier score può essere decomposto in tre termini:
 
-bars = axes[1].bar(range(len(scenarios)), losses_scenarios, 
-                   color=[c for _, _, _, c in scenarios], alpha=0.7, 
-                   edgecolor='black', linewidth=2)
-axes[1].set_xticks(range(len(scenarios)))
-axes[1].set_xticklabels([s[0] for s in scenarios], fontsize=10)
-axes[1].set_ylabel('Log Loss', fontsize=12)
-axes[1].set_title('Log Loss per Scenari Diversi', fontsize=13, fontweight='bold')
-axes[1].grid(axis='y', alpha=0.3)
+$\text{BS} = \text{Reliability} - \text{Resolution} + \text{Uncertainty}$
 
-for bar, loss, (_, _, pred, _) in zip(bars, losses_scenarios, scenarios):
-    axes[1].text(bar.get_x() + bar.get_width()/2, loss + 0.05,
-                f'{loss:.3f}\np={pred}', ha='center', fontsize=9, fontweight='bold')
+dove:
+- **Reliability**: Quanto le probabilità predette corrispondono alle frequenze osservate
+- **Resolution**: Quanto bene il modello separa i casi positivi dai negativi
+- **Uncertainty**: Varianza intrinseca dei dati (non controllabile)
 
-plt.tight_layout()
-plt.show()
-```
+**Confronto Log Loss vs Brier Score**:
 
-### 7.4 Brier Score
+| Aspetto | Log Loss | Brier Score |
+|---------|----------|-------------|
+| Penalizzazione | Logaritmica (più severa) | Quadratica |
+| Range | $[0, \infty)$ | $[0, 1]$ |
+| Proper scoring rule | Sì | Sì |
+| Interpretabilità | Meno intuitiva | Più intuitiva (MSE) |
+| Sensibilità a errori confidenti | Molto alta | Moderata |
 
-Il **Brier Score** misura l'accuratezza delle predizioni probabilistiche come MSE:
+### 8.3 Calibrazione delle Probabilità
 
-$$\text{Brier Score} = \frac{1}{N} \sum_{i=1}^{N} (p_i - y_i)^2$$
+Un modello è **ben calibrato** se le probabilità predette riflettono le vere frequenze:
+
+$P(y=1 | p(y=1|x) = q) = q \quad \forall q \in [0,1]$
+
+**Interpretazione**: Se il modello assegna probabilità 0.7 a 100 esempi, circa 70 dovrebbero essere effettivamente positivi.
+
+#### 8.3.1 Reliability Diagram (Calibration Plot)
+
+Per valutare la calibrazione:
+
+1. **Binning**: Dividi le predizioni in $B$ bin basati su $p_i$
+2. Per ogni bin $b$:
+   - Calcola probabilità media predetta: $\bar{p}_b = \frac{1}{|B_b|} \sum_{i \in B_b} p_i$
+   - Calcola frazione empirica di positivi: $\bar{y}_b = \frac{1}{|B_b|} \sum_{i \in B_b} y_i$
+3. Plotta $\bar{y}_b$ vs $\bar{p}_b$
+
+**Interpretazione**:
+- Modello perfettamente calibrato: Punti sulla diagonale
+- Sopra la diagonale: Modello sotto-confidente
+- Sotto la diagonale: Modello sovra-confidente
+
+#### 8.3.2 Expected Calibration Error (ECE)
+
+L'**ECE** quantifica la deviazione dalla calibrazione perfetta:
+
+$\text{ECE} = \sum_{b=1}^{B} \frac{|B_b|}{N} |\bar{y}_b - \bar{p}_b|$
 
 **Proprietà**:
-- Range: $[0, 1]$, valori più bassi sono migliori
-- Brier = 0: Probabilità perfette
-- Equivalente al Mean Squared Error
+- Range: $[0, 1]$
+- ECE = 0 indica calibrazione perfetta
+- Usa errore assoluto (più robusto di MSE)
 
-```python
-from sklearn.metrics import brier_score_loss
+**Maximum Calibration Error (MCE)**:
 
-brier = brier_score_loss(y_test, y_proba)
-print(f'Brier Score: {brier:.4f}')
+$\text{MCE} = \max_{b=1,\ldots,B} |\bar{y}_b - \bar{p}_b|$
 
-# Confronto Log Loss vs Brier Score
-fig, ax = plt.subplots(figsize=(10, 6))
+Misura la peggiore deviazione locale dalla calibrazione.
 
-true_label = 1
-probs = np.linspace(0.01, 0.99, 100)
-log_losses_comp = [-np.log(p) for p in probs]
-brier_scores = [(p - true_label)**2 for p in probs]
+#### 8.3.3 Metodi di Calibrazione
 
-ax.plot(probs, log_losses_comp, 'b-', lw=3, label='Log Loss')
-ax2 = ax.twinx()
-ax2.plot(probs, brier_scores, 'r-', lw=3, label='Brier Score')
+**Platt Scaling**: Applica regressione logistica agli score:
 
-ax.set_xlabel('Probabilità Predetta', fontsize=12)
-ax.set_ylabel('Log Loss', fontsize=12, color='blue')
-ax2.set_ylabel('Brier Score', fontsize=12, color='red')
-ax.set_title('Log Loss vs Brier Score\n(Log Loss penalizza più severamente)', 
-            fontsize=14, fontweight='bold')
-ax.tick_params(axis='y', labelcolor='blue')
-ax2.tick_params(axis='y', labelcolor='red')
-ax.grid(alpha=0.3)
+$p_{\text{calibrated}} = \frac{1}{1 + e^{-(a \cdot s + b)}}$
 
-lines1, labels1 = ax.get_legend_handles_labels()
-lines2, labels2 = ax2.get_legend_handles_labels()
-ax.legend(lines1 + lines2, labels1 + labels2, loc='upper center')
+dove $s$ è lo score non calibrato, e $a, b$ sono appresi su un validation set.
 
-plt.tight_layout()
-plt.show()
+**Isotonic Regression**: Apprende una funzione monotona non-parametrica che mappa score a probabilità calibrate.
+
+**Temperature Scaling** (per reti neurali): Scala i logit con un parametro $T$:
+
+$p_i = \frac{e^{z_i/T}}{\sum_j e^{z_j/T}}$
+
+dove $T > 1$ "addolcisce" le probabilità (meno confidenti), $T < 1$ le rende più confidenti.
+
+### 8.4 Decisioni con Costi Asimmetrici
+
+#### 8.4.1 Framework del Rischio Bayesiano
+
+Il **rischio bayesiano** (o rischio atteso) per una decision rule $\delta$ è:
+
+$R(\delta) = \mathbb{E}_{(X,Y) \sim p(x,y)}[L(Y, \delta(X))] = \sum_x \sum_y L(y, \delta(x)) p(x,y)$
+
+**Distinzione chiave**:
+
+**Rischio Empirico** (Training):
+$\hat{R}_{\text{emp}}(\delta) = \frac{1}{N} \sum_{i=1}^{N} L(y_i, \delta(x_i))$
+
+Calcolato sul training set, tende a sottostimare il vero rischio (overfitting).
+
+**Rischio di Generalizzazione** (Test):
+$R_{\text{true}}(\delta) = \mathbb{E}_{(X,Y) \sim p_{\text{true}}(x,y)}[L(Y, \delta(X))]$
+
+Il vero rischio sulla distribuzione sottostante (sconosciuta).
+
+**Obiettivo**: Minimizzare $R_{\text{true}}(\delta)$, stimabile via validation set o cross-validation.
+
+#### 8.4.2 Ottimizzazione della Soglia per Costi Specifici
+
+Dato un modello che produce $p(y=1|x)$, la soglia ottimale $\tau^*$ dipende dai costi:
+
+**Teorema (Soglia Ottimale con Costi Asimmetrici)**:
+
+Dato $L_{FP}$ (costo falso positivo) e $L_{FN}$ (costo falso negativo), la soglia ottimale è:
+
+$\tau^* = \frac{L_{FP}}{L_{FP} + L_{FN}}$
+
+**Dimostrazione**:
+
+Il rischio atteso per soglia $\tau$ è:
+
+$R(\tau) = L_{FN} \cdot P(Y=1, \hat{Y}=0) + L_{FP} \cdot P(Y=0, \hat{Y}=1)$
+
+$= L_{FN} \int_{p(y=1|x) \leq \tau} p(y=1|x) p(x) dx + L_{FP} \int_{p(y=1|x) > \tau} p(y=0|x) p(x) dx$
+
+Derivando rispetto a $\tau$ e usando il calcolo variazionale:
+
+$\frac{\partial R}{\partial \tau} = 0 \Rightarrow L_{FN} \cdot \tau = L_{FP} \cdot (1-\tau)$
+
+$\Rightarrow \tau^* = \frac{L_{FP}}{L_{FP} + L_{FN}}$ $\square$
+
+**Esempi applicativi**:
+
+1. **Diagnosi medica (screening cancro)**:
+   - $L_{FN} = 100$ (mancata diagnosi → morte)
+   - $L_{FP} = 1$ (falso allarme → biopsia inutile)
+   - $\tau^* = \frac{1}{101} \approx 0.01$ → Soglia molto bassa, massimizza recall
+
+2. **Sistema anti-spam**:
+   - $L_{FN} = 1$ (spam in inbox)
+   - $L_{FP} = 10$ (email legittima in spam)
+   - $\tau^* = \frac{10}{11} \approx 0.91$ → Soglia alta, massimizza precision
+
+3. **Rilevamento frodi bancarie**:
+   - $L_{FN} = 1000$ (frode non rilevata)
+   - $L_{FP} = 5$ (transazione legittima bloccata)
+   - $\tau^* = \frac{5}{1005} \approx 0.005$ → Soglia molto bassa
+
+#### 8.4.3 Ottimizzazione Multi-Obiettivo
+
+Quando vogliamo ottimizzare per una metrica specifica (es. F1, F2), possiamo cercare la soglia che la massimizza:
+
+$\tau^*_{F_\beta} = \arg\max_\tau F_\beta(\tau)$
+
+Questo richiede una ricerca (grid search o ottimizzazione) sul validation set.
+
+**Algoritmo**:
+```
+Input: Validation set {(x_i, y_i, p_i)}_{i=1}^M
+1. For τ in [0, 1] con step 0.01:
+2.     Compute ŷ_i = I(p_i > τ)
+3.     Compute F_β(τ)
+4. Return τ* = argmax_τ F_β(τ)
 ```
 
-## 8. Calibrazione delle Probabilità
+## 9. Metriche Multi-Classe
 
-La **calibration curve** mostra se le probabilità predette riflettono la vera probabilità:
+### 9.1 Estensione della Matrice di Confusione
 
-```python
-from sklearn.calibration import calibration_curve
+Per $C$ classi, la matrice di confusione è $C \times C$:
 
-fraction_of_positives, mean_predicted_value = calibration_curve(y_test, y_proba, n_bins=10)
+$M_{ij} = |\{k : y_k = i \land \hat{y}_k = j\}|$
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+Elementi sulla diagonale sono predizioni corrette, elementi fuori diagonale sono errori.
 
-# Curva di calibrazione
-axes[0].plot(mean_predicted_value, fraction_of_positives, "s-", 
-            linewidth=2, markersize=8, label="Modello")
-axes[0].plot([0, 1], [0, 1], "k--", linewidth=2, label="Perfettamente calibrato")
-axes[0].set_xlabel("Probabilità Predetta", fontsize=12)
-axes[0].set_ylabel("Frazione di Positivi", fontsize=12)
-axes[0].set_title("Curva di Calibrazione", fontsize=14, fontweight='bold')
-axes[0].legend()
-axes[0].grid(alpha=0.3)
+### 9.2 Strategie di Aggregazione
 
-# Distribuzione delle probabilità
-axes[1].hist(y_proba[y_test == 0], bins=20, alpha=0.6, label='Negativi', 
-            color='red', density=True)
-axes[1].hist(y_proba[y_test == 1], bins=20, alpha=0.6, label='Positivi', 
-            color='green', density=True)
-axes[1].set_xlabel('Probabilità Predetta', fontsize=12)
-axes[1].set_ylabel('Densità', fontsize=12)
-axes[1].set_title('Distribuzione delle Probabilità Predette', fontsize=14, fontweight='bold')
-axes[1].legend()
-axes[1].grid(alpha=0.3)
+#### 9.2.1 Macro-Averaging
 
-plt.tight_layout()
-plt.show()
+Calcola la metrica per ogni classe separatamente, poi fa la media:
+
+$\text{Metric}_{\text{macro}} = \frac{1}{C} \sum_{c=1}^{C} \text{Metric}_c$
+
+**Proprietà**:
+- **Peso uguale a tutte le classi**: Ogni classe contribuisce equamente
+- **Sensibile a classi rare**: Una classe con pochi esempi ha lo stesso peso di una grande
+- **Uso**: Quando tutte le classi sono ugualmente importanti
+
+**Esempio**:
+- Classe 1: 10 esempi, Precision = 0.5
+- Classe 2: 1000 esempi, Precision = 0.9
+- Macro-Precision = $(0.5 + 0.9)/2 = 0.7$
+
+#### 9.2.2 Micro-Averaging
+
+Aggrega i conteggi globalmente prima di calcolare la metrica:
+
+$\text{Precision}_{\text{micro}} = \frac{\sum_{c=1}^{C} TP_c}{\sum_{c=1}^{C} (TP_c + FP_c)}$
+
+$\text{Recall}_{\text{micro}} = \frac{\sum_{c=1}^{C} TP_c}{\sum_{c=1}^{C} (TP_c + FN_c)}$
+
+**Proprietà**:
+- **Peso proporzionale alla dimensione**: Classi grandi dominano
+- **Equivale all'accuracy** per classificazione multi-classe bilanciata
+- **Uso**: Quando si vuole enfatizzare le performance sulle classi più comuni
+
+**Esempio** (stesso di prima):
+- Micro-Precision = $(TP_1 + TP_2)/(TP_1 + TP_2 + FP_1 + FP_2)$
+- Sarà vicino a 0.9 (dominato dalla classe 2)
+
+#### 9.2.3 Weighted-Averaging
+
+Pesa le metriche per classe in base alla loro frequenza:
+
+$\text{Metric}_{\text{weighted}} = \sum_{c=1}^{C} w_c \cdot \text{Metric}_c$
+
+dove $w_c = \frac{N_c}{N}$ è la proporzione di esempi nella classe $c$.
+
+**Proprietà**:
+- **Compromesso**: Via di mezzo tra macro e micro
+- **Uso**: Quando si vuole dare importanza proporzionale ma non esclusiva alle classi grandi
+
+**Confronto**:
+
+| Strategia | Peso classi | Sensibilità sbilanciamento | Uso tipico |
+|-----------|-------------|---------------------------|------------|
+| Macro | Uguale | Alta | Classi ugualmente importanti |
+| Micro | Proporzionale (volume) | Bassa | Enfasi su classi comuni |
+| Weighted | Proporzionale (frequenza) | Media | Compromesso generale |
+
+### 9.3 Cohen's Kappa Multi-Classe
+
+Estensione diretta della formula binaria:
+
+$\kappa = \frac{p_o - p_e}{1 - p_e}$
+
+dove ora:
+
+$p_o = \frac{\sum_{c=1}^{C} M_{cc}}{N} = \frac{\text{Trace}(M)}{N}$
+
+$p_e = \sum_{c=1}^{C} \frac{N_c \cdot \hat{N}_c}{N^2}$
+
+dove $N_c = \sum_j M_{cj}$ (veri positivi classe $c$) e $\hat{N}_c = \sum_i M_{ic}$ (predetti classe $c$).
+
+**Interpretazione**: Stesso range e interpretazione del caso binario.
+
+### 9.4 Matthews Correlation Coefficient Multi-Classe
+
+La generalizzazione del MCC per $C$ classi è il **R_K coefficient**:
+
+$\text{MCC}_{\text{multi}} = \frac{\sum_c M_{cc} \cdot N - \sum_c N_c \hat{N}_c}{\sqrt{N^2 - \sum_c \hat{N}_c^2} \cdot \sqrt{N^2 - \sum_c N_c^2}}$
+
+**Proprietà**:
+- Range: $[-1, +1]$
+- Riduce al MCC binario per $C=2$
+- Simmetrico e invariante a permutazioni di classe
+
+### 9.5 Curve PR Multi-Classe
+
+#### 9.5.1 One-vs-Rest (OvR)
+
+Per ogni classe $c$, trattiamo il problema come binario:
+- Positivi: Classe $c$
+- Negativi: Tutte le altre classi
+
+Generiamo $C$ curve PR separate, una per classe.
+
+**Aggregazione**:
+
+**Macro-average PR**: Media delle PR curve per ogni classe.
+
+**Micro-average PR**: Pool di tutti i TP, FP, FN attraverso le classi:
+
+$\text{Precision}_{\text{micro}} = \frac{\sum_{c} TP_c}{\sum_c (TP_c + FP_c)}$
+
+$\text{Recall}_{\text{micro}} = \frac{\sum_{c} TP_c}{\sum_c (TP_c + FN_c)}$
+
+Plottiamo questi valori globali per generare un'unica curva.
+
+**Interpretazione**:
+- Macro: Peso uguale a ogni classe
+- Micro: Peso proporzionale alla frequenza, dominato da classi grandi
+
+## 10. Interpretazioni Statistiche Avanzate
+
+### 10.1 ROC come Test di Mann-Whitney U
+
+**Teorema (Equivalenza AUC e Mann-Whitney U)**:
+
+L'AUC è equivalente alla statistica U del test di Mann-Whitney:
+
+$\text{AUC} = \frac{U}{n_+ \cdot n_-}$
+
+dove:
+- $n_+$ = numero di esempi positivi
+- $n_-$ = numero di esempi negativi
+- $U = \sum_{i=1}^{n_+} \sum_{j=1}^{n_-} \mathbb{I}(f(x_i^+) > f(x_j^-))$
+
+**Interpretazione**: $U$ conta il numero di coppie $(x_+, x_-)$ dove lo score del positivo supera quello del negativo.
+
+**Dimostrazione** (sketch):
+
+Per costruzione, AUC è la probabilità che un esempio positivo casuale abbia score maggiore di un negativo casuale:
+
+$\text{AUC} = P(f(X_+) > f(X_-))$
+
+Questo può essere stimato campionariamente come:
+
+$\hat{\text{AUC}} = \frac{1}{n_+ n_-} \sum_{i=1}^{n_+} \sum_{j=1}^{n_-} \mathbb{I}(f(x_i^+) > f(x_j^-)) = \frac{U}{n_+ n_-}$
+
+La statistica U è esattamente questa stima. $\square$
+
+**Implicazione**: Il test di Mann-Whitney U per verificare se due distribuzioni sono diverse è equivalente a testare se AUC ≠ 0.5.
+
+### 10.2 PR come Metrica per Dati Sbilanciati
+
+**Teorema (Sensibilità al Prior)**:
+
+Dato uno shift nella prevalenza da $\pi_{\text{train}}$ a $\pi_{\text{test}}$:
+
+- **ROC-AUC**: Invariante (dipende solo da $p(x|y)$)
+- **PR-AUC**: Cambia (dipende da $p(y|x) \propto p(x|y)p(y)$)
+
+**Dimostrazione**:
+
+ROC usa TPR e FPR che sono entrambi condizionati su $y$:
+
+$\text{TPR} = P(\hat{y}=1|y=1) \quad \text{FPR} = P(\hat{y}=1|y=0)$
+
+Questi dipendono solo da $p(x|y)$ e dalla soglia, non dalla prevalenza $p(y)$.
+
+PR usa Precision che dipende dal prior:
+
+$\text{Precision} = P(y=1|\hat{y}=1) = \frac{P(\hat{y}=1|y=1)P(y=1)}{P(\hat{y}=1)}$
+
+Applicando Bayes, vediamo che Precision dipende esplicitamente da $P(y=1) = \pi$. $\square$
+
+**Implicazione pratica**: Se la prevalenza cambia tra training e test, la curva PR sarà diversa, ma la ROC rimarrà la stessa. Questo rende PR più "onesta" per dataset molto sbilanciati.
+
+### 10.3 Expected Precision in Ranking
+
+Per sistemi di ranking (information retrieval), la curva PR può essere interpretata come:
+
+$\text{Expected Precision at random recall level}$
+
+Se scegliamo casualmente un livello di recall $r \in [0,1]$, la precision media attesa è:
+
+$\mathbb{E}[P(r)] = \int_0^1 P(r) dr = \text{AP}$
+
+Questo giustifica l'uso di Average Precision come metrica singola.
+
+## 11. Linee Guida Pratiche per la Scelta delle Metriche
+
+### 11.1 Albero Decisionale per la Scelta
+
+```
+START
+│
+├─ Dataset bilanciato?
+│  ├─ SÌ → Accuracy, F1, ROC-AUC
+│  └─ NO ↓
+│
+├─ Classe positiva molto rara (< 5%)?
+│  ├─ SÌ → PR-AUC, F2, Recall @ fixed FPR
+│  └─ NO → F1, Balanced Accuracy, MCC
+│
+├─ Costi FP e FN asimmetrici?
+│  ├─ SÌ → Ottimizza soglia per costo totale
+│  │       Usa F-beta appropriato
+│  └─ NO → F1-Score
+│
+├─ Interessa il ranking?
+│  ├─ SÌ → AUC-ROC o AUC-PR, Precision@K
+│  └─ NO → Metriche basate su soglia fissa
+│
+├─ Probabilità predette importanti?
+│  ├─ SÌ → Log Loss, Brier Score, ECE
+│  └─ NO → Metriche basate su label hard
+│
+└─ Multi-classe?
+   ├─ Classi bilanciate → Micro-averaged metrics
+   ├─ Classi sbilanciate → Macro-averaged metrics
+   └─ Classe importante specifica → OvR per quella classe
 ```
 
-## 9. Metriche per Classificazione Multi-classe
+### 11.2 Metriche per Scenario
 
-### 9.1 Strategie di Aggregazione
+#### Scenario: Diagnosi Medica
+**Priorità**: Minimizzare falsi negativi
+- **Metriche primarie**: Recall, F2-Score, FNR
+- **Metriche secondarie**: Specificity (per evitare troppi falsi allarmi)
+- **Soglia**: Ottimizzare per costo $L_{FN} \gg L_{FP}$
 
-Per estendere le metriche binarie al caso multi-classe:
+#### Scenario: Spam Detection
+**Priorità**: Minimizzare falsi positivi
+- **Metriche primarie**: Precision, F0.5-Score, FPR
+- **Metriche secondarie**: Recall (catturare abbastanza spam)
+- **Soglia**: Alta, ottimizzare per costo $L_{FP} > L_{FN}$
 
-#### Macro-averaging
-$$\text{Metric}_{\text{macro}} = \frac{1}{K} \sum_{k=1}^{K} \text{Metric}_k$$
-Tutte le classi hanno lo stesso peso.
+#### Scenario: Information Retrieval
+**Priorità**: Ranking corretto
+- **Metriche primarie**: AUC-PR, MAP, NDCG, Precision@K
+- **Metriche secondarie**: Recall@K
+- **Nota**: Non serve soglia fissa, importa l'ordinamento
 
-#### Micro-averaging
-$$\text{Precision}_{\text{micro}} = \frac{\sum_{k=1}^{K} TP_k}{\sum_{k=1}^{K} (TP_k + FP_k)}$$
-Aggrega i contributi; favorisce classi frequenti.
+#### Scenario: Rilevamento Frodi (Rare)
+**Priorità**: Catturare frodi, dataset molto sbilanciato
+- **Metriche primarie**: PR-AUC, Recall @ FPR fissato, F2
+- **Metriche secondarie**: Precision (per evitare overhead investigativo)
+- **Nota**: ROC-AUC può essere ingannevole
 
-#### Weighted-averaging
-$$\text{Metric}_{\text{weighted}} = \sum_{k=1}^{K} w_k \cdot \text{Metric}_k$$
-dove $w_k$ è la frequenza della classe $k$.
+#### Scenario: Multi-Classe Sbilanciato
+**Priorità**: Performance su tutte le classi
+- **Metriche primarie**: Macro F1, Balanced Accuracy, MCC multi-classe
+- **Metriche secondarie**: Confusion matrix, per-class precision/recall
+- **Nota**: Micro-averaging maschera performance su classi rare
 
-```python
-from sklearn.metrics import classification_report
+### 11.3 Checklist Completa per Valutazione
 
-# Dataset multi-classe
-X_mc, y_mc = make_classification(n_samples=1000, n_features=20, n_classes=4,
-                                  n_informative=15, n_redundant=5, n_clusters_per_class=1,
-                                  random_state=42)
-X_train_mc, X_test_mc, y_train_mc, y_test_mc = train_test_split(
-    X_mc, y_mc, test_size=0.3, random_state=42)
+- [ ] **Analisi Esplorativa**
+  - [ ] Calcolare prevalenza di classe
+  - [ ] Visualizzare matrice di confusione
+  - [ ] Identificare pattern di errore
 
-clf_mc = RandomForestClassifier(random_state=42)
-clf_mc.fit(X_train_mc, y_train_mc)
-y_pred_mc = clf_mc.predict(X_test_mc)
+- [ ] **Metriche Base**
+  - [ ] Accuracy (solo se bilanciato)
+  - [ ] Precision, Recall, F1
+  - [ ] Specificity, FPR, FNR
 
-# Calcolo metriche
-averages = ['macro', 'micro', 'weighted']
-metrics = {}
+- [ ] **Metriche Robuste**
+  - [ ] MCC o Cohen's Kappa
+  - [ ] Balanced Accuracy (se sbilanciato)
 
-for avg in averages:
-    metrics[avg] = {
-        'Precision': precision_score(y_test_mc, y_pred_mc, average=avg, zero_division=0),
-        'Recall': recall_score(y_test_mc, y_pred_mc, average=avg, zero_division=0),
-        'F1-Score': f1_score(y_test_mc, y_pred_mc, average=avg, zero_division=0)
-    }
+- [ ] **Curve e AUC**
+  - [ ] ROC curve e AUC-ROC
+  - [ ] PR curve e AUC-PR (se sbilanciato)
+  - [ ] Identificare EER
 
-# Visualizzazione
-fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+- [ ] **Probabilità**
+  - [ ] Log Loss o Brier Score
+  - [ ] Reliability diagram
+  - [ ] ECE
 
-# Grafico comparativo
-metric_names = list(metrics['macro'].keys())
-x = np.arange(len(metric_names))
-width = 0.25
+- [ ] **Ottimizzazione Soglia**
+  - [ ] Grid search per F-beta ottimale
+  - [ ] Soglia per costo specifico (se noto)
 
-for i, avg in enumerate(averages):
-    values = [metrics[avg][m] for m in metric_names]
-    axes[0].bar(x + i*width, values, width, label=avg.capitalize(), alpha=0.8)
+- [ ] **Validazione**
+  - [ ] Cross-validation (almeno 5-fold)
+  - [ ] Riportare media ± std
+  - [ ] Test su hold-out set
 
-axes[0].set_xlabel('Metrica', fontsize=12)
-axes[0].set_ylabel('Valore', fontsize=12)
-axes[0].set_title('Confronto Strategie di Aggregazione (Multi-classe)', 
-                 fontsize=14, fontweight='bold')
-axes[0].set_xticks(x + width)
-axes[0].set_xticklabels(metric_names)
-axes[0].legend()
-axes[0].grid(axis='y', alpha=0.3)
-axes[0].set_ylim([0, 1.1])
+- [ ] **Documentazione**
+  - [ ] Scelta metriche giustificata
+  - [ ] Limitazioni discusse
+  - [ ] Intervalli di confidenza
 
-# Matrice di confusione
-cm_mc = confusion_matrix(y_test_mc, y_pred_mc)
-im = axes[1].imshow(cm_mc, cmap='Blues')
-axes[1].set_xlabel('Predetto', fontsize=12)
-axes[1].set_ylabel('Reale', fontsize=12)
-axes[1].set_title('Matrice di Confusione Multi-classe', fontsize=14, fontweight='bold')
-axes[1].set_xticks(range(4))
-axes[1].set_yticks(range(4))
+## 12. Conclusioni
 
-for i in range(4):
-    for j in range(4):
-        text = axes[1].text(j, i, cm_mc[i, j], ha="center", va="center",
-                          color="white" if cm_mc[i, j] > cm_mc.max()/2 else "black",
-                          fontsize=12, fontweight='bold')
+### 12.1 Principi Fondamentali
 
-plt.colorbar(im, ax=axes[1])
-plt.tight_layout()
-plt.show()
+1. **Non esiste una metrica universale**: Ogni problema richiede metriche appropriate al contesto
 
-# Report dettagliato
-print("\n" + "="*60)
-print("CLASSIFICATION REPORT (Multi-classe)")
-print("="*60)
-print(classification_report(y_test_mc, y_pred_mc, digits=4))
-```
+2. **Usa metriche multiple**: Una singola metrica può essere ingannevole
 
----
+3. **Considera i costi**: FP e FN hanno spesso costi asimmetrici nel mondo reale
 
-*Continua nella Parte 3: Ottimizzazione della Soglia, Lift/Gain Charts e Linee Guida*
+4. **Dataset sbilanciati richiedono metriche speciali**: Accuracy e ROC-AUC possono mascherare problemi
+
+5. **Le probabilità contano**: Se il modello produce probabilità, valutale con metriche appropriate
+
+6. **Visualizza sempre**: Curve (ROC, PR), matrici di confusione e reliability plots forniscono insight
+
+7. **Valida robustamente**: Cross-validation e intervalli di confidenza sono essenziali
