@@ -1,125 +1,262 @@
 # Metriche di Valutazione per Classificazione in Machine Learning
 
-## 1. Introduzione
+## Indice
 
-La valutazione di modelli di classificazione richiede metriche specifiche che quantifichino la qualità delle predizioni. Questo documento presenta una trattazione completa e rigorosa delle principali metriche utilizzate nel machine learning, con particolare enfasi sulla teoria delle decisioni bayesiane e sulla minimizzazione del rischio.
+1. [Fondamenti Teorici](#1-fondamenti-teorici)
+2. [Matrice di Confusione](#2-matrice-di-confusione)
+3. [Teoria delle Decisioni e Loss Functions](#3-teoria-delle-decisioni-e-loss-functions)
+4. [Metriche Fondamentali](#4-metriche-fondamentali)
+5. [Curve ROC e Analisi delle Performance](#5-curve-roc-e-analisi-delle-performance)
+6. [Curve Precision-Recall](#6-curve-precision-recall)
+7. [Metriche Avanzate e Robuste](#7-metriche-avanzate-e-robuste)
+8. [Valutazione Probabilistica e Calibrazione](#8-valutazione-probabilistica-e-calibrazione)
+9. [Classificazione Multi-Classe](#9-classificazione-multi-classe)
+10. [Guida Pratica alla Scelta delle Metriche](#10-guida-pratica-alla-scelta-delle-metriche)
 
-### 1.1 Contesto Teorico: Bayesian Decision Theory
+## 1. Fondamenti Teorici
 
-Nel contesto della teoria delle decisioni, un problema di classificazione può essere formalizzato come un **gioco contro la natura**. In questo scenario:
+### 1.1 Introduzione
 
-1. La natura sceglie uno stato (label) $y \in \mathcal{Y}$, sconosciuto a noi
-2. Genera un'osservazione $x \in \mathcal{X}$, che possiamo osservare
-3. Dobbiamo scegliere un'azione $a$ da uno spazio di azioni $\mathcal{A}$
-4. Incorriamo in una perdita $L(y, a)$ che misura quanto la nostra azione sia compatibile con lo stato reale
+La valutazione di modelli di classificazione è un problema fondamentale nel machine learning. Non esiste una singola metrica universale: la scelta dipende dal problema specifico, dalla distribuzione dei dati, e dai costi associati ai diversi tipi di errore.
 
-L'obiettivo è trovare una **policy di decisione** o **decision rule** $\delta: \mathcal{X} \rightarrow \mathcal{A}$ che minimizzi la perdita attesa:
+Questo documento presenta una trattazione rigorosa e completa delle principali metriche di valutazione, partendo dai fondamenti della teoria delle decisioni bayesiane fino alle applicazioni pratiche.
 
-$$\delta(x) = \arg\min_{a \in \mathcal{A}} \mathbb{E}[L(y, a)]$$
+### 1.2 Il Framework della Teoria delle Decisioni Bayesiane
 
-Nell'approccio **bayesiano**, l'azione ottimale dopo aver osservato $x$ è quella che minimizza la **perdita attesa a posteriori**:
+Nel contesto della teoria delle decisioni, un problema di classificazione può essere formalizzato come un **gioco contro la natura**:
 
-$$\rho(a|x) = \mathbb{E}_{p(y|x)}[L(y, a)] = \sum_{y} L(y, a) p(y|x)$$
+1. **La natura** sceglie uno stato (label) $y \in \mathcal{Y}$, sconosciuto a noi
+2. **La natura** genera un'osservazione $x \in \mathcal{X}$, che possiamo osservare
+3. **Noi** scegliamo un'azione $a$ da uno spazio di azioni $\mathcal{A}$
+4. **Incorriamo** in una perdita $L(y, a)$ che misura la discrepanza tra stato reale e azione scelta
 
-Quindi, il **Bayes estimator** (o **Bayes decision rule**) è dato da:
+#### Objective: Decision Rule Ottimale
 
-$$\delta^*(x) = \arg\min_{a \in \mathcal{A}} \rho(a|x)$$
+L'obiettivo è trovare una **decision rule** (o **policy**) $\delta: \mathcal{X} \rightarrow \mathcal{A}$ che minimizzi la perdita attesa:
 
-### 1.2 Principio di Utilità Attesa Massima
+$$\delta^*(x) = \arg\min_{a \in \mathcal{A}} \mathbb{E}_{p(y|x)}[L(y, a)]$$
 
-In economia, è più comune parlare di **funzione di utilità** $U(y, a) = -L(y, a)$, trasformando il problema in:
+Nell'approccio **bayesiano**, dopo aver osservato $x$, l'azione ottimale è quella che minimizza la **perdita attesa a posteriori** (posterior expected loss):
 
-$$\delta(x) = \arg\max_{a \in \mathcal{A}} \mathbb{E}[U(y, a)]$$
+$$\rho(a|x) = \mathbb{E}_{p(y|x)}[L(y, a)] = \sum_{y \in \mathcal{Y}} L(y, a) \cdot p(y|x)$$
 
-Questo è noto come **principio di utilità attesa massima** ed è l'essenza del comportamento razionale.
+Quindi, il **Bayes estimator** (o **Bayes decision rule**) è:
+
+$$\delta^*(x) = \arg\min_{a \in \mathcal{A}} \rho(a|x) = \arg\min_{a \in \mathcal{A}} \sum_{y \in \mathcal{Y}} L(y, a) \cdot p(y|x)$$
+
+**Interpretazione intuitive**: Il Bayes estimator ci dice: "Data l'osservazione $x$, scegli l'azione che minimizza la perdita media che ti aspetti di subire, pesando ogni possibile stato reale $y$ per la sua probabilità a posteriori $p(y|x)$."
+
+#### Principio di Utilità Attesa Massima
+
+In economia, è più comune parlare di **funzione di utilità** $U(y, a) = -L(y, a)$. Il problema diventa:
+
+$$\delta^*(x) = \arg\max_{a \in \mathcal{A}} \mathbb{E}_{p(y|x)}[U(y, a)]$$
+
+Questo è il **principio di utilità attesa massima**, che costituisce la base del comportamento razionale in condizioni di incertezza.
+
+### 1.3 Rischio e Generalizzazione
+
+Il **rischio** (o rischio atteso) di una decision rule $\delta$ è la perdita media sulla distribuzione dei dati:
+
+$$R(\delta) = \mathbb{E}_{(X,Y) \sim p(x,y)}[L(Y, \delta(X))] = \int_{\mathcal{X}} \int_{\mathcal{Y}} L(y, \delta(x)) \, p(x,y) \, dy \, dx$$
+
+Dobbiamo distinguere tre concetti fondamentali:
+
+**Rischio Empirico** (Training Risk):
+$$\hat{R}_{\text{train}}(\delta) = \frac{1}{n} \sum_{i=1}^{n} L(y_i, \delta(x_i))$$
+
+È la perdita media calcolata sul training set. Tende a **sottostimare** il vero rischio (overfitting).
+
+**Rischio di Generalizzazione** (True Risk):
+$$R_{\text{true}}(\delta) = \mathbb{E}_{(X,Y) \sim p_{\text{true}}(x,y)}[L(Y, \delta(X))]$$
+
+È il vero rischio sulla distribuzione sottostante (sconosciuta). È quello che vogliamo davvero minimizzare.
+
+**Rischio Empirico su Test Set**:
+$$\hat{R}_{\text{test}}(\delta) = \frac{1}{m} \sum_{j=1}^{m} L(y_j^{\text{test}}, \delta(x_j^{\text{test}}))$$
+
+È una stima non distorta di $R_{\text{true}}(\delta)$ se il test set è indipendente dal training.
+
+**Principio Fondamentale**: Minimizziamo $\hat{R}_{\text{train}}(\delta)$ durante il training, ma valutiamo su $\hat{R}_{\text{test}}(\delta)$ per stimare $R_{\text{true}}(\delta)$.
 
 ## 2. Matrice di Confusione
 
-La **matrice di confusione** è la struttura fondamentale per calcolare tutte le metriche di classificazione. Per un problema binario:
+### 2.1 Definizione e Struttura
 
-|                    | **Predetto Positivo ($\hat{y}=1$)** | **Predetto Negativo ($\hat{y}=0$)** |
-|--------------------|---------------------------|---------------------------|
-| **Reale Positivo ($y=1$)** | TP (True Positive)        | FN (False Negative)       |
-| **Reale Negativo ($y=0$)** | FP (False Positive)       | TN (True Negative)        |
+La **matrice di confusione** (confusion matrix) è la struttura fondamentale per calcolare tutte le metriche di classificazione binaria. Essa organizza le predizioni in base alla classe reale e alla classe predetta.
 
-### 2.1 Definizioni Rigorose
+Per un problema di classificazione binaria, con:
+- $y = 1$: classe **positiva**
+- $y = 0$: classe **negativa**
 
-Definiamo formalmente le quattro quantità:
+La matrice di confusione ha questa struttura:
 
-- **True Positive (TP)**: $|\{i: y_i = 1 \land \hat{y}_i = 1\}|$ - Istanze positive correttamente classificate
-- **True Negative (TN)**: $|\{i: y_i = 0 \land \hat{y}_i = 0\}|$ - Istanze negative correttamente classificate
-- **False Positive (FP)**: $|\{i: y_i = 0 \land \hat{y}_i = 1\}|$ - Istanze negative erroneamente classificate come positive (**Errore di Tipo I**)
-- **False Negative (FN)**: $|\{i: y_i = 1 \land \hat{y}_i = 0\}|$ - Istanze positive erroneamente classificate come negative (**Errore di Tipo II**)
+|                        | **Predetto Positivo** ($\hat{y}=1$) | **Predetto Negativo** ($\hat{y}=0$) | **Totale** |
+|------------------------|-------------------------------------|-------------------------------------|------------|
+| **Reale Positivo** ($y=1$) | **TP** (True Positive)              | **FN** (False Negative)             | $P = TP + FN$ |
+| **Reale Negativo** ($y=0$) | **FP** (False Positive)             | **TN** (True Negative)              | $N = TN + FP$ |
+| **Totale**                 | $P^* = TP + FP$                     | $N^* = TN + FN$                     | $n = P + N$ |
 
-*Nota*: Per ricordarle bene, osserviamo che la prima lettera si riferisce alla realtà e la seconda alla predizione; es. $TP$ corrisponde al numero di esempi che nella realtà sono positivi e nella predizione sono stati predetti come positivi.
+### 2.2 Definizioni Rigorose
 
-### 2.2 Relazioni Fondamentali
+Dato un dataset di $n$ esempi $\{(x_i, y_i)\}_{i=1}^n$ e un classificatore che produce predizioni $\hat{y}_i$, definiamo:
 
-Dalla matrice di confusione derivano alcune identità fondamentali:
+**True Positive (TP)**:
+$$TP = |\{i : y_i = 1 \land \hat{y}_i = 1\}|$$
+Numero di istanze positive correttamente classificate come positive.
 
-$$N = TP + TN + FP + FN$$
+**True Negative (TN)**:
+$$TN = |\{i : y_i = 0 \land \hat{y}_i = 0\}|$$
+Numero di istanze negative correttamente classificate come negative.
 
-dove $N$ è il numero totale di esempi. Inoltre:
+**False Positive (FP)**:
+$$FP = |\{i : y_i = 0 \land \hat{y}_i = 1\}|$$
+Numero di istanze negative erroneamente classificate come positive (**Errore di Tipo I**).
 
-$$N_+ = TP + FN \quad \text{(numero reale di positivi)}$$
-$$N_- = TN + FP \quad \text{(numero reale di negativi)}$$
-$$\hat{N}_+ = TP + FP \quad \text{(numero predetto di positivi)}$$
-$$\hat{N}_- = TN + FN \quad \text{(numero predetto di negativi)}$$
+**False Negative (FN)**:
+$$FN = |\{i : y_i = 1 \land \hat{y}_i = 0\}|$$
+Numero di istanze positive erroneamente classificate come negative (**Errore di Tipo II**).
 
-### 2.3 Interpretazione Probabilistica
+**Mnemonico**: La prima lettera (T/F) indica se la predizione è corretta (True) o errata (False). La seconda lettera (P/N) indica cosa ha predetto il classificatore.
 
-Dato un sistema di classificazione con soglia $\tau$, definiamo:
+### 2.3 Relazioni Fondamentali
+
+Dalla matrice di confusione derivano identità fondamentali:
+
+**Totale esempi**:
+$$n = TP + TN + FP + FN$$
+
+**Esempi positivi reali**:
+$$P = TP + FN$$
+
+**Esempi negativi reali**:
+$$N = TN + FP$$
+
+**Esempi predetti come positivi**:
+$$P^* = TP + FP$$
+
+**Esempi predetti come negativi**:
+$$N^* = TN + FN$$
+
+**Prevalenza** (proporzione di positivi):
+$$\pi = \frac{P}{n} = \frac{TP + FN}{n}$$
+
+### 2.4 Interpretazione Probabilistica
+
+Possiamo interpretare i conteggi della matrice di confusione in termini probabilistici. Definiamo:
 
 **Ipotesi**:
-
 - $H_0$: L'istanza appartiene alla classe negativa ($y=0$)
 - $H_1$: L'istanza appartiene alla classe positiva ($y=1$)
 
 **Decisioni**:
-
 - $D_0$: Classificare come negativo ($\hat{y}=0$)
 - $D_1$: Classificare come positivo ($\hat{y}=1$)
 
-Allora le probabilità di errore condizionate sono:
+Allora possiamo scrivere le probabilità condizionate:
 
-$$\text{FPR} = P(D_1 | H_0) = P(\hat{y}=1 | y=0)$$
+**True Positive Rate (TPR)**:
+$$\text{TPR} = P(D_1 | H_1) = P(\hat{y}=1 | y=1) = \frac{TP}{P}$$
+Probabilità di classificare correttamente un positivo.
 
-$$\text{FNR} = P(D_0 | H_1) = P(\hat{y}=0 | y=1)$$
+**False Positive Rate (FPR)**:
+$$\text{FPR} = P(D_1 | H_0) = P(\hat{y}=1 | y=0) = \frac{FP}{N}$$
+Probabilità di classificare erroneamente un negativo come positivo (Errore di Tipo I).
 
-## 3. Loss Functions e Bayes Estimators
+**True Negative Rate (TNR)**:
+$$\text{TNR} = P(D_0 | H_0) = P(\hat{y}=0 | y=0) = \frac{TN}{N}$$
+Probabilità di classificare correttamente un negativo.
 
-### 3.1 0-1 Loss e Stima MAP
+**False Negative Rate (FNR)**:
+$$\text{FNR} = P(D_0 | H_1) = P(\hat{y}=0 | y=1) = \frac{FN}{P}$$
+Probabilità di classificare erroneamente un positivo come negativo (Errore di Tipo II).
 
-La **0-1 loss** è definita come:
+**Relazioni complementari**:
+$$\text{TPR} + \text{FNR} = 1$$
+$$\text{TNR} + \text{FPR} = 1$$
 
-$$L(y, a) = \mathbb{I}(y \neq a) = \begin{cases} 0 & \text{se } a = y \\ 1 & \text{se } a \neq y \end{cases}$$
+### 2.5 Esempio: Rilevamento di Malattie della Tiroide
 
-**Teorema**: La 0-1 loss è minimizzata dalla stima **MAP (Maximum A Posteriori)**.
+Consideriamo il problema di rilevare malattie della tiroide usando un dataset con 3428 pazienti nel test set, di cui 250 hanno una malattia tiroidea.
+
+**Prima configurazione** (soglia di default $\tau = 0.5$):
+
+|                    | Predetto Normale | Predetto Malato | Totale |
+|--------------------|------------------|-----------------|--------|
+| Realmente Normale  | 3177             | 1               | 3178   |
+| Realmente Malato   | 237              | 13              | 250    |
+| Totale             | 3414             | 14              | 3428   |
+
+Analisi:
+- **Accuracy**: $(3177 + 13) / 3428 = 93.1\%$ (sembra buona!)
+- **Recall**: $13 / 250 = 5.2\%$ (pessimo! Perdiamo il 95% dei malati)
+- **Precision**: $13 / 14 = 92.9\%$ (alta, ma poche predizioni positive)
+
+Questo classificatore è **praticamente inutile**: un modello "dummy" che predice sempre "normale" otterrebbe accuracy del $92.7\%$, quasi identica!
+
+**Seconda configurazione** (soglia abbassata a $\tau = 0.15$):
+
+|                    | Predetto Normale | Predetto Malato | Totale |
+|--------------------|------------------|-----------------|--------|
+| Realmente Normale  | 3067             | 111             | 3178   |
+| Realmente Malato   | 165              | 85              | 250    |
+| Totale             | 3232             | 196             | 3428   |
+
+Analisi:
+- **Accuracy**: $(3067 + 85) / 3428 = 91.9\%$ (leggermente diminuita)
+- **Recall**: $85 / 250 = 34\%$ (migliorato significativamente!)
+- **Precision**: $85 / 196 = 43.4\%$ (diminuita, ma accettabile)
+
+**Conclusione**: Il secondo modello è probabilmente più utile in pratica, nonostante l'accuracy leggermente inferiore. Questo esempio illustra perché l'accuracy da sola è insufficiente per problemi sbilanciati.
+
+## 3. Teoria delle Decisioni e Loss Functions
+
+### 3.1 Loss Functions e Bayes Estimators
+
+La scelta della **loss function** $L(y, a)$ determina quale azione è ottimale. Diverse loss functions portano a diversi estimatori ottimali.
+
+#### 3.1.1 0-1 Loss e Stima MAP
+
+La **0-1 loss** è la più semplice e naturale:
+
+$$L_{0-1}(y, a) = \mathbb{I}(y \neq a) = \begin{cases} 0 & \text{se } a = y \\ 1 & \text{se } a \neq y \end{cases}$$
+
+**Interpretazione**: Penalizziamo ugualmente tutti gli errori, senza distinzione di tipo.
+
+**Teorema 3.1** (Bayes Estimator per 0-1 Loss):
+*La 0-1 loss è minimizzata dalla stima MAP (Maximum A Posteriori).*
 
 **Dimostrazione**:
 
-La perdita attesa a posteriori è:
+La perdita attesa a posteriori per l'azione $a$ è:
 
-$$\rho(a|x) = \sum_{y} L(y,a) p(y|x) = \sum_{y \neq a} p(y|x) = 1 - p(a|x)$$
+$$\rho(a|x) = \sum_{y \in \mathcal{Y}} L_{0-1}(y,a) \cdot p(y|x) = \sum_{y \neq a} p(y|x) = 1 - p(a|x)$$
 
-Per minimizzare $\rho(a|x)$, dobbiamo massimizzare $p(a|x)$, quindi:
+Per minimizzare $\rho(a|x)$, dobbiamo massimizzare $p(a|x)$:
 
 $$\delta^*(x) = \arg\min_a \rho(a|x) = \arg\max_a p(a|x) = \arg\max_{y \in \mathcal{Y}} p(y|x)$$
 
 che è esattamente la **stima MAP**. $\square$
 
-#### 3.1.1 Matrice di Loss Generalizzata
+**Corollario**: Per classificazione binaria con 0-1 loss, la regola ottimale è:
 
-Per problemi binari, possiamo rappresentare la loss come matrice:
+$$\hat{y} = \begin{cases} 1 & \text{se } p(y=1|x) > 0.5 \\ 0 & \text{altrimenti} \end{cases}$$
+
+#### 3.1.2 Loss Asimmetrica e Costi Differenziati
+
+Nella pratica, i diversi tipi di errore hanno spesso costi diversi. Rappresentiamo questo con una **matrice di loss**:
 
 |            | $\hat{y}=1$ | $\hat{y}=0$ |
 |------------|------------|------------|
 | $y=1$      | $0$        | $L_{FN}$   |
 | $y=0$      | $L_{FP}$   | $0$        |
 
-dove $L_{FN}$ è il costo di un falso negativo e $L_{FP}$ è il costo di un falso positivo.
+dove:
+- $L_{FN}$: costo di un False Negative (mancata rilevazione)
+- $L_{FP}$: costo di un False Positive (falso allarme)
 
-**Teorema (Regola di Decisione Ottimale)**: Dovremmo scegliere $\hat{y}=1$ se e solo se:
+**Teorema 3.2** (Regola di Decisione Ottimale con Costi Asimmetrici):
+*Sotto la matrice di loss asimmetrica, dovremmo classificare come positivo se e solo se:*
 
 $$\frac{p(y=1|x)}{p(y=0|x)} > \frac{L_{FP}}{L_{FN}}$$
 
@@ -127,34 +264,78 @@ $$\frac{p(y=1|x)}{p(y=0|x)} > \frac{L_{FP}}{L_{FN}}$$
 
 Le perdite attese per le due azioni sono:
 
-$$\rho(\hat{y}=0|x) = L_{FN} \cdot p(y=1|x)$$
-$$\rho(\hat{y}=1|x) = L_{FP} \cdot p(y=0|x)$$
+$$\rho(\hat{y}=0|x) = L_{FN} \cdot p(y=1|x) + 0 \cdot p(y=0|x) = L_{FN} \cdot p(y=1|x)$$
+
+$$\rho(\hat{y}=1|x) = 0 \cdot p(y=1|x) + L_{FP} \cdot p(y=0|x) = L_{FP} \cdot p(y=0|x)$$
 
 Scegliamo $\hat{y}=1$ quando $\rho(\hat{y}=1|x) < \rho(\hat{y}=0|x)$:
 
 $$L_{FP} \cdot p(y=0|x) < L_{FN} \cdot p(y=1|x)$$
 
-$$\frac{p(y=1|x)}{p(y=0|x)} > \frac{L_{FP}}{L_{FN}}$$
+Dividendo entrambi i lati per $p(y=0|x)$ e $L_{FN}$:
 
-Se $L_{FN} = c \cdot L_{FP}$, la regola diventa: scegliere $\hat{y}=1$ se $p(y=1|x) > \tau$ dove $\tau = \frac{c}{1+c}$. $\square$
+$$\frac{L_{FP}}{L_{FN}} < \frac{p(y=1|x)}{p(y=0|x)}$$
 
-#### 3.1.2 Reject Option
+$\square$
 
-In domini ad alto rischio (medicina, finanza), potrebbe essere preferibile **rifiutare** di classificare esempi incerti. Formalizziamo l'azione di rifiuto come $a = C+1$ con costo $\lambda_r$, mentre gli errori di sostituzione hanno costo $\lambda_s$.
+**Corollario (Soglia Ottimale)**:
+Se $L_{FN} = c \cdot L_{FP}$ con $c > 0$, la regola diventa: classificare come positivo se $p(y=1|x) > \tau^*$ dove:
 
-**Teorema**: L'azione ottimale è rifiutare se:
+$$\tau^* = \frac{1}{1 + c} = \frac{L_{FP}}{L_{FP} + L_{FN}}$$
 
-$$\max_{i \in \{1,\ldots,C\}} p(y=i|x) < 1 - \frac{\lambda_r}{\lambda_s}$$
+**Esempi numerici**:
 
-altrimenti scegliere la classe con probabilità massima.
+1. **Screening medico**: $L_{FN} = 100$, $L_{FP} = 1$ (la mancata diagnosi è 100 volte più grave)
+   $$\tau^* = \frac{1}{101} \approx 0.01$$
+   Soglia molto bassa → massimizziamo il recall.
 
-### 3.2 Quadratic Loss ($\ell_2$) e Posterior Mean
+2. **Anti-spam**: $L_{FN} = 1$, $L_{FP} = 10$ (eliminare email legittima è 10 volte peggio)
+   $$\tau^* = \frac{10}{11} \approx 0.91$$
+   Soglia alta → massimizziamo la precision.
 
-La **quadratic loss** o **squared error** è definita come:
+#### 3.1.3 Reject Option
 
-$$L(y, a) = (y - a)^2$$
+In applicazioni ad alto rischio (medicina, finanza), può essere preferibile **rifiutare** di classificare esempi incerti piuttosto che rischiare errori gravi.
 
-**Teorema**: La $\ell_2$ loss è minimizzata dalla **media a posteriori**.
+Formalizziamo l'azione di rifiuto come $a = \text{reject}$ con costo $\lambda_r$, mentre gli errori di classificazione hanno costo $\lambda_s$ (substitution error).
+
+**Teorema 3.3** (Regola con Reject Option):
+*L'azione ottimale è:*
+
+$$\delta^*(x) = \begin{cases}
+\arg\max_c p(y=c|x) & \text{se } \max_c p(y=c|x) \geq 1 - \frac{\lambda_r}{\lambda_s} \\
+\text{reject} & \text{altrimenti}
+\end{cases}$$
+
+**Dimostrazione** (sketch):
+
+Il costo atteso per classificare nella classe $c$ è:
+
+$$\rho(\hat{y}=c|x) = \lambda_s \cdot P(\text{errore}|x) = \lambda_s \cdot (1 - p(y=c|x))$$
+
+Il costo per rifiutare è costante: $\rho(\text{reject}|x) = \lambda_r$.
+
+Conviene classificare se:
+
+$$\lambda_s \cdot (1 - p(y=c|x)) < \lambda_r$$
+
+$$p(y=c|x) > 1 - \frac{\lambda_r}{\lambda_s}$$
+
+Scegliamo la classe con probabilità massima solo se supera questa soglia. $\square$
+
+**Esempio**: Se $\lambda_s = 10$ (errore costa 10) e $\lambda_r = 2$ (rifiuto costa 2):
+$$\text{Soglia} = 1 - \frac{2}{10} = 0.8$$
+
+Rifiutiamo di classificare se $\max_c p(y=c|x) < 0.8$.
+
+#### 3.1.4 Quadratic Loss e Posterior Mean
+
+Per problemi di regressione o quando lavoriamo con probabilità, la **quadratic loss** (o squared error) è naturale:
+
+$$L_2(y, a) = (y - a)^2$$
+
+**Teorema 3.4** (Bayes Estimator per Quadratic Loss):
+*La $\ell_2$ loss è minimizzata dalla media a posteriori.*
 
 **Dimostrazione**:
 
@@ -162,27 +343,28 @@ La perdita attesa a posteriori è:
 
 $$\rho(a|x) = \mathbb{E}[(y-a)^2|x] = \mathbb{E}[y^2|x] - 2a\mathbb{E}[y|x] + a^2$$
 
-Derivando rispetto ad $a$ e ponendo uguale a zero:
+Deriviamo rispetto ad $a$ e poniamo uguale a zero:
 
 $$\frac{\partial \rho(a|x)}{\partial a} = -2\mathbb{E}[y|x] + 2a = 0$$
 
-$$\Rightarrow \hat{y} = \mathbb{E}[y|x] = \int y \, p(y|x) \, dy$$
+$$\Rightarrow a^* = \mathbb{E}[y|x] = \int y \, p(y|x) \, dy$$
 
 Questa è la **stima MMSE (Minimum Mean Squared Error)**. $\square$
 
-Per regressione lineare con $p(y|x,\theta) = \mathcal{N}(y|x^T w, \sigma^2)$, abbiamo:
+**Applicazione in regressione**: Per un modello lineare $p(y|x,w) = \mathcal{N}(y|w^Tx, \sigma^2)$, l'estimatore MMSE è:
 
-$$\mathbb{E}[y|x, \mathcal{D}] = x^T \mathbb{E}[w|\mathcal{D}]$$
+$$\hat{y}(x) = \mathbb{E}[y|x, \mathcal{D}] = x^T \mathbb{E}[w|\mathcal{D}]$$
 
-cioè, basta usare la media a posteriori dei parametri.
+Basta usare la media a posteriori dei parametri.
 
-### 3.3 Absolute Loss ($\ell_1$) e Posterior Median
+#### 3.1.5 Absolute Loss e Posterior Median
 
-La **absolute loss** è:
+La **absolute loss** (o $\ell_1$ loss) è più robusta agli outlier:
 
-$$L(y, a) = |y - a|$$
+$$L_1(y, a) = |y - a|$$
 
-**Teorema**: La $\ell_1$ loss è minimizzata dalla **mediana a posteriori**.
+**Teorema 3.5** (Bayes Estimator per Absolute Loss):
+*La $\ell_1$ loss è minimizzata dalla mediana a posteriori.*
 
 **Dimostrazione**:
 
@@ -190,860 +372,1451 @@ La perdita attesa è:
 
 $$\rho(a|x) = \int |y-a| p(y|x) dy = \int_{-\infty}^{a} (a-y) p(y|x) dy + \int_{a}^{\infty} (y-a) p(y|x) dy$$
 
-Derivando rispetto ad $a$:
+Deriviamo rispetto ad $a$. Usando la regola di Leibniz:
 
-$$\frac{\partial \rho(a|x)}{\partial a} = \int_{-\infty}^{a} p(y|x) dy - \int_{a}^{\infty} p(y|x) dy = P(y \leq a|x) - P(y > a|x)$$
+$$\frac{\partial \rho(a|x)}{\partial a} = \int_{-\infty}^{a} p(y|x) dy - \int_{a}^{\infty} p(y|x) dy$$
+
+$$= P(y \leq a|x) - P(y > a|x)$$
 
 Ponendo uguale a zero:
 
-$$P(y \leq a|x) = P(y > a|x) = 0.5$$
+$$P(y \leq a|x) = P(y > a|x) = \frac{1}{2}$$
 
 che è la definizione di **mediana**. $\square$
 
-La $\ell_1$ loss è più robusta agli outlier rispetto alla $\ell_2$ loss perché penalizza linearmente (anziché quadraticamente) le deviazioni.
+**Perché la $\ell_1$ è più robusta?** La $\ell_2$ loss penalizza quadraticamente le deviazioni, quindi un singolo outlier molto distante può dominare la loss. La $\ell_1$ penalizza linearmente, riducendo l'influenza degli outlier.
 
 ## 4. Metriche Fondamentali
 
 ### 4.1 Accuracy (Accuratezza)
 
-L'**accuracy** misura la proporzione di predizioni corrette:
+L'**accuracy** è la metrica più semplice e intuitiva: misura la proporzione di predizioni corrette.
 
-$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} = \frac{TP + TN}{N}$$
+**Definizione**:
+$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} = \frac{TP + TN}{n}$$
 
-**Interpretazione**: Rappresenta $P(\hat{y} = y)$, la probabilità che la predizione sia corretta.
+**Interpretazione probabilistica**:
+$$\text{Accuracy} = P(\hat{y} = y)$$
+È la probabilità che una predizione casuale sia corretta.
 
 **Proprietà**:
+- **Range**: $[0, 1]$, dove $1$ indica predizioni perfette
+- **Simmetrica** rispetto alle classi
+- **Uguale peso** a errori positivi e negativi
 
-- Range: $[0, 1]$, dove $1$ indica predizioni perfette
-- Simmetrica rispetto alle classi
-- **Limitazione critica**: Inadeguata per dataset sbilanciati
+**Limitazione critica: Dataset Sbilanciati**
 
-**Esempio**: Con prevalenza $p(y=1) = 0.01$, un classificatore "dummy" che predice sempre $\hat{y}=0$ ottiene accuracy $0.99$, pur essendo completamente inutile per identificare i positivi.
+Consideriamo un problema di fraud detection dove solo l'1% delle transazioni è fraudolenta ($\pi = 0.01$).
 
-### 4.2 Precision (Precisione, Positive Predictive Value)
+Un classificatore "dummy" che **predice sempre negativo** ottiene:
+$$\text{Accuracy}_{\text{dummy}} = \frac{0 + 0.99n}{n} = 0.99$$
 
-La **precision** misura la proporzione di predizioni positive corrette:
+Questo sembra eccellente, ma il modello è completamente inutile! Non rileva nessuna frode.
 
-$$\text{Precision} = \frac{TP}{TP + FP} = \frac{TP}{\hat{N}_+} = P(y=1|\hat{y}=1)$$
+**Teorema 4.1** (Lower Bound su Accuracy per Classificatore Dummy):
+*Un classificatore che predice sempre la classe maggioritaria ottiene accuracy pari alla prevalenza della classe maggioritaria:*
 
-**Interpretazione**: "Tra tutti i casi che ho predetto come positivi, quanti sono realmente positivi?"
+$$\text{Accuracy}_{\text{majority}} = \max(\pi, 1-\pi)$$
 
-**Quando è critica**: Scenari dove i falsi positivi sono costosi:
+**Conclusione**: L'accuracy è **inadeguata per dataset sbilanciati**. Dobbiamo usare metriche che distinguano tra i diversi tipi di errore.
 
-- **Spam detection**: Classificare email legittime come spam
-- **Diagnosi mediche**: Prescrivere trattamenti invasivi non necessari
-- **Sistemi di raccomandazione**: Raccomandare prodotti irrilevanti
+### 4.2 Precision (Precisione)
 
-**Complemento**: $\text{FDR} = 1 - \text{Precision} = \frac{FP}{TP+FP}$ (False Discovery Rate)
+La **precision** misura l'affidabilità delle predizioni positive.
+
+**Definizione**:
+$$\text{Precision} = \frac{TP}{TP + FP} = \frac{TP}{P^*}$$
+
+**Interpretazione probabilistica**:
+$$\text{Precision} = P(y=1|\hat{y}=1)$$
+"Tra tutti i casi che ho predetto come positivi, qual è la probabilità che siano realmente positivi?"
+
+**Interpretazione intuitiva**: "Quando il modello dice 'positivo', quanto possiamo fidarci?"
+
+**Quando è critica**: Scenari dove i **falsi positivi sono costosi**:
+
+1. **Spam detection**: Classificare email legittime come spam può far perdere comunicazioni importanti
+2. **Diagnosi mediche aggressive**: Prescrivere chemioterapia a pazienti sani
+3. **Raccomandazioni**: Raccomandare prodotti irrilevanti irrita l'utente
+4. **Allerte di sicurezza**: Troppi falsi allarmi causano "alarm fatigue"
+
+**Complemento - False Discovery Rate (FDR)**:
+$$\text{FDR} = 1 - \text{Precision} = \frac{FP}{TP+FP}$$
+Proporzione di "scoperte" che sono in realtà false.
+
+**Dipendenza dalla Prevalenza**
+
+La precision dipende fortemente dalla prevalenza $\pi = P(y=1)$. Usando il teorema di Bayes:
+
+$$\text{Precision} = P(y=1|\hat{y}=1) = \frac{P(\hat{y}=1|y=1) \cdot P(y=1)}{P(\hat{y}=1)}$$
+
+$$= \frac{\text{TPR} \cdot \pi}{\text{TPR} \cdot \pi + \text{FPR} \cdot (1-\pi)}$$
+
+**Esempio**: Con TPR = 0.9, FPR = 0.1:
+- Se $\pi = 0.5$: Precision = $\frac{0.9 \cdot 0.5}{0.9 \cdot 0.5 + 0.1 \cdot 0.5} = 0.9$
+- Se $\pi = 0.01$: Precision = $\frac{0.9 \cdot 0.01}{0.9 \cdot 0.01 + 0.1 \cdot 0.99} \approx 0.08$
+
+Con prevalenza bassa, anche un FPR modesto degrada drasticamente la precision!
 
 ### 4.3 Recall (Sensibilità, True Positive Rate)
 
-Il **recall** misura la proporzione di positivi reali correttamente identificati:
+Il **recall** misura la capacità di identificare i positivi.
 
-$$\text{Recall} = \text{TPR} = \text{Sensitivity} = \frac{TP}{TP + FN} = \frac{TP}{N_+} = P(\hat{y}=1|y=1)$$
+**Definizione**:
+$$\text{Recall} = \text{TPR} = \text{Sensitivity} = \frac{TP}{TP + FN} = \frac{TP}{P}$$
 
-**Interpretazione**: "Tra tutti i casi realmente positivi, quanti ne ho identificati?"
+**Interpretazione probabilistica**:
+$$\text{Recall} = P(\hat{y}=1|y=1)$$
+"Tra tutti i casi realmente positivi, quale proporzione riesco a identificare?"
 
-**Quando è critico**: Scenari dove i falsi negativi sono costosi:
+**Interpretazione intuitiva**: "Quanto è completa la mia rilevazione dei positivi?"
 
-- **Rilevamento tumori**: Non diagnosticare un cancro presente
-- **Rilevamento frodi**: Non bloccare transazioni fraudolente
-- **Sistemi di sicurezza**: Non rilevare intrusioni
+**Quando è critico**: Scenari dove i **falsi negativi sono costosi**:
 
-**Complemento**: $\text{FNR} = 1 - \text{Recall} = \frac{FN}{TP+FN}$ (False Negative Rate, Miss Rate)
+1. **Screening medico**: Non diagnosticare un tumore è potenzialmente fatale
+2. **Rilevamento frodi**: Non bloccare una transazione fraudolenta causa perdite economiche
+3. **Sistemi di sicurezza**: Non rilevare un'intrusione compromette la sicurezza
+4. **Information retrieval**: Non trovare documenti rilevanti limita l'utilità del sistema
+
+**Complemento - False Negative Rate (FNR)**:
+$$\text{FNR} = \text{Miss Rate} = 1 - \text{Recall} = \frac{FN}{TP+FN}$$
+Proporzione di positivi che "perdiamo" (manchiamo di rilevare).
+
+**Indipendenza dalla Prevalenza**
+
+A differenza della precision, il recall **non dipende dalla prevalenza** perché è condizionato sulla classe reale:
+
+$\text{Recall} = P(\hat{y}=1|y=1)$
+
+Questa è una probabilità condizionata su $y=1$, che dipende solo da $p(x|y=1)$ e dalla soglia di decisione, non da $P(y=1)$.
 
 ### 4.4 Specificity (True Negative Rate)
 
-La **specificity** misura la proporzione di negativi correttamente identificati:
+La **specificity** è il "recall per la classe negativa".
 
-$$\text{Specificity} = \text{TNR} = \frac{TN}{TN + FP} = \frac{TN}{N_-} = P(\hat{y}=0|y=0)$$
+**Definizione**:
+$\text{Specificity} = \text{TNR} = \frac{TN}{TN + FP} = \frac{TN}{N}$
 
-**Interpretazione**: Capacità di identificare correttamente i negativi.
+**Interpretazione probabilistica**:
+$\text{Specificity} = P(\hat{y}=0|y=0)$
+"Tra tutti i casi realmente negativi, quale proporzione riesco a identificare correttamente?"
 
 **Relazione con FPR**:
+$\text{FPR} = 1 - \text{Specificity} = \frac{FP}{FP + TN} = P(\hat{y}=1|y=0)$
 
-$$\text{FPR} = 1 - \text{Specificity} = \frac{FP}{FP + TN} = P(\hat{y}=1|y=0)$$
+Il FPR è la probabilità di **falso allarme** (Errore di Tipo I nel testing d'ipotesi).
 
-Il FPR è la probabilità di **falso allarme** (Errore di Tipo I).
+**Importanza in medicina**: In test diagnostici, specificity alta significa pochi falsi positivi, riducendo ansia ingiustificata e procedure invasive non necessarie.
 
 ### 4.5 Trade-off Precision vs Recall
 
-Precision e Recall sono tipicamente in **trade-off**: aumentare una tende a diminuire l'altra.
+Precision e recall sono tipicamente in **trade-off**: migliorare una tende a peggiorare l'altra.
 
-**Intuizione**:
+**Intuizione del trade-off**:
 
-- Per aumentare il recall (catturare più positivi), abbassiamo la soglia → più predizioni positive → ma aumentano anche i falsi positivi → precision diminuisce
-- Per aumentare la precision (evitare falsi positivi), alziamo la soglia → solo predizioni molto confidenti → ma perdiamo alcuni veri positivi → recall diminuisce
+Consideriamo un classificatore probabilistico che produce $p(y=1|x)$ e una soglia $\tau$:
 
-Formalmente, variando la soglia $\tau$ nella regola $\hat{y} = \mathbb{I}(p(y=1|x) > \tau)$:
+$\hat{y} = \begin{cases} 1 & \text{se } p(y=1|x) > \tau \\ 0 & \text{altrimenti} \end{cases}$
 
-- $\tau \to 0$: Recall $\to 1$, Precision $\to$ prevalenza
-- $\tau \to 1$: Precision $\to 1$, Recall $\to 0$
+**Abbassando la soglia** $\tau$ (classifichiamo più casi come positivi):
+- ✅ **Recall aumenta**: Catturiamo più veri positivi
+- ❌ **Precision diminuisce**: Includiamo anche più falsi positivi
 
-### 4.6 F-Scores: Combinare Precision e Recall
+**Alzando la soglia** $\tau$ (siamo più selettivi):
+- ✅ **Precision aumenta**: Solo predizioni molto confidenti
+- ❌ **Recall diminuisce**: Perdiamo alcuni veri positivi "border-line"
 
-#### 4.6.1 F1-Score
+**Analisi formale**:
 
-L'**F1-score** è la **media armonica** di precision e recall:
+Al variare di $\tau$:
 
-$$F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TP}{2TP + FP + FN}$$
+$\tau \to 0: \quad \begin{cases} \text{Recall} \to 1 \\ \text{Precision} \to \pi \end{cases} \quad \text{(tutto positivo)}$
 
-**Perché media armonica?**
+$\tau \to 1: \quad \begin{cases} \text{Recall} \to 0 \\ \text{Precision} \to 1 \end{cases} \quad \text{(tutto negativo)}$
 
-La media armonica $H(a,b) = \frac{2ab}{a+b}$ è più severa della media aritmetica $A(a,b) = \frac{a+b}{2}$ quando i valori sono sbilanciati.
+**Esempio numerico**:
 
-**Esempio**: Se $P = 0.9$ e $R = 0.1$:
+Dataset: 100 positivi, 900 negativi. Modello produce score da 0 a 1.
 
-- Media aritmetica: $\frac{0.9 + 0.1}{2} = 0.5$
-- Media armonica (F1): $\frac{2 \cdot 0.9 \cdot 0.1}{0.9 + 0.1} = 0.18$
+| Soglia $\tau$ | TP | FP | FN | Precision | Recall |
+|---------------|----|----|----|-----------| -------|
+| 0.9 | 10 | 5 | 90 | 0.67 | 0.10 |
+| 0.7 | 40 | 50 | 60 | 0.44 | 0.40 |
+| 0.5 | 70 | 200 | 30 | 0.26 | 0.70 |
+| 0.3 | 90 | 500 | 10 | 0.15 | 0.90 |
 
-L'F1 penalizza fortemente sistemi con precision o recall molto bassi.
+Osserviamo chiaramente il trade-off: recall alta → precision bassa, e viceversa.
 
-**Proprietà**:
+### 4.6 F-Scores: Armonizzare Precision e Recall
 
-- Range: $[0, 1]$
-- $F_1 = 1$ solo se $P = R = 1$
-- $F_1 \geq H(P, R) \geq G(P, R)$ dove $G$ è la media geometrica
+#### 4.6.1 F1-Score: Media Armonica
 
-#### 4.6.2 F-Beta Score
+L'**F1-score** combina precision e recall in una singola metrica bilanciata.
 
-Generalizzazione che pesa diversamente precision e recall:
+**Definizione**:
+$F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TP}{2TP + FP + FN}$
 
-$$F_\beta = (1 + \beta^2) \cdot \frac{\text{Precision} \cdot \text{Recall}}{\beta^2 \cdot \text{Precision} + \text{Recall}}$$
+**Perché la media armonica?**
 
-**Interpretazione di $\beta$**:
+La media armonica di due numeri $a$ e $b$ è:
+$H(a,b) = \frac{2ab}{a+b}$
 
-- $\beta < 1$: Recall pesa meno → maggior enfasi su Precision
-- $\beta = 1$: F1-score (bilanciamento equo)
-- $\beta > 1$: Recall pesa di più → maggior enfasi su Recall
-- $\beta = 2$: F2-score (recall vale il doppio)
-- $\beta = 0.5$: F0.5-score (precision vale il doppio)
+È più **severa** della media aritmetica quando i valori sono sbilanciati:
+$H(a,b) \leq G(a,b) \leq A(a,b)$
+dove $G$ è la media geometrica e $A$ la media aritmetica.
 
-**Derivazione del peso**: Il parametro $\beta$ rappresenta quanto il recall è più importante della precision. Se scriviamo:
+**Esempio illustrativo**:
 
-$$F_\beta = \frac{(1+\beta^2) \cdot TP}{(1+\beta^2) \cdot TP + \beta^2 \cdot FN + FP}$$
+| Precision | Recall | Media Aritmetica | F1 (Media Armonica) |
+|-----------|--------|------------------|---------------------|
+| 0.9 | 0.9 | 0.90 | 0.90 |
+| 0.9 | 0.5 | 0.70 | 0.64 |
+| 0.9 | 0.1 | 0.50 | 0.18 |
+| 0.5 | 0.5 | 0.50 | 0.50 |
 
-vediamo che $FN$ è pesato per $\beta^2$ rispetto a $FP$, quindi $\beta^2$ è il rapporto di importanza.
+L'F1 **penalizza fortemente** sistemi con una metrica molto bassa, anche se l'altra è alta.
 
-## 5. ROC Curves e AUC
+**Proprietà matematiche**:
 
-### 5.1 Curva ROC (Receiver Operating Characteristic)
+1. **Range**: $F_1 \in [0, 1]$
+2. **Massimo**: $F_1 = 1$ se e solo se $\text{Precision} = \text{Recall} = 1$
+3. **Simmetria**: $F_1(P, R) = F_1(R, P)$
+4. **Monotonia**: $F_1$ cresce se aumentiamo sia $P$ che $R$
 
-La **curva ROC** visualizza il trade-off tra True Positive Rate e False Positive Rate al variare della soglia $\tau$:
+**Derivazione alternativa**:
 
-- **Asse Y**: $\text{TPR}(\tau) = \frac{TP(\tau)}{TP(\tau) + FN(\tau)}$
-- **Asse X**: $\text{FPR}(\tau) = \frac{FP(\tau)}{FP(\tau) + TN(\tau)}$
+Possiamo scrivere:
+$F_1 = \frac{1}{\frac{1}{2}\left(\frac{1}{P} + \frac{1}{R}\right)}$
 
-**Costruzione**: 
-1. Per ogni possibile soglia $\tau \in [0,1]$, calcoliamo TPR e FPR
-2. Plottiamo il punto $(FPR(\tau), TPR(\tau))$
-3. Colleghiamo i punti per formare la curva
+L'F1 è la media armonica perché è l'inverso della media aritmetica degli inversi.
 
-**Punti Notevoli**:
+#### 4.6.2 F-Beta Score: Peso Asimmetrico
 
-- $(0, 0)$: Soglia $\tau = 1$ → tutto classificato come negativo
-- $(1, 1)$: Soglia $\tau = 0$ → tutto classificato come positivo
-- $(0, 1)$: Classificatore perfetto
-- Diagonale $TPR = FPR$: Classificatore casuale
+Il **F-beta score** generalizza l'F1 permettendo di pesare diversamente recall e precision.
 
-**Interpretazione Geometrica**: Una curva ROC che "abbraccia" l'angolo superiore sinistro indica un buon classificatore.
+**Definizione**:
+$F_\beta = (1 + \beta^2) \cdot \frac{\text{Precision} \cdot \text{Recall}}{\beta^2 \cdot \text{Precision} + \text{Recall}}$
 
-### 5.2 AUC (Area Under the ROC Curve)
+**Interpretazione del parametro $\beta$**:
 
-L'**AUC** quantifica l'area sotto la curva ROC:
+- $\beta < 1$: **Precision pesa di più** (enfasi su evitare falsi positivi)
+- $\beta = 1$: **Peso uguale** (F1-score standard)
+- $\beta > 1$: **Recall pesa di più** (enfasi su catturare tutti i positivi)
 
-$$\text{AUC} = \int_0^1 \text{TPR}(t) \, d(\text{FPR}(t))$$
+**Valori comuni**:
 
-**Teorema (Interpretazione Probabilistica dell'AUC)**: 
+**$F_{0.5}$** (Precision vale il doppio):
+$F_{0.5} = 1.25 \cdot \frac{P \cdot R}{0.25 \cdot P + R}$
+Uso: Spam detection, dove falsi positivi sono molto costosi.
 
-$$\text{AUC} = P(f(x_+) > f(x_-))$$
+**$F_2$** (Recall vale il doppio):
+$F_2 = 5 \cdot \frac{P \cdot R}{4 \cdot P + R}$
+Uso: Screening medico, dove falsi negativi sono molto costosi.
 
-dove $x_+ \sim p(x|y=1)$ e $x_- \sim p(x|y=0)$ sono campioni casuali dalle classi positiva e negativa, e $f(x)$ è lo score del classificatore.
+**Derivazione del peso di $\beta$**:
+
+Riscriviamo l'F-beta in forma estesa:
+$F_\beta = \frac{(1+\beta^2) \cdot TP}{(1+\beta^2) \cdot TP + \beta^2 \cdot FN + FP}$
+
+Notiamo che:
+- I falsi negativi (FN) sono pesati per $\beta^2$
+- I falsi positivi (FP) sono pesati per $1$
+
+Quindi $\beta^2$ è il **rapporto di importanza** tra recall e precision:
+$\beta^2 = \frac{\text{Importanza del Recall}}{\text{Importanza della Precision}}$
+
+**Esempio numerico**:
+
+Consideriamo tre modelli con diverse caratteristiche:
+
+| Modello | Precision | Recall | F1 | F0.5 | F2 |
+|---------|-----------|--------|----|----- |----|
+| A | 0.90 | 0.50 | 0.64 | 0.75 | 0.56 |
+| B | 0.50 | 0.90 | 0.64 | 0.56 | 0.75 |
+| C | 0.70 | 0.70 | 0.70 | 0.70 | 0.70 |
+
+- **Modello A**: Alta precision, basso recall → F0.5 lo premia
+- **Modello B**: Bassa precision, alto recall → F2 lo premia  
+- **Modello C**: Bilanciato → performance costante su tutti gli F-score
+
+**Scelta di $\beta$ in base al dominio**:
+
+1. **Medicina (screening)**: $\beta = 2$ o superiore (priorità su recall)
+2. **Spam filtering**: $\beta = 0.5$ (priorità su precision)
+3. **Information retrieval**: $\beta = 1$ (bilanciamento)
+4. **Fraud detection**: $\beta = 1.5$ - $2$ (leggermente sbilanciato verso recall)
+
+## 5. Curve ROC e Analisi delle Performance
+
+### 5.1 Introduzione alle Curve ROC
+
+La **curva ROC** (Receiver Operating Characteristic) è uno strumento fondamentale per valutare classificatori binari indipendentemente dalla scelta della soglia.
+
+**Contesto storico**: Le curve ROC furono sviluppate durante la Seconda Guerra Mondiale per analizzare segnali radar. Il nome "Receiver Operating Characteristic" deriva proprio dall'analisi dei ricevitori radio.
+
+### 5.2 Costruzione della Curva ROC
+
+**Definizione formale**:
+
+Data una famiglia di classificatori parametrizzati da una soglia $\tau \in [0,1]$:
+$\hat{y}(\tau) = \mathbb{I}(p(y=1|x) > \tau)$
+
+La curva ROC è il grafico dei punti:
+$\text{ROC}(\tau) = \big(\text{FPR}(\tau), \text{TPR}(\tau)\big)$
+
+al variare di $\tau$ da 0 a 1.
+
+**Coordinate**:
+- **Asse X**: False Positive Rate = $\frac{FP}{N}$
+- **Asse Y**: True Positive Rate = $\frac{TP}{P}$
+
+**Algoritmo di costruzione**:
+
+```
+Input: Score s_i e label y_i per i = 1,...,n
+
+1. Ordina gli esempi per score decrescente: s_1 ≥ s_2 ≥ ... ≥ s_n
+2. Inizializza: TP = 0, FP = 0
+3. Per ogni soglia τ (prendendo s_i come soglie):
+   a. Se y_i = 1: TP++
+   b. Se y_i = 0: FP++
+   c. Calcola: TPR = TP/P, FPR = FP/N
+   d. Aggiungi punto (FPR, TPR) alla curva
+4. Collega i punti per formare la curva
+```
+
+### 5.3 Interpretazione e Punti Notevoli
+
+**Punti estremi**:
+
+$(0, 0)$: **Origine** - Soglia $\tau = 1$ → tutto classificato come negativo
+- TP = 0, FP = 0
+- Classifier "always negative"
+
+$(1, 1)$: **Angolo in alto a destra** - Soglia $\tau = 0$ → tutto classificato come positivo
+- TP = P, FP = N
+- Classifier "always positive"
+
+$(0, 1)$: **Angolo in alto a sinistra** - Classificatore perfetto
+- TP = P, FP = 0
+- Nessun errore
+
+**Diagonale principale** $y = x$: Classificatore casuale
+- Prediction random con $P(\hat{y}=1) = p$
+- In media: $\text{TPR} = p$, $\text{FPR} = p$
+
+**Interpretazione geometrica**:
+
+- **Curve vicine all'angolo (0,1)**: Ottimo classificatore
+  - Alto TPR con basso FPR
+  - Buona separazione tra classi
+
+- **Curve vicine alla diagonale**: Classificatore scarso
+  - Nessun potere discriminante
+  - Simile a indovinare casualmente
+
+- **Curve sotto la diagonale**: Classificatore "invertito"
+  - Performance peggiore del caso
+  - Invertire le predizioni migliorerebbe il modello!
+
+**Proprietà di monotonia**:
+
+La curva ROC è **monotona crescente**: muovendoci lungo la curva da sinistra a destra (abbassando $\tau$), sia TPR che FPR aumentano (o restano costanti).
+
+**Teorema 5.1** (Monotonia della Curva ROC):
+*Per un classificatore con score $s(x)$, se $\tau_1 < \tau_2$, allora:*
+$\text{FPR}(\tau_1) \geq \text{FPR}(\tau_2) \quad \text{e} \quad \text{TPR}(\tau_1) \geq \text{TPR}(\tau_2)$
+
+**Dimostrazione**: Abbassando la soglia, classifichiamo più esempi come positivi, quindi sia TP che FP possono solo aumentare (o restare costanti). $\square$
+
+### 5.4 Area Under the Curve (AUC-ROC)
+
+L'**AUC** (Area Under the ROC Curve) è una metrica scalare che riassume la performance complessiva del classificatore.
+
+**Definizione matematica**:
+$\text{AUC} = \int_0^1 \text{TPR}(t) \, d(\text{FPR}(t))$
+
+dove $t$ varia lungo la curva (parametro di soglia).
+
+**Range**: $\text{AUC} \in [0, 1]$
+
+**Interpretazione dei valori**:
+
+- $\text{AUC} = 1.0$: **Perfetto** - Separazione completa tra classi
+- $\text{AUC} = 0.9$: **Eccellente** - Ottima discriminazione
+- $\text{AUC} = 0.8$: **Buono** - Buona discriminazione
+- $\text{AUC} = 0.7$: **Accettabile** - Discriminazione discreta
+- $\text{AUC} = 0.5$: **Nullo** - Nessun potere discriminante (casuale)
+- $\text{AUC} < 0.5$: **Invertito** - Performance peggiore del caso
+
+**Teorema 5.2** (Interpretazione Probabilistica dell'AUC):
+*L'AUC è la probabilità che un esempio positivo casuale abbia score maggiore di un esempio negativo casuale:*
+
+$\text{AUC} = P(s(X_+) > s(X_-))$
+
+dove $X_+ \sim p(x|y=1)$ e $X_- \sim p(x|y=0)$.
 
 **Dimostrazione** (sketch):
 
-Sia $S_+ = \{f(x_i) : y_i = 1\}$ e $S_- = \{f(x_j) : y_j = 0\}$ gli insiemi di score per positivi e negativi.
+Consideriamo tutti i possibili confronti tra un esempio positivo e uno negativo. Per ogni soglia $\tau$, contiamo:
+- Quante coppie $(x_+, x_-)$ hanno $s(x_+) > \tau$ e $s(x_-) \leq \tau$
 
-L'AUC può essere calcolata come:
+La curva ROC traccia esattamente questa proporzione. L'integrale accumula tutti questi confronti, dando la frazione totale di coppie ordinate correttamente.
 
-$$\text{AUC} = \frac{1}{|S_+| \cdot |S_-|} \sum_{i \in S_+} \sum_{j \in S_-} \mathbb{I}(f(x_i) > f(x_j))$$
+Formalmente, l'AUC può essere calcolata come:
+$\text{AUC} = \frac{1}{P \cdot N} \sum_{i: y_i=1} \sum_{j: y_j=0} \mathbb{I}(s_i > s_j)$
 
-Questa è esattamente la frazione di coppie $(x_+, x_-)$ per cui lo score del positivo supera quello del negativo, cioè una stima di $P(f(x_+) > f(x_-))$. $\square$
+dove $P$ è il numero di positivi e $N$ di negativi. Questo è esattamente una stima di $P(s(X_+) > s(X_-))$. $\square$
 
-**Equivalenza con test di Wilcoxon-Mann-Whitney**: L'AUC è equivalente alla statistica U del test non parametrico di Wilcoxon-Mann-Whitney.
+**Corollario**: L'AUC equivale alla statistica U del test di Mann-Whitney-Wilcoxon:
+$\text{AUC} = \frac{U}{P \cdot N}$
 
-**Scala di Interpretazione**:
+dove $U$ è la statistica U di Mann-Whitney.
 
-- $\text{AUC} = 1.0$: Separazione perfetta
-- $\text{AUC} = 0.5$: Nessun potere discriminante (casuale)
-- $\text{AUC} < 0.5$: Performance peggiore del caso (predizioni invertite)
-- $0.5 < \text{AUC} < 0.7$: Scarso
-- $0.7 \leq \text{AUC} < 0.8$: Accettabile
-- $0.8 \leq \text{AUC} < 0.9$: Eccellente
-- $\text{AUC} \geq 0.9$: Outstanding
+**Calcolo pratico dell'AUC**:
 
-**Proprietà Chiave**:
+**Metodo 1** (Regola del trapezio):
+$\text{AUC} \approx \sum_{i=1}^{n-1} \frac{1}{2}(\text{TPR}_i + \text{TPR}_{i+1}) \cdot (\text{FPR}_{i+1} - \text{FPR}_i)$
 
-1. **Invarianza alla scala**: Dipende solo dall'ordinamento relativo degli score
-2. **Robustezza allo sbilanciamento**: Non dipende dalla prevalenza delle classi
-3. **Interpretazione come ranking metric**: Misura quanto bene il modello ordina esempi positivi prima dei negativi
+**Metodo 2** (Conteggio di coppie concordanti):
+$\text{AUC} = \frac{\#\{(i,j): y_i=1, y_j=0, s_i > s_j\}}{P \cdot N}$
 
-### 5.3 Equal Error Rate (EER)
+### 5.5 Proprietà Fondamentali dell'AUC
 
-L'**Equal Error Rate** è il punto dove:
+**Proprietà 5.1** (Invarianza alla Scala):
+L'AUC dipende solo dall'**ordinamento** degli score, non dai valori assoluti.
 
-$$\text{FPR}(\tau^*) = \text{FNR}(\tau^*) = \text{EER}$$
+Se applichiamo una trasformazione monotona crescente $f$ agli score:
+$\text{AUC}(f(s)) = \text{AUC}(s)$
 
-Poiché $\text{FNR} = 1 - \text{TPR}$, questo corrisponde al punto sulla curva ROC dove la linea $\text{TPR} = 1 - \text{FPR}$ interseca la curva.
+**Implicazione**: Possiamo confrontare modelli che producono score su scale diverse (e.g., probabilità vs logit vs distance).
 
-**Interpretazione**: Rappresenta il punto di bilanciamento ottimale tra i due tipi di errore. EER più basso indica performance migliore.
+**Proprietà 5.2** (Robustezza allo Sbilanciamento):
+L'AUC **non dipende dalla prevalenza** della classe positiva.
 
-## 6. Precision-Recall Curves
+Se cambiamo la distribuzione di classe nel test set, l'AUC rimane invariata (a patto che $p(x|y)$ non cambi).
+
+**Dimostrazione**: TPR e FPR sono entrambi condizionati su $y$:
+$\text{TPR} = P(\hat{y}=1|y=1), \quad \text{FPR} = P(\hat{y}=1|y=0)$
+
+Questi dipendono solo da $p(x|y=1)$, $p(x|y=0)$ e dalla soglia, non da $P(y)$. $\square$
+
+**Proprietà 5.3** (Interpretazione come Ranking Metric):
+L'AUC misura la qualità del **ranking** prodotto dal classificatore:
+- Un buon ranking mette esempi positivi in cima
+- AUC alta → la maggior parte dei positivi è rankata sopra i negativi
+
+**Limitazioni dell'AUC**:
+
+1. **Non fornisce informazioni sulla calibrazione**: Due modelli con stesso AUC possono avere probabilità molto diverse
+
+2. **Aggregazione su tutte le soglie**: Può mascherare performance scarse in regioni critiche
+
+3. **Ottimizza per ranking globale**: Può non essere ottimale se ci interessa solo una specifica regione operativa (e.g., basso FPR)
+
+4. **Sensibilità ridotta**: Cambiamenti in regioni di bassa densità hanno stesso peso di regioni ad alta densità
+
+### 5.6 Operating Points e Trade-offs
+
+**Operating point**: Un punto specifico sulla curva ROC corrispondente a una soglia $\tau$.
+
+**Scelta dell'operating point**:
+
+La curva ROC mostra tutti i possibili trade-off, ma dobbiamo scegliere un punto operativo specifico basato su:
+
+1. **Costi asimmetrici**: Se $c = L_{FN}/L_{FP}$, cerchiamo il punto che minimizza:
+   $\text{Cost}(\tau) = c \cdot \text{FNR}(\tau) + \text{FPR}(\tau)$
+
+2. **Vincoli operativi**: 
+   - "FPR deve essere $\leq 0.05$" → scegli il punto con FPR massimo 0.05 e TPR massimo
+   - "Recall deve essere $\geq 0.9$" → scegli il punto con TPR minimo 0.9 e FPR minimo
+
+3. **Youden's index**: Massimizza la distanza dalla diagonale:
+   $J = \text{TPR} - \text{FPR} = \text{Sensitivity} + \text{Specificity} - 1$
+   Equivale a massimizzare l'informedness.
+
+### 5.7 Equal Error Rate (EER)
+
+L'**Equal Error Rate** è il punto sulla curva ROC dove:
+$\text{FPR}(\tau^*) = \text{FNR}(\tau^*) = \text{EER}$
+
+Equivalentemente, dove:
+$\text{FPR}(\tau^*) = 1 - \text{TPR}(\tau^*)$
+
+**Interpretazione geometrica**: Intersezione della curva ROC con la linea $y = 1 - x$.
+
+**Proprietà**:
+- Bilanciamento naturale tra i due tipi di errore
+- Utile quando non abbiamo informazioni sui costi relativi
+- EER basso indica performance migliore
+
+**Calcolo**: Cercare la soglia dove $|\text{FPR} - \text{FNR}|$ è minimo.
+
+### 5.8 Confronto tra Modelli con ROC
+
+**Dominanza**: Il modello A **domina** il modello B se:
+$\text{TPR}_A(\tau) \geq \text{TPR}_B(\tau) \quad \forall \text{FPR}(\tau)$
+
+In altre parole, la curva ROC di A è sempre sopra (o coincide con) quella di B.
+
+Se A domina B, allora certamente $\text{AUC}_A \geq \text{AUC}_B$.
+
+**Curve che si intersecano**: Se le curve ROC si intersecano, nessun modello domina l'altro. La scelta dipende dalla regione operativa:
+- Se operiamo a basso FPR (alta specificità), scegliamo il modello migliore in quella regione
+- Se operiamo ad alto TPR (alta sensibilità), scegliamo il modello migliore in quella regione
+
+**Esempio**:
+- Modello A: Migliore per FPR < 0.1 (applicazioni dove FP sono molto costosi)
+- Modello B: Migliore per FPR > 0.1 (applicazioni dove vogliamo alto recall)
+
+## 6. Curve Precision-Recall
 
 ### 6.1 Motivazione per Dataset Sbilanciati
 
-Quando la classe positiva è rara (e.g., $p(y=1) \ll 0.5$), la curva ROC può essere poco informativa perché:
+Quando la classe positiva è **rara** (e.g., $P(y=1) \ll 0.5$), la curva ROC può essere **poco informativa**:
 
-1. Il numero di veri negativi $N_-$ è molto grande
-2. Anche un piccolo FPR corrisponde a molti falsi positivi in termini assoluti
-3. Tutta l'"azione" nella curva ROC si concentra vicino all'origine
+**Problema con ROC per classi rare**:
 
-La **curva Precision-Recall** risolve questo problema focalizzandosi solo sui positivi.
+1. Il numero di negativi $N$ è molto grande
+2. Anche un piccolo FPR corrisponde a **molti falsi positivi** in termini assoluti
+3. La maggior parte della curva ROC è compressa vicino all'origine
+4. Variazioni importanti nella precision sono mascherate
 
-### 6.2 Definizione
+**Esempio numerico**:
 
-La curva PR plotta:
+Dataset: 10,000 esempi, 100 positivi (1%), 9,900 negativi.
 
-- **Asse X**: Recall $= \frac{TP}{TP + FN}$
-- **Asse Y**: Precision $= \frac{TP}{TP + FP}$
+Due classificatori:
+- **Modello A**: TPR = 0.90, FPR = 0.02
+- **Modello B**: TPR = 0.90, FPR = 0.05
+
+Sulla curva ROC sembrano molto simili (stessa TPR, FPR simili).
+
+Ma calcoliamo la precision:
+
+$\text{Precision}_A = \frac{TP}{TP + FP} = \frac{90}{90 + (0.02 \times 9900)} = \frac{90}{288} \approx 0.31$
+
+$\text{Precision}_B = \frac{90}{90 + (0.05 \times 9900)} = \frac{90}{585} \approx 0.15$
+
+La precision di B è **metà** di quella di A! Ma questo non è evidente nella curva ROC.
+
+**Soluzione**: La curva **Precision-Recall** focalizza l'attenzione sui positivi, rendendola più informativa per dataset sbilanciati.
+
+### 6.2 Definizione della Curva PR
+
+**Definizione**: La curva Precision-Recall plotta:
+$\text{PR}(\tau) = \big(\text{Recall}(\tau), \text{Precision}(\tau)\big)$
 
 al variare della soglia $\tau$.
 
-**Baseline**: Un classificatore casuale ottiene precision pari alla prevalenza: $P = p(y=1)$.
+**Coordinate**:
+- **Asse X**: Recall = $\frac{TP}{P}$
+- **Asse Y**: Precision = $\frac{TP}{TP + FP}$
 
-### 6.3 Average Precision (AP)
+**Costruzione**:
 
-L'**Average Precision** riassume la curva PR come media pesata delle precision:
+```
+Input: Score s_i e label y_i per i = 1,...,n
 
-$$\text{AP} = \sum_{n=1}^{N} (R_n - R_{n-1}) \cdot P_n$$
+1. Ordina per score decrescente: s_1 ≥ s_2 ≥ ... ≥ s_n
+2. Inizializza: TP = 0, FP = 0
+3. Per ogni soglia τ:
+   a. Aggiorna TP e FP
+   b. Calcola: Recall = TP/P, Precision = TP/(TP+FP)
+   c. Aggiungi punto (Recall, Precision)
+```
 
-dove $(P_n, R_n)$ sono precision e recall alla soglia $n$-esima, ordinati per recall crescente.
+### 6.3 Interpretazione e Comportamento
 
-**Interpretazione**: Approssima l'area sotto la curva PR.
+**Punti notevoli**:
 
-**Differenze AUC-ROC vs AUC-PR**:
+**Alta soglia** ($\tau \to 1$):
+- Poche predizioni positive (solo le più confidenti)
+- Recall basso, Precision alta
+- Punto in basso a destra della curva
+
+**Bassa soglia** ($\tau \to 0$):
+- Molte predizioni positive
+- Recall alto, Precision bassa (≈ prevalenza)
+- Punto in alto a sinistra della curva
+
+**Baseline casuale**:
+
+Un classificatore casuale che predice positivo con probabilità $p$ ottiene:
+$\text{Precision}_{\text{random}} = \frac{P}{n} = \pi$
+
+indipendentemente da $p$ (in media). Quindi la baseline è una **linea orizzontale** a $y = \pi$.
+
+**Interpretazione**: Una curva PR buona deve stare **sopra** questa baseline.
+
+**Forma tipica**: La curva PR tende a decrescere muovendosi da sinistra a destra (aumentando recall). Questo riflette il trade-off precision-recall.
+
+### 6.4 Average Precision (AP)
+
+L'**Average Precision** riassume la curva PR in un singolo numero.
+
+**Definizione** (interpolata):
+$\text{AP} = \sum_{k=1}^{n} (R_k - R_{k-1}) \cdot P_k$
+
+dove $(P_k, R_k)$ sono precision e recall al $k$-esimo elemento rankat, ordinati per recall crescente.
+
+**Interpretazione**: Approssimazione dell'area sotto la curva PR, pesando ogni livello di recall per quanto è "grande" (quanto recall guadagniamo).
+
+**Definizione alternativa** (usata in PASCAL VOC):
+$\text{AP} = \sum_{k=1}^{n} (R_k - R_{k-1}) \cdot P_{\text{interp}}(R_k)$
+
+dove:
+$P_{\text{interp}}(R_k) = \max_{R' \geq R_k} P(R')$
+
+Questo usa la precision **interpolata** (massima raggiungibile per recall $\geq R_k$), rendendo la curva monotona.
+
+**Relazione con Ranking**:
+
+$\text{AP} = \frac{1}{P} \sum_{k=1}^{n} P(k) \cdot \text{rel}(k)$
+
+dove:
+- $P(k)$ = precision at rank $k$
+- $\text{rel}(k) = 1$ se l'item al rank $k$ è positivo, 0 altrimenti
+- $P$ = numero totale di positivi
+
+**Interpretazione**: L'AP è la precision media su tutte le posizioni dove troviamo un positivo.
+
+### 6.5 Precision@K e Recall@K
+
+In information retrieval e ranking systems, spesso ci interessano solo i top-K risultati.
+
+**Precision@K**:
+$P@K = \frac{|\{i \in \text{top-}K : y_i = 1\}|}{K}$
+
+Frazione di positivi tra i primi K elementi rankati.
+
+**Recall@K**:
+$R@K = \frac{|\{i \in \text{top-}K : y_i = 1\}|}{P}$
+
+Frazione di tutti i positivi catturati nei primi K elementi.
+
+**Average Precision@K**:
+$AP@K = \frac{1}{\min(m, K)} \sum_{k=1}^{K} P(k) \cdot \text{rel}(k)$
+
+dove $m$ è il numero di positivi nel dataset.
+
+**Uso tipico**: 
+- Motori di ricerca: P@10 (prime 10 ricerche)
+- Sistemi di raccomandazione: P@20 (prime 20 raccomandazioni)
+- Object detection: mAP@IoU (mean Average Precision a diversi IoU threshold)
+
+### 6.6 Confronto AUC-ROC vs AUC-PR
+
+**Differenze fondamentali**:
 
 | Aspetto | AUC-ROC | AUC-PR |
 |---------|---------|--------|
-| Focus | Bilanciamento TPR/FPR | Classe positiva |
-| Dataset | Bilanciati | Sbilanciati |
-| Sensibilità | Meno sensibile a sbilanciamento | Più sensibile |
-| Uso | Classificazione generale | Rilevamento eventi rari |
+| **Assi** | TPR vs FPR | Precision vs Recall |
+| **Focus** | Bilanciamento tra positivi e negativi | Solo classe positiva |
+| **Baseline** | Diagonale (0.5) | Orizzontale (prevalenza $\pi$) |
+| **Dipendenza da $\pi$** | Invariante | Dipendente |
+| **Dataset bilanciati** | Ottimo | Equivalente |
+| **Dataset sbilanciati** | Può essere misleading | Più informativa |
+| **Interpretazione** | Ranking globale | Rilevanza dei positivi |
 
-### 6.4 Precision@K e Average Precision@K
+**Teorema 6.1** (Sensibilità al Prior):
+*Dato uno shift nella prevalenza da $\pi_{\text{train}}$ a $\pi_{\text{test}}$:*
+- *L'AUC-ROC rimane invariante*
+- *L'AUC-PR cambia proporzionalmente*
 
-In information retrieval e sistemi di ranking:
+**Dimostrazione**:
 
-**Precision@K**: Precision calcolata sui primi $K$ elementi recuperati:
+ROC usa metriche condizionate su $y$:
+$\text{TPR} = P(\hat{y}=1|y=1), \quad \text{FPR} = P(\hat{y}=1|y=0)$
 
-$$P@K = \frac{|\{i \in \text{top-}K : y_i = 1\}|}{K}$$
+Queste dipendono solo da $p(x|y)$, non da $P(y)$.
 
-**Average Precision@K**: Media delle precision calcolate ad ogni posizione dove compare un elemento rilevante, fino a $K$:
+PR usa Precision che dipende esplicitamente dal prior:
+$\text{Precision} = P(y=1|\hat{y}=1) = \frac{P(\hat{y}=1|y=1) \cdot P(y=1)}{P(\hat{y}=1)}$
 
-$$AP@K = \frac{1}{\min(m, K)} \sum_{k=1}^{K} P(k) \cdot \text{rel}(k)$$
+Per Bayes:
+$\text{Precision} = \frac{\text{TPR} \cdot \pi}{\text{TPR} \cdot \pi + \text{FPR} \cdot (1-\pi)}$
 
-dove $\text{rel}(k) = 1$ se l'item in posizione $k$ è rilevante, $0$ altrimenti, e $m$ è il numero totale di item rilevanti.
+Cambiando $\pi$, la precision cambia, quindi cambia AUC-PR. $\square$
 
-## 7. Metriche Avanzate
+**Implicazione pratica**: Se il test set ha prevalenza diversa dal training, AUC-PR sarà diversa anche con stesso modello. Questo rende AUC-PR più "onesta" per dataset molto sbilanciati.
+
+**Quando usare quale**:
+
+- **ROC-AUC**: 
+  - Dataset bilanciati o moderatamente sbilanciati
+  - Interessa ranking generale
+  - Vogliamo confrontare modelli indipendentemente dalla prevalenza
+  
+- **PR-AUC**:
+  - Dataset fortemente sbilanciati ($\pi < 0.1$ o $\pi > 0.9$)
+  - Focus sulla classe positiva rara
+  - Information retrieval e detection tasks
+
+## 7. Metriche Avanzate e Robuste
 
 ### 7.1 Matthews Correlation Coefficient (MCC)
 
-Il **MCC** è un coefficiente di correlazione tra predizioni e valori reali:
+Il **Matthews Correlation Coefficient** è considerato una delle metriche più bilanciate e robuste per classificazione binaria.
 
-$$\text{MCC} = \frac{TP \cdot TN - FP \cdot FN}{\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN + FN)}}$$
+**Definizione**:
+$\text{MCC} = \frac{TP \cdot TN - FP \cdot FN}{\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN + FN)}}$
 
-**Derivazione**: Il MCC è il coefficiente di correlazione di Pearson $\phi$ tra due variabili binarie $y$ e $\hat{y}$:
+**Derivazione**: L'MCC è il **coefficiente di correlazione di Pearson** $\phi$ tra le variabili binarie $y$ (label reale) e $\hat{y}$ (predizione).
 
-$$\phi = \frac{n_{11}n_{00} - n_{10}n_{01}}{\sqrt{n_{1\cdot}n_{0\cdot}n_{\cdot1}n_{\cdot0}}}$$
+Per due variabili binarie, il coefficiente $\phi$ è:
+$\phi = \frac{n_{11}n_{00} - n_{10}n_{01}}{\sqrt{n_{1\cdot}n_{0\cdot}n_{\cdot1}n_{\cdot0}}}$
 
-dove $n_{ij}$ è la frequenza congiunta di $y=i$ e $\hat{y}=j$.
+dove $n_{ij}$ è la frequenza congiunta di $y=i$ e $\hat{y}=j$. Sostituendo con la notazione della confusion matrix:
+- $n_{11} = TP$ (entrambi 1)
+- $n_{00} = TN$ (entrambi 0)
+- $n_{10} = FN$ ($y=1$, $\hat{y}=0$)
+- $n_{01} = FP$ ($y=0$, $\hat{y}=1$)
+- $n_{1\cdot} = TP + FN$ (totale reali positivi)
+- $n_{0\cdot} = TN + FP$ (totale reali negativi)
+- $n_{\cdot1} = TP + FP$ (totale predetti positivi)
+- $n_{\cdot0} = TN + FN$ (totale predetti negativi)
 
-**Proprietà**:
+Otteniamo esattamente la formula dell'MCC.
 
-- Range: $[-1, +1]$
-- $\text{MCC} = +1$: Predizione perfetta
-- $\text{MCC} = 0$: Predizione casuale (non correlata)
-- $\text{MCC} = -1$: Disaccordo totale (predizioni invertite)
-- **Simmetrico** rispetto alle classi: $\text{MCC}(y, \hat{y}) = \text{MCC}(\hat{y}, y)$
-- **Invariante** al bilanciamento: Non favorisce la classe maggioritaria
+**Range e Interpretazione**:
 
-**Teorema (Invarianza)**: MCC è invariante rispetto a scambi di classe (scambiare positivi con negativi).
+$\text{MCC} \in [-1, +1]$
+
+- $\text{MCC} = +1$: **Perfetto** - Predizione completamente corretta
+- $\text{MCC} = 0$: **Casuale** - Performance non migliore del caso
+- $\text{MCC} = -1$: **Inverso perfetto** - Predizioni completamente sbagliate (ma consistentemente)
+
+**Interpretazione come correlazione**:
+- MCC positivo: Associazione positiva tra predizioni e realtà
+- MCC vicino a 0: Nessuna associazione (predizioni random)
+- MCC negativo: Associazione negativa (predizioni sistematicamente inverse)
+
+**Proprietà Fondamentali**:
+
+**Proprietà 7.1** (Simmetria):
+$\text{MCC}(y, \hat{y}) = \text{MCC}(\neg y, \neg \hat{y})$
+
+L'MCC è invariante rispetto allo scambio di classe (chiamare "positivo" quello che prima era "negativo").
 
 **Dimostrazione**: Sotto lo scambio $y \leftrightarrow (1-y)$ e $\hat{y} \leftrightarrow (1-\hat{y})$:
-
 - $TP \leftrightarrow TN$
 - $FP \leftrightarrow FN$
 
-Quindi il numeratore diventa $TN \cdot TP - FN \cdot FP = TP \cdot TN - FP \cdot FN$ (stesso valore).
+Il numeratore diventa: $TN \cdot TP - FN \cdot FP = TP \cdot TN - FP \cdot FN$ (invariato).
 
 Il denominatore è simmetrico per costruzione. $\square$
 
-### 7.2 Cohen's Kappa
+**Proprietà 7.2** (Robustezza allo Sbilanciamento):
+L'MCC **non favorisce la classe maggioritaria** ed è considerato la metrica più affidabile per dataset sbilanciati.
 
-Il **Cohen's Kappa** misura l'accordo tra predizioni e valori reali, corretto per l'accordo casuale:
+**Confronto con Accuracy su Dataset Sbilanciato**:
 
-$$\kappa = \frac{p_o - p_e}{1 - p_e}$$
+Esempio: 95 negativi, 5 positivi.
+
+**Classificatore Dummy** (sempre negativo):
+- TP = 0, TN = 95, FP = 0, FN = 5
+- Accuracy = $95/100 = 0.95$ (sembra ottimo!)
+- MCC = $\frac{0 \cdot 95 - 0 \cdot 5}{\sqrt{0 \cdot 5 \cdot 95 \cdot 100}} = \frac{0}{0}$ (indefinito, o 0)
+
+**Classificatore Bilanciato**:
+- TP = 4, TN = 90, FP = 5, FN = 1
+- Accuracy = $94/100 = 0.94$ (leggermente peggio)
+- MCC = $\frac{4 \cdot 90 - 5 \cdot 1}{\sqrt{9 \cdot 5 \cdot 95 \cdot 91}} \approx 0.60$ (molto meglio!)
+
+L'MCC riconosce correttamente che il secondo classificatore è superiore.
+
+**Relazione con altre metriche**:
+
+L'MCC può essere espresso in termini di TPR, TNR, PPV (Precision), NPV:
+
+$\text{MCC} = \sqrt{\text{TPR} \cdot \text{TNR} \cdot \text{PPV} \cdot \text{NPV}} - \sqrt{\text{FNR} \cdot \text{FPR} \cdot \text{FOR} \cdot \text{FDR}}$
+
+dove FOR = False Omission Rate, FDR = False Discovery Rate.
+
+**Nota computazionale**: Quando uno qualsiasi dei termini nel denominatore è zero, l'MCC è indefinito (divisione per zero). In pratica, si assegna MCC = 0 in questi casi.
+
+### 7.2 Cohen's Kappa ($\kappa$)
+
+Il **Cohen's Kappa** misura l'accordo tra predizioni e realtà, **corretto per l'accordo casuale**.
+
+**Definizione**:
+$\kappa = \frac{p_o - p_e}{1 - p_e}$
 
 dove:
+- $p_o = \frac{TP + TN}{n}$ è l'**accuratezza osservata**
+- $p_e$ è l'**accuratezza attesa per caso**
 
-- $p_o = \frac{TP + TN}{N}$ è l'**accuratezza osservata**
-- $p_e = \frac{(TP+FP)(TP+FN) + (TN+FP)(TN+FN)}{N^2}$ è l'**accordo casuale atteso**
+**Calcolo di $p_e$** (Accordo Casuale Atteso):
 
-**Derivazione di $p_e$**: Se $y$ e $\hat{y}$ fossero indipendenti ma con le stesse distribuzioni marginali:
+Se $y$ e $\hat{y}$ fossero **indipendenti** ma con le stesse distribuzioni marginali:
 
-$$p_e = P(y = \hat{y}) = P(y=1)P(\hat{y}=1) + P(y=0)P(\hat{y}=0)$$
+$p_e = P(y = \hat{y}|\text{indipendenza})$
 
-$$= \frac{N_+}{N} \cdot \frac{\hat{N}_+}{N} + \frac{N_-}{N} \cdot \frac{\hat{N}_-}{N}$$
+$= P(y=1) \cdot P(\hat{y}=1) + P(y=0) \cdot P(\hat{y}=0)$
+
+$= \frac{TP + FN}{n} \cdot \frac{TP + FP}{n} + \frac{TN + FP}{n} \cdot \frac{TN + FN}{n}$
+
+$= \frac{(TP+FN)(TP+FP) + (TN+FP)(TN+FN)}{n^2}$
 
 **Interpretazione**:
 
-- $\kappa = 1$: Accordo perfetto
-- $\kappa = 0$: Accordo pari al caso
-- $\kappa < 0$: Accordo peggiore del caso
+$\kappa = \frac{\text{Accordo Osservato} - \text{Accordo Casuale}}{1 - \text{Accordo Casuale}}$
 
-**Scala di Landis e Koch**:
-- $\kappa < 0$: Accordo peggiore del caso
-- $0 \leq \kappa < 0.20$: Accordo lieve
-- $0.20 \leq \kappa < 0.40$: Accordo discreto
-- $0.40 \leq \kappa < 0.60$: Accordo moderato
-- $0.60 \leq \kappa < 0.80$: Accordo sostanziale
-- $0.80 \leq \kappa \leq 1.00$: Accordo quasi perfetto
+- Numeratore: Quanto l'accordo osservato supera il caso
+- Denominatore: Massimo miglioramento possibile rispetto al caso
 
-**Relazione con MCC**: Per problemi binari, MCC e Kappa sono strettamente correlati ma non identici. Il MCC è generalmente preferito perché:
-1. Ha interpretazione come coefficiente di correlazione
-2. È più stabile numericamente
-3. Ha migliori proprietà sotto campionamento
+**Range**:
+
+$\kappa \in [-1, 1]$
+
+ma tipicamente $\kappa \in [0, 1]$ per classificatori ragionevoli.
+
+**Scala di Landis e Koch** (interpretazione classica):
+
+| Kappa | Forza dell'Accordo |
+|-------|-------------------|
+| $< 0$ | Peggiore del caso |
+| $0.00 - 0.20$ | Lieve |
+| $0.21 - 0.40$ | Discreto |
+| $0.41 - 0.60$ | Moderato |
+| $0.61 - 0.80$ | Sostanziale |
+| $0.81 - 1.00$ | Quasi perfetto |
+
+**Esempio di calcolo**:
+
+Dataset: 100 esempi, 60 positivi, 40 negativi.
+Modello: TP = 50, TN = 30, FP = 10, FN = 10.
+
+$p_o = \frac{50 + 30}{100} = 0.80$
+
+$p_e = \frac{60 \cdot 60}{100^2} + \frac{40 \cdot 40}{100^2} = \frac{3600 + 1600}{10000} = 0.52$
+
+$\kappa = \frac{0.80 - 0.52}{1 - 0.52} = \frac{0.28}{0.48} \approx 0.58$
+
+Interpretazione: Accordo **moderato** (secondo Landis e Koch).
+
+**Relazione con MCC**:
+
+Per problemi binari, MCC e Kappa sono correlati ma **non identici**. In generale:
+- MCC è preferito per la sua interpretazione come correlazione
+- MCC ha migliori proprietà matematiche
+- Kappa è più usato in ambito medico/statistico per inter-rater agreement
+
+**Differenza chiave**: Kappa usa le distribuzioni marginali empiriche per calcolare $p_e$, mentre MCC è una pura misura di correlazione.
 
 ### 7.3 Balanced Accuracy
 
-La **balanced accuracy** è la media delle accuratezze per classe, utile per dataset sbilanciati:
+La **balanced accuracy** è particolarmente utile per dataset sbilanciati, dando peso uguale a ciascuna classe.
 
+**Definizione**:
 $\text{Balanced Accuracy} = \frac{1}{2}\left(\frac{TP}{TP+FN} + \frac{TN}{TN+FP}\right) = \frac{\text{TPR} + \text{TNR}}{2}$
 
-**Motivazione**: L'accuracy standard può essere dominata dalla classe maggioritaria. La balanced accuracy dà peso uguale a ciascuna classe.
+**Equivalente**:
+$\text{Balanced Accuracy} = \frac{\text{Sensitivity} + \text{Specificity}}{2}$
 
-**Esempio**: Dataset con 95% negativi, 5% positivi.
-- Classificatore che predice sempre negativo: Accuracy = 95%, Balanced Accuracy = 50%
-- Balanced Accuracy rivela che il modello è equivalente al caso per la classe positiva
+**Motivazione**: L'accuracy standard può essere dominata dalla classe maggioritaria. La balanced accuracy:
+- Calcola accuracy per ciascuna classe separatamente
+- Fa la media (non pesata) delle due
 
-**Generalizzazione multi-classe**:
+**Esempio illustrativo**:
+
+Dataset: 950 negativi, 50 positivi.
+
+**Classificatore A** (sempre negativo):
+- Accuracy = $950/1000 = 0.95$
+- Balanced Accuracy = $\frac{0 + 1}{2} = 0.50$ ← Rivela che è casuale!
+
+**Classificatore B**:
+- TP = 40, TN = 900, FP = 50, FN = 10
+- Accuracy = $940/1000 = 0.94$
+- Balanced Accuracy = $\frac{40/50 + 900/950}{2} = \frac{0.8 + 0.947}{2} \approx 0.87$
+
+La balanced accuracy rivela correttamente che B è molto migliore di A, anche se l'accuracy semplice è simile.
+
+**Generalizzazione Multi-Classe**:
 
 $\text{Balanced Accuracy} = \frac{1}{C} \sum_{c=1}^{C} \frac{TP_c}{TP_c + FN_c}$
 
 dove $C$ è il numero di classi.
 
-## 8. Metriche Probabilistiche e Calibrazione
+**Proprietà**:
+- Range: $[0, 1]$
+- Balanced Accuracy = 0.5 per classificatore casuale (binario)
+- Non favorisce alcuna classe
+- Più interpretabile dell'MCC per utenti non tecnici
 
-### 8.1 Log Loss (Cross-Entropy Loss)
+**Confronto con Macro-F1**:
 
-La **log loss** o **cross-entropy** valuta la qualità delle probabilità predette:
+Entrambe danno peso uguale alle classi, ma:
+- Balanced Accuracy: Media di recall per classe
+- Macro-F1: Media di F1 per classe (combina precision e recall)
 
-$\text{Log Loss} = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(p_i) + (1 - y_i) \log(1 - p_i) \right]$
+### 7.4 Informedness e Markedness
 
-dove $p_i = P(y_i = 1|x_i)$ è la probabilità predetta per il campione $i$.
+Due metriche meno note ma teoricamente importanti.
 
-**Derivazione dall'entropia incrociata**: La log loss è l'entropia incrociata tra la distribuzione empirica $q(y|x)$ e la distribuzione predetta $p(y|x)$:
+**Informedness** (Bookmaker Informedness):
+$\text{Informedness} = \text{TPR} + \text{TNR} - 1 = \text{Sensitivity} + \text{Specificity} - 1$
 
-$H(q, p) = -\mathbb{E}_{y \sim q}[\log p(y|x)] = -\sum_{y} q(y|x) \log p(y|x)$
+**Interpretazione**: 
+- Quanto il classificatore è più informato del caso?
+- Probabilità di decisione informata vs casuale
+- Range: $[-1, 1]$ dove 0 = casuale
 
-Per classificazione binaria con $q(y=1|x) = y$ (0 o 1):
+**Relazione**: 
+$\text{Informedness} = 2 \cdot \text{Balanced Accuracy} - 1$
 
+**Markedness**:
+$\text{Markedness} = \text{PPV} + \text{NPV} - 1 = \text{Precision} + \text{NPV} - 1$
+
+dove NPV (Negative Predictive Value) = $\frac{TN}{TN+FN}$.
+
+**Interpretazione**: Quanto sono "marcate" (affidabili) le predizioni?
+
+**Teorema 7.1** (Relazione MCC con Informedness e Markedness):
+$\text{MCC} = \sqrt{\text{Informedness} \times \text{Markedness}}$
+
+(quando tutti i termini sono definiti e non negativi)
+
+**Dimostrazione** (sketch):
+$\text{Informedness} = \frac{TP}{P} + \frac{TN}{N} - 1$
+
+$\text{Markedness} = \frac{TP}{P^*} + \frac{TN}{N^*} - 1$
+
+Espandendo e semplificando usando le identità della confusion matrix, si ottiene che il loro prodotto geometrico è correlato a MCC². $\square$
+
+## 8. Valutazione Probabilistica e Calibrazione
+
+### 8.1 Introduzione
+
+Molti classificatori producono **probabilità** $p(y=1|x)$ anziché solo label binari. È importante valutare:
+1. **Discriminazione**: Il modello separa bene le classi? (ROC, PR)
+2. **Calibrazione**: Le probabilità predette riflettono le vere frequenze?
+
+Un modello può avere ottima discriminazione (AUC alta) ma pessima calibrazione.
+
+**Esempio**: Un modello che produce sempre $p=0.9$ per positivi e $p=0.1$ per negativi ha:
+- Perfetta discriminazione (AUC = 1)
+- Pessima calibrazione (le probabilità non riflettono l'incertezza reale)
+
+### 8.2 Log Loss (Cross-Entropy Loss)
+
+La **log loss** valuta la qualità delle probabilità predette.
+
+**Definizione** (Binaria):
+$\mathcal{L}_{\text{log}} = -\frac{1}{n} \sum_{i=1}^{n} \left[ y_i \log(p_i) + (1 - y_i) \log(1 - p_i) \right]$
+
+dove $p_i = P(y_i=1|x_i)$ è la probabilità predetta.
+
+**Derivazione**: La log loss è l'**entropia incrociata** tra distribuzione empirica e predetta:
+
+$H(q, p) = -\mathbb{E}_{y \sim q}[\log p(y|x)]$
+
+Per label binari deterministici: $q(y=1|x) = y$ (0 o 1):
 $H = -y \log p - (1-y) \log(1-p)$
 
 **Proprietà**:
-- Range: $[0, +\infty)$, dove 0 indica probabilità perfette
-- **Penalizzazione esponenziale**: Predizioni confidenti ma sbagliate sono penalizzate pesantemente
-- **Proper scoring rule**: Minimizzata dalle vere probabilità
 
-**Esempio di penalizzazione**:
-- Vera classe: $y=1$
-- Predizione confidante errata: $p=0.01$ → Loss $= -\log(0.01) \approx 4.6$
-- Predizione incerta: $p=0.5$ → Loss $= -\log(0.5) \approx 0.69$
-- Predizione corretta confidante: $p=0.99$ → Loss $= -\log(0.99) \approx 0.01$
+1. **Range**: $[0, +\infty)$ dove 0 indica probabilità perfette
+2. **Penalizzazione logaritmica**: Predizioni confidenti ma sbagliate sono penalizzate esponenzialmente
+3. **Proper scoring rule**: Minimizzata dalle vere probabilità
 
-**Collegamento con likelihood**: Minimizzare la log loss equivale a massimizzare la log-likelihood:
+**Proper Scoring Rule**: Una metrica è "proper" se è ottimizzata predicendo le vere probabilità:
+$\mathbb{E}_{y \sim p^*}[S(y, p)] \geq \mathbb{E}_{y \sim p^*}[S(y, q)] \quad \forall q$
 
-$\arg\min_\theta \text{Log Loss} = \arg\max_\theta \sum_{i=1}^{N} \log p(y_i|x_i, \theta)$
+con uguaglianza solo se $q = p^*$.
 
-### 8.2 Brier Score
+**Esempi di penalizzazione**:
 
-Il **Brier score** misura l'errore quadratico medio delle probabilità predette:
+| Vera Classe | Probabilità Predetta | Log Loss |
+|-------------|---------------------|----------|
+| $y=1$ | $p=0.99$ | $-\log(0.99) \approx 0.01$ |
+| $y=1$ | $p=0.9$ | $-\log(0.9) \approx 0.11$ |
+| $y=1$ | $p=0.5$ | $-\log(0.5) \approx 0.69$ |
+| $y=1$ | $p=0.1$ | $-\log(0.1) \approx 2.30$ |
+| $y=1$ | $p=0.01$ | $-\log(0.01) \approx 4.61$ |
 
-$\text{Brier Score} = \frac{1}{N} \sum_{i=1}^{N} (p_i - y_i)^2$
+Notare la **penalizzazione esponenziale**: predire $p=0.01$ quando $y=1$ costa 460 volte più che predire $p=0.99$!
 
-**Derivazione**: È semplicemente il MSE tra probabilità predette e label binari.
+**Collegamento con Maximum Likelihood**:
 
-**Decomposizione di Murphy**: Il Brier score può essere decomposto in tre termini:
+Minimizzare la log loss è equivalente a massimizzare la log-likelihood:
+$\arg\min_\theta \mathcal{L}_{\text{log}} = \arg\max_\theta \sum_{i=1}^{n} \log p(y_i|x_i, \theta)$
+
+Questo è il principio del **Maximum Likelihood Estimation (MLE)**.
+
+**Multi-Classe**:
+$\mathcal{L}_{\text{log}} = -\frac{1}{n} \sum_{i=1}^{n} \sum_{c=1}^{C} y_{ic} \log(p_{ic})$
+
+dove $y_{ic} = 1$ se $y_i = c$, altrimenti 0 (one-hot encoding).
+
+### 8.3 Brier Score
+
+Il **Brier score** misura l'errore quadratico delle probabilità.
+
+**Definizione** (Binaria):
+$\text{BS} = \frac{1}{n} \sum_{i=1}^{n} (p_i - y_i)^2$
+
+dove $y_i \in \{0, 1\}$.
+
+**Derivazione**: È semplicemente il **Mean Squared Error (MSE)** tra probabilità predette e label binari.
+
+**Range**: $[0, 1]$ dove 0 indica probabilità perfette.
+
+**Decomposizione di Murphy**:
+
+Il Brier score può essere decomposto in tre componenti interpretabili:
 
 $\text{BS} = \text{Reliability} - \text{Resolution} + \text{Uncertainty}$
 
 dove:
-- **Reliability**: Quanto le probabilità predette corrispondono alle frequenze osservate
-- **Resolution**: Quanto bene il modello separa i casi positivi dai negativi
-- **Uncertainty**: Varianza intrinseca dei dati (non controllabile)
+
+**Uncertainty** (varianza intrinseca):
+$\text{Uncertainty} = \bar{y}(1 - \bar{y})$
+dove $\bar{y}$ è la prevalenza. Non controllabile dal modello.
+
+**Resolution** (capacità di separare):
+$\text{Resolution} = \frac{1}{n} \sum_{k=1}^{K} n_k(\bar{y}_k - \bar{y})^2$
+Quanto bene il modello separa esempi con diverse probabilità vere. Vogliamo massimizzarlo.
+
+**Reliability** (calibrazione):
+$\text{Reliability} = \frac{1}{n} \sum_{k=1}^{K} n_k(\bar{y}_k - \bar{p}_k)^2$
+Deviazione tra probabilità predette e frequenze osservate. Vogliamo minimizzarlo.
+
+**Interpretazione**: 
+- Un buon modello ha **alta resolution** (separa bene) e **bassa reliability** (ben calibrato)
+- BS basso indica entrambe le proprietà
 
 **Confronto Log Loss vs Brier Score**:
 
 | Aspetto | Log Loss | Brier Score |
 |---------|----------|-------------|
-| Penalizzazione | Logaritmica (più severa) | Quadratica |
-| Range | $[0, \infty)$ | $[0, 1]$ |
-| Proper scoring rule | Sì | Sì |
-| Interpretabilità | Meno intuitiva | Più intuitiva (MSE) |
-| Sensibilità a errori confidenti | Molto alta | Moderata |
+| **Penalizzazione** | Logaritmica (severa) | Quadratica (moderata) |
+| **Range** | $[0, \infty)$ | $[0, 1]$ |
+| **Proper scoring** | Sì | Sì |
+| **Interpretabilità** | Meno intuitiva | Più intuitiva (MSE) |
+| **Sensibilità a errori** | Molto alta | Moderata |
+| **Decomponibile** | No (direttamente) | Sì (Murphy) |
 
-### 8.3 Calibrazione delle Probabilità
+**Quando usare quale**:
+- **Log Loss**: Training di modelli (gradient-based), quando predizioni molto sbagliate devono essere evitate
+- **Brier Score**: Valutazione finale, quando vogliamo interpretabilità e decomposizione
 
-Un modello è **ben calibrato** se le probabilità predette riflettono le vere frequenze:
+### 8.4 Calibrazione delle Probabilità
 
+Un modello è **ben calibrato** (o **affidabile**) se le probabilità predette riflettono le vere frequenze:
+
+**Definizione Formale**:
 $P(y=1 | p(y=1|x) = q) = q \quad \forall q \in [0,1]$
 
-**Interpretazione**: Se il modello assegna probabilità 0.7 a 100 esempi, circa 70 dovrebbero essere effettivamente positivi.
+**Interpretazione**: "Tra tutti gli esempi a cui assegno probabilità $q$, una frazione $q$ dovrebbe essere effettivamente positiva."
 
-#### 8.3.1 Reliability Diagram (Calibration Plot)
+**Esempio**:
+- Se predico $p=0.7$ per 100 esempi, circa 70 dovrebbero essere realmente positivi
+- Se predico $p=0.3$ per 50 esempi, circa 15 dovrebbero essere realmente positivi
 
-Per valutare la calibrazione:
+#### 8.4.1 Reliability Diagram (Calibration Plot)
 
-1. **Binning**: Dividi le predizioni in $B$ bin basati su $p_i$
-2. Per ogni bin $b$:
-   - Calcola probabilità media predetta: $\bar{p}_b = \frac{1}{|B_b|} \sum_{i \in B_b} p_i$
-   - Calcola frazione empirica di positivi: $\bar{y}_b = \frac{1}{|B_b|} \sum_{i \in B_b} y_i$
-3. Plotta $\bar{y}_b$ vs $\bar{p}_b$
+Il **reliability diagram** visualizza la calibrazione.
+
+**Procedura**:
+
+1. **Binning**: Dividi le predizioni in $B$ bin basati su $p_i$ (e.g., $B=10$ bin di ampiezza 0.1)
+
+2. **Per ogni bin $b$**:
+   - Calcola **probabilità media predetta**: $\bar{p}_b = \frac{1}{|B_b|} \sum_{i \in B_b} p_i$
+   - Calcola **frazione empirica di positivi**: $\bar{y}_b = \frac{1}{|B_b|} \sum_{i \in B_b} y_i$
+
+3. **Plot**: $\bar{y}_b$ (asse Y) vs $\bar{p}_b$ (asse X)
 
 **Interpretazione**:
-- Modello perfettamente calibrato: Punti sulla diagonale
-- Sopra la diagonale: Modello sotto-confidente
-- Sotto la diagonale: Modello sovra-confidente
 
-#### 8.3.2 Expected Calibration Error (ECE)
+- **Diagonale perfetta** ($\bar{y}_b = \bar{p}_b$ per ogni bin): Calibrazione perfetta
+- **Sopra la diagonale**: Modello **sotto-confidente** (predice probabilità troppo basse)
+- **Sotto la diagonale**: Modello **sovra-confidente** (predice probabilità troppo alte)
+- **Forma a S**: Modello sovra-confidente alle estremità, sotto-confidente al centro
 
-L'**ECE** quantifica la deviazione dalla calibrazione perfetta:
+**Esempio**:
 
-$\text{ECE} = \sum_{b=1}^{B} \frac{|B_b|}{N} |\bar{y}_b - \bar{p}_b|$
+Bin $[0.8, 0.9]$:
+- $\bar{p}_b = 0.85$ (probabilità media predetta)
+- $\bar{y}_b = 0.95$ (frazione reale di positivi)
+- Interpretazione: Il modello è sotto-confidente in questa regione
+
+#### 8.4.2 Expected Calibration Error (ECE)
+
+L'**ECE** quantifica numericamente la deviazione dalla calibrazione perfetta.
+
+**Definizione**:
+$\text{ECE} = \sum_{b=1}^{B} \frac{|B_b|}{n} |\bar{y}_b - \bar{p}_b|$
+
+dove:
+- $B$ = numero di bin
+- $|B_b|$ = numero di esempi nel bin $b$
+- $\bar{y}_b$ = frazione empirica di positivi nel bin
+- $\bar{p}_b$ = probabilità media predetta nel bin
+
+**Interpretazione**: Media pesata della deviazione assoluta dalla calibrazione perfetta.
 
 **Proprietà**:
 - Range: $[0, 1]$
 - ECE = 0 indica calibrazione perfetta
-- Usa errore assoluto (più robusto di MSE)
+- Usa errore **assoluto** (più robusto del quadratico)
 
 **Maximum Calibration Error (MCE)**:
-
 $\text{MCE} = \max_{b=1,\ldots,B} |\bar{y}_b - \bar{p}_b|$
 
-Misura la peggiore deviazione locale dalla calibrazione.
+Misura la **peggiore** deviazione locale dalla calibrazione.
 
-#### 8.3.3 Metodi di Calibrazione
+**Scelta del numero di bin**: Tipicamente $B \in \{10, 15, 20\}$. Troppo pochi → scarsa risoluzione. Troppi → bin con pochi esempi (stime instabili).
 
-**Platt Scaling**: Applica regressione logistica agli score:
+#### 8.4.3 Metodi di Calibrazione
 
-$p_{\text{calibrated}} = \frac{1}{1 + e^{-(a \cdot s + b)}}$
+Se un modello ha buona discriminazione ma scarsa calibrazione, possiamo **post-processare** le probabilità.
 
-dove $s$ è lo score non calibrato, e $a, b$ sono appresi su un validation set.
+**Platt Scaling** (Regressione Logistica):
 
-**Isotonic Regression**: Apprende una funzione monotona non-parametrica che mappa score a probabilità calibrate.
+Applica una trasformazione logistica agli score:
+$p_{\text{calib}}(y=1|x) = \frac{1}{1 + e^{-(a \cdot s(x) + b)}}$
 
-**Temperature Scaling** (per reti neurali): Scala i logit con un parametro $T$:
+dove:
+- $s(x)$ è lo score non calibrato del modello
+- $a, b$ sono parametri appresi su un **validation set**
 
-$p_i = \frac{e^{z_i/T}}{\sum_j e^{z_j/T}}$
+**Procedura**:
+1. Genera score $s_i$ per il validation set
+2. Fit regressione logistica: $y_i \sim \text{Logistic}(a \cdot s_i + b)$
+3. Applica la trasformazione agli score futuri
 
-dove $T > 1$ "addolcisce" le probabilità (meno confidenti), $T < 1$ le rende più confidenti.
+**Quando usare**: Funziona bene quando la relazione score-probabilità è monotona e approssimativamente sigmoidale (comune per SVM, Naive Bayes).
 
-### 8.4 Decisioni con Costi Asimmetrici
+**Isotonic Regression**:
 
-#### 8.4.1 Framework del Rischio Bayesiano
+Apprende una funzione **monotona crescente** non-parametrica $f: \mathbb{R} \to [0,1]$:
+$p_{\text{calib}}(y=1|x) = f(s(x))$
 
-Il **rischio bayesiano** (o rischio atteso) per una decision rule $\delta$ è:
+**Procedura**:
+1. Ordina validation set per score crescente
+2. Trova la funzione a gradini monotona che minimizza MSE con i label
+3. Applica $f$ agli score futuri
 
-$R(\delta) = \mathbb{E}_{(X,Y) \sim p(x,y)}[L(Y, \delta(X))] = \sum_x \sum_y L(y, \delta(x)) p(x,y)$
+**Quando usare**: Più flessibile di Platt, funziona per relazioni non-sigmoidali. Richiede più dati per evitare overfitting.
 
-**Distinzione chiave**:
+**Temperature Scaling** (per Neural Networks):
 
-**Rischio Empirico** (Training):
-$\hat{R}_{\text{emp}}(\delta) = \frac{1}{N} \sum_{i=1}^{N} L(y_i, \delta(x_i))$
+Scala i **logit** con un parametro temperatura $T$:
+$p_i^{\text{calib}} = \frac{e^{z_i/T}}{\sum_{j=1}^{C} e^{z_j/T}}$
 
-Calcolato sul training set, tende a sottostimare il vero rischio (overfitting).
+dove $z_i$ sono i logit (output pre-softmax).
 
-**Rischio di Generalizzazione** (Test):
-$R_{\text{true}}(\delta) = \mathbb{E}_{(X,Y) \sim p_{\text{true}}(x,y)}[L(Y, \delta(X))]$
+**Effetto di $T$**:
+- $T > 1$: **"Smoothing"** → probabilità meno confidenti (più disperse)
+- $T < 1$: **"Sharpening"** → probabilità più confidenti (più concentrate)
+- $T = 1$: Nessun cambiamento
 
-Il vero rischio sulla distribuzione sottostante (sconosciuta).
+**Apprendimento**: Trova $T$ che minimizza log loss sul validation set (tipicamente con grid search o gradient descent).
 
-**Obiettivo**: Minimizzare $R_{\text{true}}(\delta)$, stimabile via validation set o cross-validation.
+**Vantaggi**: Mantiene l'ordinamento relativo delle classi, singolo parametro globale, preserva accuracy.
 
-#### 8.4.2 Ottimizzazione della Soglia per Costi Specifici
+**Confronto metodi**:
 
-Dato un modello che produce $p(y=1|x)$, la soglia ottimale $\tau^*$ dipende dai costi:
+| Metodo | Parametri | Flessibilità | Requisiti Dati | Uso Tipico |
+|--------|-----------|--------------|----------------|------------|
+| Platt | 2 | Bassa (sigmoid) | Moderati | SVM, Naive Bayes |
+| Isotonic | Molti (piecewise) | Alta | Molti | Alberi, ensemble |
+| Temperature | 1 | Bassa (scala) | Pochi | Neural networks |
 
-**Teorema (Soglia Ottimale con Costi Asimmetrici)**:
+### 8.5 Decisioni Ottimali con Costi Asimmetrici
 
-Dato $L_{FP}$ (costo falso positivo) e $L_{FN}$ (costo falso negativo), la soglia ottimale è:
+#### 8.5.1 Framework del Rischio Bayesiano
 
-$\tau^* = \frac{L_{FP}}{L_{FP} + L_{FN}}$
+Abbiamo visto nella Sezione 3 che la decision rule ottimale minimizza il rischio atteso. Approfondiamo ora come utilizzare questo framework in pratica.
+
+**Rischio Atteso** per soglia $\tau$:
+$$R(\tau) = L_{FN} \cdot \text{FNR}(\tau) \cdot \pi + L_{FP} \cdot \text{FPR}(\tau) \cdot (1-\pi)$$
+
+dove $\pi = P(Y=1)$ è la prevalenza.
+
+**Teorema 8.1** (Soglia Ottimale per Costi Asimmetrici):
+*Data loss matrix con costi $L_{FP}$ e $L_{FN}$, la soglia ottimale è:*
+
+$$\tau^* = \frac{L_{FP} \cdot (1-\pi)}{L_{FP} \cdot (1-\pi) + L_{FN} \cdot \pi}$$
 
 **Dimostrazione**:
 
-Il rischio atteso per soglia $\tau$ è:
+Dal Teorema 3.2, classifichiamo come positivo quando:
+$$\frac{p(y=1|x)}{p(y=0|x)} > \frac{L_{FP}}{L_{FN}}$$
 
-$R(\tau) = L_{FN} \cdot P(Y=1, \hat{Y}=0) + L_{FP} \cdot P(Y=0, \hat{Y}=1)$
+Riscrivendo in termini di $p(y=1|x) = p$:
+$$\frac{p}{1-p} > \frac{L_{FP}}{L_{FN}}$$
 
-$= L_{FN} \int_{p(y=1|x) \leq \tau} p(y=1|x) p(x) dx + L_{FP} \int_{p(y=1|x) > \tau} p(y=0|x) p(x) dx$
+Risolvendo per $p$:
+$$p > \frac{L_{FP}}{L_{FP} + L_{FN}}$$
 
-Derivando rispetto a $\tau$ e usando il calcolo variazionale:
+Questa è la soglia ottimale quando $\pi = 0.5$. Per prevalenza arbitraria, la soglia diventa:
+$$\tau^* = \frac{L_{FP} \cdot (1-\pi)}{L_{FP} \cdot (1-\pi) + L_{FN} \cdot \pi}$$
 
-$\frac{\partial R}{\partial \tau} = 0 \Rightarrow L_{FN} \cdot \tau = L_{FP} \cdot (1-\tau)$
+$\square$
 
-$\Rightarrow \tau^* = \frac{L_{FP}}{L_{FP} + L_{FN}}$ $\square$
+**Casi speciali**:
 
-**Esempi applicativi**:
+1. **Costi uguali** ($L_{FP} = L_{FN} = 1$):
+   $$\tau^* = \frac{1-\pi}{1-\pi+\pi} = 1-\pi$$
+   
+2. **Prevalenza bilanciata** ($\pi = 0.5$):
+   $$\tau^* = \frac{L_{FP}}{L_{FP} + L_{FN}}$$
 
-1. **Diagnosi medica (screening cancro)**:
-   - $L_{FN} = 100$ (mancata diagnosi → morte)
-   - $L_{FP} = 1$ (falso allarme → biopsia inutile)
-   - $\tau^* = \frac{1}{101} \approx 0.01$ → Soglia molto bassa, massimizza recall
+**Esempio pratico**:
 
-2. **Sistema anti-spam**:
-   - $L_{FN} = 1$ (spam in inbox)
-   - $L_{FP} = 10$ (email legittima in spam)
-   - $\tau^* = \frac{10}{11} \approx 0.91$ → Soglia alta, massimizza precision
+Screening medico: $L_{FN} = 1000$ (vita a rischio), $L_{FP} = 1$ (test aggiuntivo), $\pi = 0.01$.
 
-3. **Rilevamento frodi bancarie**:
-   - $L_{FN} = 1000$ (frode non rilevata)
-   - $L_{FP} = 5$ (transazione legittima bloccata)
-   - $\tau^* = \frac{5}{1005} \approx 0.005$ → Soglia molto bassa
+$$\tau^* = \frac{1 \cdot 0.99}{1 \cdot 0.99 + 1000 \cdot 0.01} = \frac{0.99}{10.99} \approx 0.09$$
 
-#### 8.4.3 Ottimizzazione Multi-Obiettivo
+Soglia molto bassa → massimizziamo la sensibilità, accettando molti falsi positivi.
 
-Quando vogliamo ottimizzare per una metrica specifica (es. F1, F2), possiamo cercare la soglia che la massimizza:
+### 8.5.2 Cost-Sensitive Learning
 
-$\tau^*_{F_\beta} = \arg\max_\tau F_\beta(\tau)$
+Invece di ottimizzare la soglia post-hoc, possiamo integrare i costi **durante il training**.
 
-Questo richiede una ricerca (grid search o ottimizzazione) sul validation set.
+**Weighted Loss**:
+$$\mathcal{L}_{\text{weighted}} = -\frac{1}{n}\sum_{i=1}^n \left[w_1 \cdot y_i\log(p_i) + w_0 \cdot (1-y_i)\log(1-p_i)\right]$$
 
-**Algoritmo**:
-```
-Input: Validation set {(x_i, y_i, p_i)}_{i=1}^M
-1. For τ in [0, 1] con step 0.01:
-2.     Compute ŷ_i = I(p_i > τ)
-3.     Compute F_β(τ)
-4. Return τ* = argmax_τ F_β(τ)
-```
+dove i pesi sono proporzionali ai costi:
+$$w_1 = L_{FN}, \quad w_0 = L_{FP}$$
 
-## 9. Metriche Multi-Classe
+**Class Rebalancing**:
+Alternativamente, possiamo ri-pesare le classi per compensare lo sbilanciamento:
+$$w_c = \frac{n}{C \cdot n_c}$$
+dove $C$ è il numero di classi e $n_c$ il numero di esempi della classe $c$.
+
+## 9. Classificazione Multi-Classe
 
 ### 9.1 Estensione della Matrice di Confusione
 
 Per $C$ classi, la matrice di confusione è $C \times C$:
 
-$M_{ij} = |\{k : y_k = i \land \hat{y}_k = j\}|$
+$$\text{CM}[i,j] = \text{numero di esempi con classe reale } i \text{ predetti come } j$$
 
-Elementi sulla diagonale sono predizioni corrette, elementi fuori diagonale sono errori.
+**Diagonale**: Predizioni corrette
+**Fuori diagonale**: Errori
 
-### 9.2 Strategie di Aggregazione
+### 9.2 Metriche Per-Classe
 
-#### 9.2.1 Macro-Averaging
+Per ogni classe $c$, definiamo:
 
-Calcola la metrica per ogni classe separatamente, poi fa la media:
+**Precision per classe $c$**:
+$$\text{Precision}_c = \frac{TP_c}{TP_c + FP_c} = \frac{\text{CM}[c,c]}{\sum_i \text{CM}[i,c]}$$
 
-$\text{Metric}_{\text{macro}} = \frac{1}{C} \sum_{c=1}^{C} \text{Metric}_c$
+**Recall per classe $c$**:
+$$\text{Recall}_c = \frac{TP_c}{TP_c + FN_c} = \frac{\text{CM}[c,c]}{\sum_j \text{CM}[c,j]}$$
 
-**Proprietà**:
-- **Peso uguale a tutte le classi**: Ogni classe contribuisce equamente
-- **Sensibile a classi rare**: Una classe con pochi esempi ha lo stesso peso di una grande
-- **Uso**: Quando tutte le classi sono ugualmente importanti
+**F1 per classe $c$**:
+$$F1_c = \frac{2 \cdot \text{Precision}_c \cdot \text{Recall}_c}{\text{Precision}_c + \text{Recall}_c}$$
+
+### 9.3 Aggregazione: Macro vs Micro vs Weighted
+
+**Macro-Average** (media semplice):
+$$\text{Macro-Precision} = \frac{1}{C}\sum_{c=1}^C \text{Precision}_c$$
+
+**Interpretazione**: Ogni classe ha peso uguale, indipendentemente dalla sua frequenza.
+**Uso**: Dataset bilanciati, tutte le classi sono ugualmente importanti.
+
+**Micro-Average** (aggregazione globale):
+$$\text{Micro-Precision} = \frac{\sum_{c=1}^C TP_c}{\sum_{c=1}^C (TP_c + FP_c)}$$
+
+**Interpretazione**: Ogni esempio ha peso uguale.
+**Uso**: Dataset sbilanciati, classi maggioritarie sono più importanti.
+
+**Weighted-Average** (pesata per frequenza):
+$$\text{Weighted-Precision} = \sum_{c=1}^C \frac{n_c}{n} \cdot \text{Precision}_c$$
+
+**Interpretazione**: Peso proporzionale alla dimensione della classe.
+**Uso**: Compromesso tra macro e micro.
 
 **Esempio**:
-- Classe 1: 10 esempi, Precision = 0.5
-- Classe 2: 1000 esempi, Precision = 0.9
-- Macro-Precision = $(0.5 + 0.9)/2 = 0.7$
 
-#### 9.2.2 Micro-Averaging
+3 classi: A (100 esempi), B (50 esempi), C (10 esempi)
 
-Aggrega i conteggi globalmente prima di calcolare la metrica:
+| Classe | Precision | Recall |
+|--------|-----------|--------|
+| A | 0.90 | 0.85 |
+| B | 0.80 | 0.75 |
+| C | 0.50 | 0.40 |
 
-$\text{Precision}_{\text{micro}} = \frac{\sum_{c=1}^{C} TP_c}{\sum_{c=1}^{C} (TP_c + FP_c)}$
+- **Macro-Precision** = $(0.90 + 0.80 + 0.50)/3 = 0.73$
+- **Micro-Precision** = $(90 + 40 + 5)/(100 + 50 + 10) = 0.84$
+- **Weighted-Precision** = $0.90 \cdot \frac{100}{160} + 0.80 \cdot \frac{50}{160} + 0.50 \cdot \frac{10}{160} = 0.85$
 
-$\text{Recall}_{\text{micro}} = \frac{\sum_{c=1}^{C} TP_c}{\sum_{c=1}^{C} (TP_c + FN_c)}$
+### 9.4 One-vs-Rest e One-vs-One
 
-**Proprietà**:
-- **Peso proporzionale alla dimensione**: Classi grandi dominano
-- **Equivale all'accuracy** per classificazione multi-classe bilanciata
-- **Uso**: Quando si vuole enfatizzare le performance sulle classi più comuni
+**One-vs-Rest (OvR)**:
+- Per ogni classe $c$, creiamo un problema binario: classe $c$ vs tutte le altre
+- Calcoliamo metriche binarie per ciascun problema
+- Aggreghiamo con macro/micro/weighted
 
-**Esempio** (stesso di prima):
-- Micro-Precision = $(TP_1 + TP_2)/(TP_1 + TP_2 + FP_1 + FP_2)$
-- Sarà vicino a 0.9 (dominato dalla classe 2)
+**One-vs-One (OvO)**:
+- Per ogni coppia di classi $(c_i, c_j)$, creiamo un classificatore binario
+- Totale: $\binom{C}{2} = \frac{C(C-1)}{2}$ classificatori
+- Utile per SVM multi-classe
 
-#### 9.2.3 Weighted-Averaging
+### 9.5 Matthews Correlation Coefficient Multi-Classe
 
-Pesa le metriche per classe in base alla loro frequenza:
+L'MCC può essere esteso al caso multi-classe:
 
-$\text{Metric}_{\text{weighted}} = \sum_{c=1}^{C} w_c \cdot \text{Metric}_c$
+$$\text{MCC} = \frac{\sum_{k,l,m} C_{kk}C_{lm} - C_{kl}C_{mk}}{\sqrt{\sum_k\left(\sum_l C_{kl}\right)\left(\sum_{k'\neq k}\sum_{l'}C_{k'l'}\right)} \cdot \sqrt{\sum_k\left(\sum_l C_{lk}\right)\left(\sum_{k'\neq k}\sum_{l'}C_{l'k'}\right)}}$$
 
-dove $w_c = \frac{N_c}{N}$ è la proporzione di esempi nella classe $c$.
+dove $C$ è la matrice di confusione.
 
-**Proprietà**:
-- **Compromesso**: Via di mezzo tra macro e micro
-- **Uso**: Quando si vuole dare importanza proporzionale ma non esclusiva alle classi grandi
+**Interpretazione**: Generalizzazione del coefficiente di correlazione al caso multi-classe.
 
-**Confronto**:
+**Range**: $[-1, +1]$ come nel caso binario.
 
-| Strategia | Peso classi | Sensibilità sbilanciamento | Uso tipico |
-|-----------|-------------|---------------------------|------------|
-| Macro | Uguale | Alta | Classi ugualmente importanti |
-| Micro | Proporzionale (volume) | Bassa | Enfasi su classi comuni |
-| Weighted | Proporzionale (frequenza) | Media | Compromesso generale |
+## 10. Guida Pratica alla Scelta delle Metriche
 
-### 9.3 Cohen's Kappa Multi-Classe
-
-Estensione diretta della formula binaria:
-
-$\kappa = \frac{p_o - p_e}{1 - p_e}$
-
-dove ora:
-
-$p_o = \frac{\sum_{c=1}^{C} M_{cc}}{N} = \frac{\text{Trace}(M)}{N}$
-
-$p_e = \sum_{c=1}^{C} \frac{N_c \cdot \hat{N}_c}{N^2}$
-
-dove $N_c = \sum_j M_{cj}$ (veri positivi classe $c$) e $\hat{N}_c = \sum_i M_{ic}$ (predetti classe $c$).
-
-**Interpretazione**: Stesso range e interpretazione del caso binario.
-
-### 9.4 Matthews Correlation Coefficient Multi-Classe
-
-La generalizzazione del MCC per $C$ classi è il **R_K coefficient**:
-
-$\text{MCC}_{\text{multi}} = \frac{\sum_c M_{cc} \cdot N - \sum_c N_c \hat{N}_c}{\sqrt{N^2 - \sum_c \hat{N}_c^2} \cdot \sqrt{N^2 - \sum_c N_c^2}}$
-
-**Proprietà**:
-- Range: $[-1, +1]$
-- Riduce al MCC binario per $C=2$
-- Simmetrico e invariante a permutazioni di classe
-
-### 9.5 Curve PR Multi-Classe
-
-#### 9.5.1 One-vs-Rest (OvR)
-
-Per ogni classe $c$, trattiamo il problema come binario:
-- Positivi: Classe $c$
-- Negativi: Tutte le altre classi
-
-Generiamo $C$ curve PR separate, una per classe.
-
-**Aggregazione**:
-
-**Macro-average PR**: Media delle PR curve per ogni classe.
-
-**Micro-average PR**: Pool di tutti i TP, FP, FN attraverso le classi:
-
-$\text{Precision}_{\text{micro}} = \frac{\sum_{c} TP_c}{\sum_c (TP_c + FP_c)}$
-
-$\text{Recall}_{\text{micro}} = \frac{\sum_{c} TP_c}{\sum_c (TP_c + FN_c)}$
-
-Plottiamo questi valori globali per generare un'unica curva.
-
-**Interpretazione**:
-- Macro: Peso uguale a ogni classe
-- Micro: Peso proporzionale alla frequenza, dominato da classi grandi
-
-## 10. Interpretazioni Statistiche Avanzate
-
-### 10.1 ROC come Test di Mann-Whitney U
-
-**Teorema (Equivalenza AUC e Mann-Whitney U)**:
-
-L'AUC è equivalente alla statistica U del test di Mann-Whitney:
-
-$\text{AUC} = \frac{U}{n_+ \cdot n_-}$
-
-dove:
-- $n_+$ = numero di esempi positivi
-- $n_-$ = numero di esempi negativi
-- $U = \sum_{i=1}^{n_+} \sum_{j=1}^{n_-} \mathbb{I}(f(x_i^+) > f(x_j^-))$
-
-**Interpretazione**: $U$ conta il numero di coppie $(x_+, x_-)$ dove lo score del positivo supera quello del negativo.
-
-**Dimostrazione** (sketch):
-
-Per costruzione, AUC è la probabilità che un esempio positivo casuale abbia score maggiore di un negativo casuale:
-
-$\text{AUC} = P(f(X_+) > f(X_-))$
-
-Questo può essere stimato campionariamente come:
-
-$\hat{\text{AUC}} = \frac{1}{n_+ n_-} \sum_{i=1}^{n_+} \sum_{j=1}^{n_-} \mathbb{I}(f(x_i^+) > f(x_j^-)) = \frac{U}{n_+ n_-}$
-
-La statistica U è esattamente questa stima. $\square$
-
-**Implicazione**: Il test di Mann-Whitney U per verificare se due distribuzioni sono diverse è equivalente a testare se AUC ≠ 0.5.
-
-### 10.2 PR come Metrica per Dati Sbilanciati
-
-**Teorema (Sensibilità al Prior)**:
-
-Dato uno shift nella prevalenza da $\pi_{\text{train}}$ a $\pi_{\text{test}}$:
-
-- **ROC-AUC**: Invariante (dipende solo da $p(x|y)$)
-- **PR-AUC**: Cambia (dipende da $p(y|x) \propto p(x|y)p(y)$)
-
-**Dimostrazione**:
-
-ROC usa TPR e FPR che sono entrambi condizionati su $y$:
-
-$\text{TPR} = P(\hat{y}=1|y=1) \quad \text{FPR} = P(\hat{y}=1|y=0)$
-
-Questi dipendono solo da $p(x|y)$ e dalla soglia, non dalla prevalenza $p(y)$.
-
-PR usa Precision che dipende dal prior:
-
-$\text{Precision} = P(y=1|\hat{y}=1) = \frac{P(\hat{y}=1|y=1)P(y=1)}{P(\hat{y}=1)}$
-
-Applicando Bayes, vediamo che Precision dipende esplicitamente da $P(y=1) = \pi$. $\square$
-
-**Implicazione pratica**: Se la prevalenza cambia tra training e test, la curva PR sarà diversa, ma la ROC rimarrà la stessa. Questo rende PR più "onesta" per dataset molto sbilanciati.
-
-### 10.3 Expected Precision in Ranking
-
-Per sistemi di ranking (information retrieval), la curva PR può essere interpretata come:
-
-$\text{Expected Precision at random recall level}$
-
-Se scegliamo casualmente un livello di recall $r \in [0,1]$, la precision media attesa è:
-
-$\mathbb{E}[P(r)] = \int_0^1 P(r) dr = \text{AP}$
-
-Questo giustifica l'uso di Average Precision come metrica singola.
-
-## 11. Linee Guida Pratiche per la Scelta delle Metriche
-
-### 11.1 Albero Decisionale per la Scelta
+### 10.1 Albero Decisionale
 
 ```
-START
+Dataset bilanciato?
+├─ Sì
+│  ├─ Interessa solo accuracy? → Accuracy, Balanced Accuracy
+│  └─ Serve probabilità? → Log Loss, Brier Score, Calibration
 │
-├─ Dataset bilanciato?
-│  ├─ SÌ → Accuracy, F1, ROC-AUC
-│  └─ NO ↓
-│
-├─ Classe positiva molto rara (< 5%)?
-│  ├─ SÌ → PR-AUC, F2, Recall @ fixed FPR
-│  └─ NO → F1, Balanced Accuracy, MCC
-│
-├─ Costi FP e FN asimmetrici?
-│  ├─ SÌ → Ottimizza soglia per costo totale
-│  │       Usa F-beta appropriato
-│  └─ NO → F1-Score
-│
-├─ Interessa il ranking?
-│  ├─ SÌ → AUC-ROC o AUC-PR, Precision@K
-│  └─ NO → Metriche basate su soglia fissa
-│
-├─ Probabilità predette importanti?
-│  ├─ SÌ → Log Loss, Brier Score, ECE
-│  └─ NO → Metriche basate su label hard
-│
-└─ Multi-classe?
-   ├─ Classi bilanciate → Micro-averaged metrics
-   ├─ Classi sbilanciate → Macro-averaged metrics
-   └─ Classe importante specifica → OvR per quella classe
+└─ No (sbilanciato)
+   ├─ Qual è la classe di interesse?
+   │  ├─ Classe rara (positiva)
+   │  │  ├─ FN molto costosi? → Recall, F2, PR-AUC
+   │  │  ├─ FP molto costosi? → Precision, F0.5
+   │  │  └─ Bilanciamento? → F1, MCC
+   │  │
+   │  └─ Entrambe le classi importanti → Balanced Accuracy, MCC, Cohen's Kappa
+   │
+   └─ Serve valutazione threshold-independent? → ROC-AUC (se moderatamente sbilanciato), PR-AUC (se molto sbilanciato)
 ```
 
-### 11.2 Metriche per Scenario
+### 10.2 Raccomandazioni per Dominio
 
-#### Scenario: Diagnosi Medica
-**Priorità**: Minimizzare falsi negativi
-- **Metriche primarie**: Recall, F2-Score, FNR
-- **Metriche secondarie**: Specificity (per evitare troppi falsi allarmi)
-- **Soglia**: Ottimizzare per costo $L_{FN} \gg L_{FP}$
+**Medicina (Screening)**:
+- **Primarie**: Recall, Sensitivity, F2
+- **Secondarie**: Specificity, PR-AUC
+- **Perché**: FN (mancata diagnosi) sono critici
 
-#### Scenario: Spam Detection
-**Priorità**: Minimizzare falsi positivi
-- **Metriche primarie**: Precision, F0.5-Score, FPR
-- **Metriche secondarie**: Recall (catturare abbastanza spam)
-- **Soglia**: Alta, ottimizzare per costo $L_{FP} > L_{FN}$
+**Medicina (Diagnostica Definitiva)**:
+- **Primarie**: Balanced Accuracy, MCC, F1
+- **Secondarie**: Specificity, PPV
+- **Perché**: Bilanciamento tra evitare trattamenti inutili e non perdere malati
 
-#### Scenario: Information Retrieval
-**Priorità**: Ranking corretto
-- **Metriche primarie**: AUC-PR, MAP, NDCG, Precision@K
-- **Metriche secondarie**: Recall@K
-- **Nota**: Non serve soglia fissa, importa l'ordinamento
+**Fraud Detection**:
+- **Primarie**: Precision@K, PR-AUC, F1.5
+- **Secondarie**: Recall, ROC-AUC
+- **Perché**: FN costosi (perdite economiche), ma serve precision ragionevole
 
-#### Scenario: Rilevamento Frodi (Rare)
-**Priorità**: Catturare frodi, dataset molto sbilanciato
-- **Metriche primarie**: PR-AUC, Recall @ FPR fissato, F2
-- **Metriche secondarie**: Precision (per evitare overhead investigativo)
-- **Nota**: ROC-AUC può essere ingannevole
+**Spam Filtering**:
+- **Primarie**: Precision, F0.5
+- **Secondarie**: FPR, Specificity
+- **Perché**: FP (email legittime in spam) sono inaccettabili
 
-#### Scenario: Multi-Classe Sbilanciato
-**Priorità**: Performance su tutte le classi
-- **Metriche primarie**: Macro F1, Balanced Accuracy, MCC multi-classe
-- **Metriche secondarie**: Confusion matrix, per-class precision/recall
-- **Nota**: Micro-averaging maschera performance su classi rare
+**Information Retrieval**:
+- **Primarie**: MAP (Mean Average Precision), NDCG, Precision@K
+- **Secondarie**: Recall@K, F1
+- **Perché**: Focus su top-K risultati e qualità del ranking
 
-### 11.3 Checklist Completa per Valutazione
+**Computer Vision (Classification)**:
+- **Bilanciato**: Top-1 Accuracy, Top-5 Accuracy
+- **Sbilanciato**: Macro-F1, Per-class metrics
+- **Perché**: Dipende dal numero e bilanciamento delle classi
 
-- [ ] **Analisi Esplorativa**
-  - [ ] Calcolare prevalenza di classe
-  - [ ] Visualizzare matrice di confusione
-  - [ ] Identificare pattern di errore
+**Sentiment Analysis / NLP**:
+- **Primarie**: Macro-F1, Weighted-F1
+- **Secondarie**: Per-class Precision/Recall, Confusion Matrix
+- **Perché**: Classi spesso sbilanciate, tutte le sentiment importanti
 
-- [ ] **Metriche Base**
-  - [ ] Accuracy (solo se bilanciato)
-  - [ ] Precision, Recall, F1
-  - [ ] Specificity, FPR, FNR
+### 10.3 Checklist di Valutazione
 
-- [ ] **Metriche Robuste**
-  - [ ] MCC o Cohen's Kappa
-  - [ ] Balanced Accuracy (se sbilanciato)
+Prima di scegliere le metriche, rispondi a:
 
-- [ ] **Curve e AUC**
-  - [ ] ROC curve e AUC-ROC
-  - [ ] PR curve e AUC-PR (se sbilanciato)
-  - [ ] Identificare EER
+1. **Dataset è bilanciato?**
+   - [ ] Sì (Accuracy OK)
+   - [ ] No (evitare Accuracy)
 
-- [ ] **Probabilità**
-  - [ ] Log Loss o Brier Score
-  - [ ] Reliability diagram
-  - [ ] ECE
+2. **Costi asimmetrici?**
+   - [ ] FP più costosi → enfatizza Precision
+   - [ ] FN più costosi → enfatizza Recall
+   - [ ] Bilanciati → F1, MCC
 
-- [ ] **Ottimizzazione Soglia**
-  - [ ] Grid search per F-beta ottimale
-  - [ ] Soglia per costo specifico (se noto)
+3. **Soglia fissa o variabile?**
+   - [ ] Fissa → metriche a soglia fissata (Precision, Recall, F1)
+   - [ ] Variabile → curve (ROC, PR)
 
-- [ ] **Validazione**
-  - [ ] Cross-validation (almeno 5-fold)
-  - [ ] Riportare media ± std
-  - [ ] Test su hold-out set
+4. **Serve calibrazione?**
+   - [ ] Sì → Log Loss, Brier Score, ECE, Reliability Diagram
+   - [ ] No → solo discriminazione
 
-- [ ] **Documentazione**
-  - [ ] Scelta metriche giustificata
-  - [ ] Limitazioni discusse
-  - [ ] Intervalli di confidenza
+5. **Multi-classe?**
+   - [ ] Macro (classi ugualmente importanti)
+   - [ ] Micro (esempi ugualmente importanti)
+   - [ ] Weighted (compromesso)
 
-## 12. Conclusioni
+### 10.4 Metriche da Riportare Sempre
 
-### 12.1 Principi Fondamentali
+**Minimo indispensabile**:
+1. Matrice di confusione (visualizzazione completa)
+2. Almeno 2 metriche complementari (e.g., Precision + Recall, o F1 + MCC)
+3. Curva appropriata (ROC o PR) con AUC
 
-1. **Non esiste una metrica universale**: Ogni problema richiede metriche appropriate al contesto
+**Report completo**:
+1. Confusion matrix
+2. Precision, Recall, F1
+3. ROC curve + AUC-ROC
+4. PR curve + AUC-PR (se sbilanciato)
+5. MCC o Cohen's Kappa
+6. Calibration plot + ECE (se probabilistico)
+7. Per-class metrics (se multi-classe)
 
-2. **Usa metriche multiple**: Una singola metrica può essere ingannevole
+### 10.5 Errori Comuni da Evitare
 
-3. **Considera i costi**: FP e FN hanno spesso costi asimmetrici nel mondo reale
+**❌ Usare solo Accuracy su dataset sbilanciato**
+- Un modello dummy può avere accuracy alta
 
-4. **Dataset sbilanciati richiedono metriche speciali**: Accuracy e ROC-AUC possono mascherare problemi
+**❌ Ignorare la calibrazione**
+- AUC alta non implica probabilità ben calibrate
 
-5. **Le probabilità contano**: Se il modello produce probabilità, valutale con metriche appropriate
+**❌ Ottimizzare solo una metrica**
+- Trade-off impliciti possono nascondere problemi
 
-6. **Visualizza sempre**: Curve (ROC, PR), matrici di confusione e reliability plots forniscono insight
+**❌ Non considerare i costi reali**
+- FP e FN raramente hanno stesso costo
 
-7. **Valida robustamente**: Cross-validation e intervalli di confidenza sono essenziali
+**❌ Confrontare modelli con metriche diverse**
+- Usare stesse metriche per confronti fair
+
+**❌ Dimenticare intervalli di confidenza**
+- Report puntuale senza incertezza è fuorviante
+
+**❌ Usare test set per tuning**
+- Porta a overfitting ottimistico
+
+**✅ Best Practices**:
+1. Sempre riportare confusion matrix
+2. Usare multiple metriche complementari
+3. Considerare i costi del dominio applicativo
+4. Validare calibrazione se si usano probabilità
+5. Report con confidence intervals (bootstrap o cross-validation)
+6. Mantenere test set completamente holdout
+
+## Riferimenti e Risorse
+
+**Paper fondamentali**:
+- Provost, F., Fawcett, T. (2001). "Robust Classification for Imprecise Environments"
+- Davis, J., Goadrich, M. (2006). "The Relationship Between Precision-Recall and ROC Curves"
+- Chicco, D., Jurman, G. (2020). "The advantages of the Matthews correlation coefficient (MCC) over F1 score and accuracy in binary classification evaluation"
+
+**Libri consigliati**:
+- Murphy, K. P. (2022). "Probabilistic Machine Learning: An Introduction"
+- Hastie, T., Tibshirani, R., Friedman, J. (2009). "The Elements of Statistical Learning"
+- Bishop, C. M. (2006). "Pattern Recognition and Machine Learning"
+
+**Strumenti software**:
+- `sklearn.metrics` (Python): Implementazione completa
+- `ROCR` (R): Visualizzazione ROC/PR
+- `calibration` (Python): Post-processing calibration
