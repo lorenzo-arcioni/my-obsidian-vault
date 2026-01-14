@@ -26,6 +26,8 @@ Il tratto biometrico dovrebbe essere posseduto da ogni individuo. In altre parol
 - **Unicità**
 Il tratto biometrico deve essere sufficientemente diverso da persona a persona. Idealmente, ogni individuo dovrebbe poter essere distinto da qualsiasi altro sulla base di quella caratteristica, riducendo al minimo il rischio di ambiguità o collisioni.
 
+   *Nota: una assunzione base dei sistemi biometrici è che ogni persona è unica.*
+
 - **Permanenza**
 Una buona caratteristica biometrica non dovrebbe variare significativamente nel tempo. Anche se piccoli cambiamenti sono inevitabili, il tratto deve rimanere stabile abbastanza a lungo da garantire un’identificazione affidabile nel corso degli anni.
 
@@ -73,6 +75,41 @@ Acquisizione → Estrazione Feature → Matching → Decisione
 
 Il processo inizia con l'**acquisizione** tramite un sensore specifico (telecamera per il volto, scanner per impronte, microfono per la voce). Questo passaggio è critico: un'acquisizione di bassa qualità compromette irrimediabilmente le fasi successive. Successivamente, il modulo di **estrazione feature** analizza il campione grezzo e ne estrae le caratteristiche distintive, memorizzate come template biometrico. Il **matcher** confronta poi il template del probe (campione da verificare) con i template memorizzati nel database, producendo uno score di similarità o distanza. Infine, la **decisione** viene presa confrontando questo score con una soglia predefinita.
 
+#### Tipologie di Utenti
+
+Il comportamento dell’utente influenza in modo significativo il funzionamento e la sicurezza del sistema biometrico. È possibile distinguere diverse categorie:
+
+- **Utenti cooperativi**: l’utente è interessato a essere riconosciuto correttamente (es. autenticazione volontaria). Un impostore in questo caso tenta di farsi riconoscere come un utente legittimo.
+- **Utenti non cooperativi**: l’utente è indifferente o ostile al riconoscimento (es. sorveglianza). Un impostore può tentare di evitare deliberatamente il riconoscimento.
+- **Utenti pubblici / privati**:
+  - *Pubblici*: clienti o utenti esterni (es. controllo accessi in aeroporti).
+  - *Privati*: dipendenti o membri interni di un’organizzazione.
+- **Utenti frequenti / occasionali**:
+  - *Used*: utilizzano il sistema frequentemente, con template aggiornati e stabili.
+  - *Non-used*: interagiscono raramente con il sistema, aumentando la probabilità di mismatch.
+- **Utenti consapevoli / inconsapevoli**:
+  - *Aware*: sanno di essere sottoposti a riconoscimento biometrico.
+  - *Not aware*: il riconoscimento avviene in modo trasparente o passivo.
+
+Queste differenze influenzano la qualità dell’acquisizione, la variabilità intra-classe e la robustezza richiesta al sistema.
+
+#### Tipologie di Setting di Acquisizione
+
+Le condizioni operative del sistema hanno un impatto diretto sulle prestazioni biometriche:
+
+- **Setting controllati**:
+  - condizioni ambientali controllate (illuminazione, posa, distanza)
+  - distorsioni ridotte
+  - possibilità di scartare template difettosi
+  - acquisizione ripetibile
+- **Setting non controllati o sotto-controllati**:
+  - condizioni ambientali variabili
+  - presenza di rumore, occlusioni, blur
+  - template con diversi livelli di distorsione
+  - possibilità di scartare template difettosi, ma **senza possibilità di ripetere la cattura**
+
+I sistemi operanti in setting non controllati devono essere più robusti e tolleranti alla variabilità.
+
 **Vulnerabilità agli attacchi (spoofing)**:
 
 I sistemi biometrici possono essere attaccati a diversi livelli:
@@ -93,6 +130,19 @@ Acquisizione ed elaborazione dei dati biometrici dell'utente per l'utilizzo da p
 
 Acquisizione ed elaborazione dei dati biometrici dell'utente al fine di fornire una decisione di autenticazione basata sul risultato di un processo di abbinamento tra il modello memorizzato e quello corrente. (verifica 1:1, identificazione 1:N)
 
+#### Modalità Tradizionali di Riconoscimento e Autenticazione
+
+Attualmente, il riconoscimento (spesso finalizzato all’autenticazione) viene effettuato secondo due principali modalità:
+
+- **Qualcosa che si possiede**: una carta, un badge o un documento.  
+  Tuttavia, questi oggetti possono essere **persi, rubati o copiati**. In realtà, il sistema non autentica la persona, ma **l’oggetto** in suo possesso.
+
+- **Qualcosa che si conosce**: una password personale o condivisa.  
+  Anche in questo caso esistono diverse criticità: la password può essere **indovinata, carpita o dimenticata**. Inoltre, una password facile da ricordare è spesso anche **facile da indovinare**.
+
+- **Basato su ciò che si è**: caratteristiche **biometriche** dell’individuo, come tratti fisici (impronte digitali, volto, iride) o comportamentali (voce, dinamica di digitazione, andatura).  
+  In questo caso, l’autenticazione è legata direttamente all’identità della persona, riducendo la dipendenza da oggetti o informazioni memorizzate.
+
 ### 1.3 Modalità Operative
 
 I sistemi biometrici operano principalmente in tre modalità, ciascuna con caratteristiche e metriche di valutazione specifiche:
@@ -109,6 +159,15 @@ I sistemi biometrici operano principalmente in tre modalità, ciascuna con carat
 - Decisioni: (1) il soggetto è/non è in galleria, (2) se sì, quale identità
 - Esempio pratico: Sorveglianza in aeroporto - il sistema cerca di identificare se una persona è presente in una watchlist
 
+**Watch list**:
+  - Il sistema possiede una lista di soggetti di interesse
+  - Verifica se il *probe* appartiene alla lista
+
+  Tipologie di watch list:
+  - **White list**: i soggetti presenti nella lista sono **autorizzati** e l’accesso viene consentito
+  - **Black list**: i soggetti presenti nella lista sono **non autorizzati**; il riconoscimento può generare un **allarme**
+
+
 **Identificazione Closed-Set (1:N forzata)**:
 - Assunzione: il probe appartiene sicuramente alla galleria
 - Sistema restituisce sempre un'identità
@@ -117,7 +176,68 @@ I sistemi biometrici operano principalmente in tre modalità, ciascuna con carat
 
 La distinzione tra queste modalità è cruciale perché determina quali errori sono possibili e come vengono misurate le performance del sistema.
 
-### 1.4 Notazione e Terminologia
+### 1.4 Tipologie di Caratteristiche Biometriche
+
+I sistemi biometrici si basano sull’analisi di **caratteristiche distintive** degli individui, che possono essere classificate ad **alto livello** in base alla loro natura e stabilità nel tempo. In generale, le caratteristiche biometriche si suddividono in **fisiologiche**, **comportamentali** e **miste**, a cui si affiancano le **tracce biologiche**.
+
+#### Caratteristiche Fisiologiche (Physiological Features)
+
+Sono legate alla struttura fisica dell’individuo e tendono a essere **stabili nel tempo**.
+
+- **Biometria delle impronte digitali** (*Fingerprints biometrics*): riconoscimento basato sui pattern delle creste papillari.
+- **Biometria oculare** (*Eye biometrics*):
+  - riconoscimento dell’**iride**
+  - riconoscimento della **retina**
+- **Biometria facciale** (*Face biometrics*): riconoscimento del volto tramite immagini nel visibile o all’infrarosso.
+- **Biometria dell’orecchio** (*Ear biometrics*): riconoscimento basato sulla forma e struttura dell’orecchio.
+- **Biometria della mano** (*Hand biometrics*): riconoscimento tramite la geometria delle dita e della mano.
+
+#### Caratteristiche Comportamentali (Behavioural Features)
+
+Descrivono il **comportamento** dell’individuo piuttosto che la sua struttura fisica e sono generalmente più **variabili**.
+
+- **Biometria della firma** (*Signature biometrics*):  
+  - firma statica  
+  - firma dinamica (velocità, pressione, traiettoria)
+- **Dinamica di digitazione** (*Keystroke dynamics*): pattern di pressione e temporizzazione durante la digitazione.
+- **Biometria vocale** (*Voice biometrics*): riconoscimento basato sulle caratteristiche della voce.
+- **Riconoscimento dell’andatura** (*Gait recognition*): analisi del modo di camminare.
+
+#### Caratteristiche Miste (Mixed Features)
+
+Combinano aspetti fisiologici e comportamentali.
+
+- **Volto**: struttura facciale (fisiologica) + espressioni e movimenti (comportamentali).
+- **Voce**: caratteristiche dell’apparato vocale (fisiologiche) + modalità di emissione (comportamentali).
+
+#### Tracce Biologiche (Biological Traces Biometrics)
+
+- **DNA**: caratteristica biometrica estremamente discriminante, utilizzata principalmente in ambito forense e non in sistemi di autenticazione in tempo reale.
+
+---
+
+#### Strong Biometric Traits
+
+Sono tratti biometrici caratterizzati da **elevata unicità e persistenza nel tempo**, quindi particolarmente affidabili per il riconoscimento:
+
+- **Impronte digitali**
+- **Volto**
+- **Iride**
+
+#### Soft Biometric Traits
+
+Sono tratti biometrici con **bassa unicità** o **scarsa persistenza**, ma possono essere utili per **ridurre lo spazio di ricerca** o supportare altre biometrie:
+
+- Colore dei capelli
+- Forma del volto
+- Andatura
+- Altre caratteristiche fisiche generali
+
+Questi tratti possono variare nel tempo a causa di fattori come **umore, stato di salute, età o condizioni ambientali**, ma risultano utili come informazioni complementari nei sistemi biometrici complessi (ad esempio per limitare il numero di candidati in fase di identificazione).
+
+---
+
+### 1.5 Notazione e Terminologia
 
 **Insiemi fondamentali**:
 - $\mathcal{G}$ = Gallery (insieme di template enrollati)
