@@ -1,753 +1,4 @@
-**Probe set** diviso in sottoinsiemi:
-- $\mathcal{P}_G$: Soggetti presenti in galleria (enrolled) - per genuine attempts
-- $\mathcal{P}_N$: Soggetti NON in galleria (non-enrolled) - per impostor attempts
-
-**Esempio partizionamento**:
-
-Dataset: 200 identità, 20 immagini/identità = 4000 immagini totali
-
-**Subject-based split**:
-- Training: 120 identità (2400 img) - per apprendere feature extraction
-- Test pool: 80 identità (1600 img)
-  - Gallery: 40 identità (80 img, 2 img/ID) - enrolled users
-  - Probe enrolled (PG): 40 identità (320 img, 8 img/ID) - same IDs as gallery
-  - Probe non-enrolled (PN): 40 identità (320 img, 8 img/ID) - different IDs
-
-Risultato:
-- 80 img in gallery (reference)
-- 320 genuine probes (per FRR, DIR)
-- 320 impostor probes (per FAR, false alarm)
-
-**Considerazioni**:
-- Ratio |PG|:|PN| dipende da application (watchlist: più PN; access control: più PG)
-- Multiple gallery enrollment: ogni ID può avere 1-N template in gallery
-- Probe set size >> gallery size (simula operazione reale: pochi enrolled, molti probe)
-
-### 5.3 K-Fold Cross-Validation
-
-**Motivazione**: Ridurre bias dovuto a una specifica partizione train/test. Una singola split può essere fortunata (easy test) o sfortunata (hard test).
-
-**Procedura standard**:
-1. Dividi dataset in $K$ subset disgiunti di dimensione simile ($K$ folds)
-2. Per $i = 1, \ldots, K$:
-   - Usa fold $i$ come test set
-   - Usa rimanenti $K-1$ folds come training set
-   - Addestra modello, valuta su test, registra performance
-3. Media i risultati su tutti i $K$ folds
-
-**Stima finale**:
-$\hat{\text{Error}} = \frac{1}{K} \sum_{i=1}^{K} \text{Error}_i$
-
-Con confidence interval:
-$\text{CI} = \hat{\text{Error}} \pm t_{\alpha/2,K-1} \cdot \frac{s}{\sqrt{K}}$
-
-dove $s$ = standard deviation degli error rates sui K folds.
-
-**Vantaggi**:
-- Ogni sample testato esattamente 1 volta (uso efficiente dati)
-- Ogni sample usato per training $K-1$ volte (massimizza training data)
-- Riduce **bias** (usa la maggior parte dei dati per training)
-- Riduce **varianza** (media su $K$ esperimenti indipendenti)
-- Fornisce confidence interval
-
-**Svantaggi**:
-- Computazionalmente costoso ($K$ training completi)
-- Correlazione tra folds (training sets si sovrappongono)
-- Leakage potenziale se stesso soggetto appare in folds diversi
-
-**Valori tipici**: $K \in \{5, 10\}$
-- $K=5$: bilanciamento computation vs variance reduction
-- $K=10$: standard in ML, buon compromesso
-- $K=N$ (Leave-One-Out): massimo uso dati, ma computational explosion
-
-**K-fold stratificato** (migliore per biometria):
-
-Mantiene proporzioni di classe in ogni fold. Essenziale quando:
-- Classi sbilanciate (pochi soggetti con molti campioni)
-- Vogliamo garantire copertura di tutte le variazioni in ogni fold
-
-Procedura:
-- Per ogni identità, distribuisci campioni equamente tra folds
-- Garantisce ogni fold ha rappresentanti di tutte (o quasi) le identità
-- Evita folds con zero samples di alcune identità
-
-**Esempio pratico**:
-
-Dataset: 100 identità, 50 img/ID = 5000 immagini
-K = 5
-
-**Standard K-fold** (random split):
-- Fold 1: 1000 img random → potrebbe avere 0 img di alcune identità
-- Performance: alta varianza tra folds
-
-**Stratified K-fold**:
-- Fold 1: 10 img/identità per tutte le 100 identità
-- Ogni fold ha copertura completa
-- Performance: bassa varianza tra folds
-
-**Cross-validation per biometria**:
-
-Attenzione speciale per modalità operative:
-
-**Verifica**:
-```
-For fold i in 1..K:
-  Training: folds ≠ i
-  Gallery: subset di fold i
-  Probe: rimanente di fold i
-  Split genuine/impostor based on claims
-  Compute FAR, FRR, EER
-Average metrics over K folds
-```
-
-**Open-Set Identification**:
-```
-For fold i in 1..K:
-  Training: folds ≠ i
-  Test identities from fold i split into:
-    - Gallery: N enrolled identities
-    - Probe enrolled (PG): same N identities
-    - Probe non-enrolled (PN): M different identities
-  Compute DIR, FAR, EER
-Average metrics over K folds
-```
-
-**Reporting**:
-- Mean ± std dev for each metric
-- Esempio: "EER = 2.3% ± 0.4% (5-fold CV)"
-- Permette statistical significance testing tra algoritmi
-
-### 5.4 Matrice di Distanze
-
-La matrice di distanze è la struttura dati fondamentale per valutazione offline efficiente.
-
-**Definizione**:
-
-Matrice $\mathbf{D} \in \mathbb{R}^{|\mathcal{P}| \times |\mathcal{G}|}$ dove:
-$\mathbf{D}_{ij} = d(p_i, g_j)$
-
-Ogni elemento è la distanza tra probe $i$ e gallery template $j$.
-
-**Proprietà** (se $\mathcal{P} = \mathcal{G}$, all-vs-all):
-- **Diagonale nulla**: $\mathbf{D}_{ii} = 0$ (distanza da sé stesso è 0)
-- **Simmetrica**: $\mathbf{D}_{ij} = \mathbf{D}_{ji}$ (se metrica)
-- **Triangular inequality**: $\mathbf{D}_{ik} \leq \mathbf{D}_{ij} + \mathbf{D}_{jk}$ (se metrica)
-
-**Vantaggi computational**:
-- Calcolo **una tantum** di tutte le distanze (costoso: O(|P|×|G|))
-- Riuso per diverse valutazioni (gratis dopo primo calcolo)
-- Diverse partizioni G/P dalla stessa matrice
-- Esplorazione di diverse soglie istantanea
-- Facilita debugging (visualizzazione heatmap)
-
-**Storage**:
-- Full matrix: |P|×|G| float32 = 4×|P|×|G| bytes
-- Esempio: 10K probe × 1K gallery = 40 MB (gestibile)
-- Large-scale: 1M probe × 100K gallery = 400 GB (problematico, serve compressione)
-
-**Rappresentazione tramite ranking**:
-
-Invece di valori numerici, memorizza solo l'**ordinamento**:
-- $\mathbf{R}_{ij}$ = rank di $g_j$ rispetto a $p_i$
-- Più robusto a differenze di scala tra sistemi
-- Semplifica analisi (rank-based metrics direttamente accessibili)
-- Compressione: ranks possono essere uint16 invece di float32
-
-**Conversione similarity → distance**:
-
-Se sistema produce similarities $s \in [0,1]$ (higher = more similar):
-$d = 1 - s \quad \text{or} \quad d = -\log(s)$
-
-Importante: mantenere consistenza per tutte le valutazioni.
-
-**Esempio pratico**:
-
-Sistema face recognition:
-- Feature extraction: 128-dim embeddings
-- Matching: cosine similarity
-
-```python
-# Compute distance matrix
-P = extract_features(probe_images)    # |P| × 128
-G = extract_features(gallery_images)  # |G| × 128
-
-# Cosine similarity matrix
-S = P @ G.T  # |P| × |G|, values in [-1, 1]
-
-# Convert to distance
-D = 1 - (S + 1) / 2  # normalize to [0, 1], then invert
-
-# Now D[i,j] = distance between probe i and gallery j
-# Lower distance = more similar
-```
-
-**Utilizzo della matrice per evaluation**:
-
-```python
-def evaluate_verification(D, probe_labels, gallery_labels, thresholds):
-    """
-    D: distance matrix |P| × |G|
-    probe_labels: array of ground truth IDs for probes
-    gallery_labels: array of ground truth IDs for gallery
-    thresholds: array of threshold values to evaluate
-    """
-    results = []
-    
-    for tau in thresholds:
-        FA = FR = GA = GR = 0
-        
-        for i in range(len(probe_labels)):
-            for j in range(len(gallery_labels)):
-                if i == j:  # skip diagonal if all-vs-all
-                    continue
-                    
-                # Decision based on threshold
-                accept = D[i, j] <= tau
-                
-                # Ground truth
-                genuine = probe_labels[i] == gallery_labels[j]
-                
-                # Update counters
-                if accept and genuine:
-                    GA += 1
-                elif accept and not genuine:
-                    FA += 1
-                elif not accept and genuine:
-                    FR += 1
-                else:  # not accept and not genuine
-                    GR += 1
-        
-        # Compute rates
-        FAR = FA / (FA + GR) if (FA + GR) > 0 else 0
-        FRR = FR / (FR + GA) if (FR + GA) > 0 else 0
-        
-        results.append({'tau': tau, 'FAR': FAR, 'FRR': FRR})
-    
-    return results
-```
-
-### 5.5 Strategie di Valutazione Massiva
-
-Quando un dataset è disponibile, possiamo adottare diverse strategie per massimizzare il numero di esperimenti e ottenere stime robuste.
-
-#### 5.5.1 All-Against-All
-
-**Idea**: Ogni template gioca alternativamente ruolo di probe e gallery. Massimizza il numero di esperimenti possibili dato un dataset fissato.
-
-**Matrice**: $\mathbf{D} \in \mathbb{R}^{|\mathcal{D}| \times |\mathcal{D}|}$ dove $|\mathcal{D}|$ = numero totale template nel dataset.
-
-**Diagonale esclusa**: Mai confrontare template con sé stesso ($\mathbf{D}_{ii}$ ignorato).
-
-**Numero esperimenti**:
-
-Per **verifica**:
-- Ogni row (probe) genera $|\mathcal{D}| - 1$ esperimenti
-- Di cui $S - 1$ genuine (altri template stessa identità)
-- E $(N-1) \times S$ impostor (template di altre identità)
-- Totale: $|\mathcal{D}| \times (|\mathcal{D}| - 1)$ confronti
-
-Per **identification**:
-- Ogni row genera 1 esperimento di identificazione
-- Ma può essere valutato sia come enrolled che come non-enrolled (simulazione)
-- Totale: $|\mathcal{D}|$ esperimenti × 2 scenari
-
-**Vantaggi**:
-1. **Massimizza numero di esperimenti**: Usa ogni possibile coppia
-2. **Media su tutte le partizioni possibili**: Riduce varianza
-3. **Over-stress del sistema**: Molti impostor attempts (realistico per screening)
-4. **Facile da programmare**: Loop doppio, nessuna split decision
-5. **Riproducibile**: Deterministic, no random split
-
-**Svantaggi**:
-1. **Computazionalmente costoso**: $O(|\mathcal{D}|^2)$ confronti
-   - 1K templates: 1M confronti (gestibile)
-   - 100K templates: 10B confronti (giorni di computation)
-2. **Non analizza distribuzioni specifiche**: Mescola tutto
-3. **Non adatto per sessioni temporali**: Mix samples stessa sessione (irrealistico)
-4. **Mescola campioni simili**: Samples dello stesso acquisition session troppo simili (sovrastima performance)
-5. **Sbilanciamento**: Molto più impostor che genuine (ratio dipende da N e S)
-
-**Quando usare**:
-- Dataset piccolo-medio (< 10K templates)
-- Nessuna struttura temporale nota
-- Benchmark rapidi
-- Massimizzare statistical power
-
-**Esempio**:
-
-Dataset: 100 identità, 10 templates/ID = 1000 templates totali
-
-All-against-all:
-- 1000 × 999 = 999,000 confronti totali
-- Per ogni row (probe):
-  - 9 genuine (stessa identità, template diversi)
-  - 990 impostor (altre 99 identità × 10 templates)
-- Totale: 9,000 genuine attempts, 990,000 impostor attempts
-- Ratio impostor:genuine = 110:1 (molto sbilanciato)
-
-→ Valutazione rigorosa security-wise (molti impostor), ma può under-estimate usability.
-
-#### 5.5.2 Probe-vs-Gallery con Sessioni
-
-**Scenario**: Dataset diviso in sessioni temporali non sovrapposte (acquisizioni in momenti diversi).
-
-**Motivazione**: Samples catturati nella stessa sessione sono **artificialmente simili** perché condividono:
-- Condizioni ambientali (illuminazione, temperatura, umidità)
-- Stato del sensore (calibrazione, pulizia, noise characteristics)
-- Stato del soggetto (umore, stanchezza, makeup, pettinatura)
-- Setup tecnico (camera position, background, settings)
-
-→ Mixing samples stessa sessione sovrastima performance (non rappresenta variazioni temporali reali)
-
-**Strategia**:
-- **Sessione 1** → Gallery (enrollment conditions)
-- **Sessione 2** → Probe (operational conditions)
-- Poi eventualmente swap e average
-
-**Razionale**: In sistema reale, enrollment e probe acquisition sono temporalmente distanti (settimane, mesi, anni).
-
-**Vantaggi**:
-1. **Più realistico**: Simula scenario operativo (temporal gap)
-2. **Valuta robustezza temporale**: Aging, condition changes
-3. **Evita bias da campioni troppo simili**: No artificial boost
-4. **Natural split**: Se dataset ha session annotations
-
-**Svantaggi**:
-- Richiede session metadata
-- Meno esperimenti di all-vs-all
-- Performance tipicamente più basse (più difficile, più realistico)
-
-**Generalizzazione**: Con $S$ sessioni, creare $\binom{S}{2}$ partizioni probe/gallery.
-
-Esempio: 3 sessioni → 3 combinazioni:
-1. Gallery: S1, Probe: S2
-2. Gallery: S1, Probe: S3
-3. Gallery: S2, Probe: S3
-
-Average results over all combinations.
-
-**Esempio pratico**:
-
-Dataset AR Face: 100 identità, 2 sessioni separate da 2 settimane
-- Session 1: 14 img/persona (controlled conditions)
-- Session 2: 14 img/persona (varied expressions, illumination)
-
-**Evaluation protocol**:
-```
-Gallery: Session 1, 1 img/persona (neutral) = 100 templates
-Probe: Session 2, 14 img/persona = 1400 probes
-
-Esperimenti:
-- Genuine: 1400 (ogni probe cerca la sua identità)
-- Impostor: 1400 × 99 = 138,600 (ogni probe vs altre 99 identità)
-
-Results:
-- FAR, FRR at various thresholds
-- Reflect real temporal variation
-```
-
-**Confronto All-vs-All vs Session-based**:
-
-| Aspect | All-vs-All | Session-based |
-|--------|------------|---------------|
-| Experiments | Maximum | Medium |
-| Realism | Medium | High |
-| Temporal gap | No | Yes |
-| Computation | High | Medium |
-| Performance | Higher (easier) | Lower (harder) |
-| Recommendation | Benchmark | Procurement |
-
-**Best practice**: Riportare entrambi se possibile
-- All-vs-all: per confronto con letteratura
-- Session-based: per stima performance reale
-
-### 5.6 Calcolo delle Metriche da Matrice di Distanze
-
-Algoritmi dettagliati per calcolare tutte le metriche biometriche dalla matrice di distanze pre-computata.
-
-#### Verifica - Single Template (un template per identità in gallery)
-
-**Assunzioni**:
-- $N$ soggetti (identità distinte)
-- $S$ template per soggetto (enrollment multiplo o more samples)
-- $|\mathcal{G}| = N \times S$ template totali in all-vs-all scenario
-
-**Ogni riga** della matrice: $|\mathcal{G}| - 1$ esperimenti (esclusa diagonale)
-
-**Conteggi per riga $i$**:
-- **Genuine attempts**: $S - 1$ (altri template dello stesso soggetto, escludendo $i$ stesso)
-- **Impostor attempts**: $(N-1) \times S$ (tutti i template di tutte le altre $N-1$ identità)
-
-**Totali globali**:
-$TG = |\mathcal{G}| \times (S - 1)$
-$TI = |\mathcal{G}| \times (N-1) \times S$
-
-**Pseudocodice**:
-
-```python
-def compute_verification_metrics_single_template(D, labels, thresholds):
-    """
-    D: distance matrix |G| × |G|
-    labels: array of identity labels for each template
-    thresholds: array of threshold values
-    
-    Returns: dict with FAR, FRR, GAR, GRR for each threshold
-    """
-    n_templates = len(labels)
-    results = []
-    
-    for tau in thresholds:
-        GA = FR = FA = GR = 0
-        
-        for i in range(n_templates):
-            for j in range(n_templates):
-                if i == j:  # skip diagonal
-                    continue
-                
-                # Decision based on threshold
-                distance = D[i, j]
-                accept = (distance <= tau)
-                
-                # Ground truth
-                same_identity = (labels[i] == labels[j])
-                
-                # Update counters
-                if accept:
-                    if same_identity:
-                        GA += 1  # Genuine Acceptance
-                    else:
-                        FA += 1  # False Acceptance
-                else:  # reject
-                    if same_identity:
-                        FR += 1  # False Rejection
-                    else:
-                        GR += 1  # Genuine Rejection
-        
-        # Compute rates (avoid division by zero)
-        TG = sum(labels == labels[0]) - 1  # genuine attempts per template
-        TG *= n_templates  # total genuine
-        
-        TI = n_templates * (n_templates - TG/n_templates - 1)  # total impostor
-        
-        FAR = FA / TI if TI > 0 else 0
-        FRR = FR / TG if TG > 0 else 0
-        GAR = GA / TG if TG > 0 else 0
-        GRR = GR / TI if TI > 0 else 0
-        
-        results.append({
-            'threshold': tau,
-            'FAR': FAR,
-            'FRR': FRR,
-            'GAR': GAR,
-            'GRR': GRR,
-            'EER': None  # computed later
-        })
-    
-    # Find EER
-    fars = [r['FAR'] for r in results]
-    frrs = [r['FRR'] for r in results]
-    diffs = [abs(far - frr) for far, frr in zip(fars, frrs)]
-    eer_idx = diffs.index(min(diffs))
-    
-    for r in results:
-        r['EER'] = (fars[eer_idx] + frrs[eer_idx]) / 2
-    
-    return results
-```
-
-**Complessità**: O(|G|² × |thresholds|)
-
-**Ottimizzazione**: Pre-sort distances per ogni row, poi binary search per threshold (riduce a O(|G|² log|G|))
-
-#### Verifica - Multiple Templates (più template per identità in gallery)
-
-**Differenza chiave**: Per ogni identità in gallery, selezioniamo **best match** tra i suoi template.
-
-**Ogni riga**: $N$ esperimenti (uno per identità in galleria, non per template)
-
-**Per ogni identità**: Seleziona best match:
-$d_{\text{best}}(p_i, \text{id}_j) = \min_{g \in \mathcal{G}_j} d(p_i, g)$
-
-dove $\mathcal{G}_j$ = set di tutti i template dell'identità $j$.
-
-**Conteggi per riga**:
-- Genuine: 1 (best match con propria identità)
-- Impostor: $N-1$ (best match con ciascuna delle altre identità)
-
-**Totali**:
-$TG = |\mathcal{G}|$
-$TI = |\mathcal{G}| \times (N-1)$
-
-**Pseudocodice**:
-
-```python
-def compute_verification_metrics_multiple_templates(D, labels, thresholds):
-    """
-    D: distance matrix |G| × |G|
-    labels: array of identity labels
-    thresholds: array of threshold values
-    
-    Multiple templates: for each identity, use best match
-    """
-    n_templates = len(labels)
-    unique_ids = np.unique(labels)
-    n_identities = len(unique_ids)
-    
-    # Create mapping: identity -> template indices
-    id_to_templates = {}
-    for identity in unique_ids:
-        id_to_templates[identity] = np.where(labels == identity)[0]
-    
-    results = []
-    
-    for tau in thresholds:
-        GA = FR = FA = GR = 0
-        
-        for i in range(n_templates):
-            probe_id = labels[i]
-            
-            # For each identity, find best (minimum) distance
-            for identity in unique_ids:
-                # Get all templates for this identity
-                template_indices = id_to_templates[identity]
-                
-                # Exclude probe itself if same identity
-                template_indices = [idx for idx in template_indices if idx != i]
-                
-                if len(template_indices) == 0:
-                    continue  # skip if no templates available
-                
-                # Best match: minimum distance
-                best_distance = min(D[i, idx] for idx in template_indices)
-                
-                # Decision
-                accept = (best_distance <= tau)
-                
-                # Ground truth
-                same_identity = (probe_id == identity)
-                
-                # Update counters
-                if accept:
-                    if same_identity:
-                        GA += 1
-                    else:
-                        FA += 1
-                else:
-                    if same_identity:
-                        FR += 1
-                    else:
-                        GR += 1
-        
-        # Compute rates
-        TG = n_templates  # each template has 1 genuine attempt
-        TI = n_templates * (n_identities - 1)  # each template vs N-1 identities
-        
-        FAR = FA / TI if TI > 0 else 0
-        FRR = FR / TG if TG > 0 else 0
-        
-        results.append({
-            'threshold': tau,
-            'FAR': FAR,
-            'FRR': FRR,
-            'GAR': 1 - FRR,
-            'GRR': 1 - FAR
-        })
-    
-    return results
-```
-
-**Complessità**: O(|G| × N × S × |thresholds|) dove S = avg templates per identity
-
-**Nota**: Best match strategy aumenta robustness (più template → più chance di buon match) ma può anche aumentare FAR (più template impostor → più chance di lucky match).
-
-#### Identificazione Open-Set
-
-**Ogni riga**: Rappresenta 2 scenari simulati
-- Scenario 1: Probe appartiene a enrolled (valuta detection + identification)
-- Scenario 2: Probe NON appartiene a enrolled (valuta false alarm)
-
-**Totali**:
-$TG = |\mathcal{G}|$
-$TI = |\mathcal{G}|$
-
-Assumiamo simulazione: ogni probe valutato sia come enrolled che come non-enrolled.
-
-**Pseudocodice**:
-
-```python
-def compute_openset_metrics(D, labels, thresholds):
-    """
-    D: distance matrix |G| × |G|
-    labels: identity labels
-    thresholds: array of threshold values
-    
-    Open-set: each row evaluated as both enrolled and non-enrolled
-    """
-    n_templates = len(labels)
-    results = []
-    
-    for tau in thresholds:
-        DI = 0  # Correct Detection and Identification
-        FA = 0  # False Acceptance (false alarm)
-        GR = 0  # Genuine Rejection
-        
-        for i in range(n_templates):
-            # Create ordered list of distances (excluding diagonal)
-            distances = []
-            for j in range(n_templates):
-                if i != j:
-                    distances.append((D[i, j], labels[j]))
-            
-            # Sort by distance (ascending)
-            distances.sort(key=lambda x: x[0])
-            
-            # First match
-            first_distance, first_label = distances[0]
-            
-            # CASE 1: Assume probe is enrolled (genuine scenario)
-            if first_distance <= tau:
-                # Detection positive
-                if first_label == labels[i]:
-                    # Correct identification
-                    DI += 1
-                # else: misidentification (counts as FR)
-            # else: no detection (counts as FR)
-            
-            # CASE 2: Assume probe is NOT enrolled (impostor scenario)
-            # Find first match with DIFFERENT label (simulate non-enrolled)
-            impostor_match = None
-            for dist, lab in distances:
-                if lab != labels[i]:
-                    impostor_match = (dist, lab)
-                    break
-            
-            if impostor_match and impostor_match[0] <= tau:
-                FA += 1  # False alarm
-            else:
-                GR += 1  # Correct rejection
-        
-        # Compute rates
-        TG = n_templates
-        TI = n_templates
-        
-        DIR = DI / TG if TG > 0 else 0
-        FRR = 1 - DIR
-        FAR = FA / TI if TI > 0 else 0
-        GRR = GR / TI if TI > 0 else 0
-        
-        results.append({
-            'threshold': tau,
-            'DIR': DIR,
-            'FRR': FRR,
-            'FAR': FAR,
-            'GRR': GRR
-        })
-    
-    return results
-```
-
-**Nota importante**: Questo pseudocode simula entrambi gli scenari per ogni probe. In evaluation reale, avremmo separate sets $\mathcal{P}_G$ e $\mathcal{P}_N$.
-
-**Estensione per DIR a rank k**:
-
-```python
-def compute_DIR_at_rank_k(D, labels, thresholds, max_rank=10):
-    """
-    Compute DIR at multiple ranks
-    """
-    n_templates = len(labels)
-    results = {k: [] for k in range(1, max_rank+1)}
-    
-    for tau in thresholds:
-        DIR_at_k = {k: 0 for k in range(1, max_rank+1)}
-        
-        for i in range(n_templates):
-            # Ordered list
-            distances = [(D[i,j], labels[j]) for j in range(n_templates) if i != j]
-            distances.sort(key=lambda x: x[0])
-            
-            # Find rank of correct identity
-            correct_rank = None
-            for rank, (dist, lab) in enumerate(distances, 1):
-                if lab == labels[i] and dist <= tau:
-                    correct_rank = rank
-                    break
-            
-            # Update DIR for all ranks >= correct_rank
-            if correct_rank:
-                for k in range(correct_rank, max_rank+1):
-                    DIR_at_k[k] += 1
-        
-        # Normalize
-        for k in range(1, max_rank+1):
-            results[k].append(DIR_at_k[k] / n_templates)
-    
-    return results
-```
-
-#### Identificazione Closed-Set
-
-**Assunzione**: Ogni probe appartiene sempre alla galleria.
-
-**Ogni riga**: 1 esperimento (identificazione forzata, no threshold)
-
-**Nessuna soglia**: Sistema restituisce sempre top-1 (e ranking completo)
-
-**Totali**:
-$T = |\mathcal{G}|$
-
-**Pseudocodice**:
-
-```python
-def compute_closedset_metrics(D, labels):
-    """
-    D: distance matrix |G| × |G|
-    labels: identity labels
-    
-    Closed-set: no threshold, always return ranked list
-    Returns: CMS array (cumulative match scores)
-    """
-    n_templates = len(labels)
-    gallery_size = n_templates
-    
-    # Initialize CMS counters
-    CMS = [0] * gallery_size
-    
-    for i in range(n_templates):
-        # Create ordered list (excluding diagonal)
-        distances = []
-        for j in range(n_templates):
-            if i != j:
-                distances.append((D[i, j], labels[j], j))
-        
-        # Sort by distance
-        distances.sort(key=lambda x: x[0])
-        
-        # Find rank of correct identity
-        correct_rank = None
-        for rank, (dist, lab, idx) in enumerate(distances, 1):
-            if lab == labels[i]:
-                correct_rank = rank
-                break
-        
-        # Update CMS: correct identity found at rank=correct_rank
-        # means it's within top-k for all k >= correct_rank
-        if correct_rank:
-            for k in range(correct_rank - 1, gallery_size):
-                CMS[k] += 1
-    
-    # Normalize to get CMS probabilities
-    CMS = [count / n_templates for count in CMS]
-    
-    # Create results dictionary
-    results = {
-        'CMS': CMS,
-        'RR': CMS[0],  # Recognition Rate = CMS at rank 1
-        'CMS_5': CMS[4] if len(CMS) > 4 else None,
-        'CMS_10': CMS[9] if len(CMS) > 9 else None,
-        'CMS_20': CMS[19] if len(CMS) > 19 else None,
-        'nAUC': sum(CMS) / len(CMS)  # Normalized AUC
-    # Metriche di Valutazione per Sistemi Biometrici
+# Metriche Biometriche per Classificazione in Machine Learning
 
 ## Indice
 
@@ -759,15 +10,32 @@ def compute_closedset_metrics(D, labels):
 6. [Confronto: Metriche Biometriche vs Machine Learning](#6-confronto-metriche-biometriche-vs-machine-learning)
 7. [Affidabilità e Qualità](#7-affidabilità-e-qualità)
 
----
-
 ## 1. Introduzione e Fondamenti
 
 ### 1.1 Contesto dei Sistemi Biometrici
 
 I sistemi biometrici operano in condizioni di **incertezza intrinseca**, una caratteristica che li distingue profondamente dai sistemi di autenticazione tradizionali basati su password o token. Mentre una password è sempre identica e il suo confronto è deterministico (corretta o errata), un campione biometrico dello stesso individuo non è mai esattamente uguale al precedente. Questa è la sfida fondamentale della biometria: nessun sistema è perfetto perché la flessibilità necessaria per riconoscere lo stesso individuo in condizioni diverse introduce inevitabilmente errori.
 
-**Fonti di incertezza:**
+#### Requisiti di una caratteristica biometrica
+
+Affinché una caratteristica possa essere utilizzata efficacemente come **tratto biometrico**, deve soddisfare una serie di requisiti fondamentali. Questi criteri permettono di valutare l’affidabilità, la robustezza e l’accettabilità di un sistema biometrico nel mondo reale.
+
+- **Universalità**
+Il tratto biometrico dovrebbe essere posseduto da ogni individuo. In altre parole, quasi tutte le persone devono poter essere identificate tramite quella caratteristica, fatta eccezione per rari casi particolari (ad esempio disabilità o condizioni mediche specifiche).
+
+- **Unicità**
+Il tratto biometrico deve essere sufficientemente diverso da persona a persona. Idealmente, ogni individuo dovrebbe poter essere distinto da qualsiasi altro sulla base di quella caratteristica, riducendo al minimo il rischio di ambiguità o collisioni.
+
+- **Permanenza**
+Una buona caratteristica biometrica non dovrebbe variare significativamente nel tempo. Anche se piccoli cambiamenti sono inevitabili, il tratto deve rimanere stabile abbastanza a lungo da garantire un’identificazione affidabile nel corso degli anni.
+
+- **Collezionabilità (Collectability)**
+Il tratto biometrico deve poter essere misurato o acquisito tramite sensori appropriati (ad esempio fotocamere, scanner o microfoni). Inoltre, la misurazione dovrebbe essere sufficientemente accurata e ripetibile.
+
+- **Accettabilità**
+Le persone coinvolte non dovrebbero avere obiezioni rilevanti alla raccolta del tratto biometrico. Questo aspetto è strettamente legato a considerazioni etiche, culturali e di privacy, ed è cruciale per l’adozione su larga scala dei sistemi biometrici.
+
+#### Fonti di Incertezza
 
 1. **Variazioni intra-classe**: Lo stesso individuo produce campioni mai identici
 
@@ -775,7 +43,7 @@ I sistemi biometrici operano in condizioni di **incertezza intrinseca**, una car
    
    - Posa, espressione, illuminazione variabili
    - Qualità di acquisizione diversa (sensore sporco, bassa risoluzione)
-   - Cambiamenti temporali (invecchiamento, barba, accessori)
+   - Cambiamenti temporali (invecchiamento, barba, accessori, chirurgia, etc.)
 
 2. **Similarità inter-classe**: Individui diversi possono apparire simili
 
@@ -816,6 +84,14 @@ I sistemi biometrici possono essere attaccati a diversi livelli:
 - **Matcher**: Manipolazione degli score di similarità. Un attaccante con accesso al software potrebbe modificare il modulo di matching per forzare uno score alto anche quando la somiglianza è bassa.
 
 - **Database template**: Modifica o iniezione di template. Compromettere il database consente di sostituire template legittimi o inserirne di fraudolenti, ottenendo così accesso permanente al sistema.
+
+#### Enrollment
+
+Acquisizione ed elaborazione dei dati biometrici dell'utente per l'utilizzo da parte del sistema nelle successive operazioni di autenticazione (gallery).
+
+#### Recognition
+
+Acquisizione ed elaborazione dei dati biometrici dell'utente al fine di fornire una decisione di autenticazione basata sul risultato di un processo di abbinamento tra il modello memorizzato e quello corrente. (verifica 1:1, identificazione 1:N)
 
 ### 1.3 Modalità Operative
 
@@ -912,8 +188,6 @@ Densità
 ```
 
 Nella regione di overlap, è impossibile distinguere con certezza se uno score proviene da un confronto genuine o impostor. La scelta della soglia determina quanti errori di ciascun tipo commetteremo.
-
----
 
 ## 2. Verifica Biometrica
 
@@ -1115,21 +389,31 @@ $$\Rightarrow \text{FAR}(\tau_1) \geq \text{FAR}(\tau_2)$$
 
 (2) Simmetricamente per FRR:
 $$\tau_1 < \tau_2 \Rightarrow P(d > \tau_1 | H_1) \leq P(d > \tau_2 | H_1)$$
-$$\Rightarrow \text{FRR}(\tau_1) \leq \text{FRR}(\tau_2)$$ $\square$
+
+$$
+\Rightarrow \text{FRR}(\tau_1) \leq \text{FRR}(\tau_2)
+$$ 
+
+$\square$
 
 **Implicazione pratica**: Non è possibile minimizzare simultaneamente FAR e FRR modificando solo la soglia. Ogni miglioramento in sicurezza (FAR più basso) costa in usabilità (FRR più alto) e viceversa.
 
 **Casi estremi**:
 
-$$\lim_{\tau \to 0} \begin{cases}
+$$
+\lim_{\tau \to 0} \begin{cases}
 \text{FAR}(\tau) \to 1 \\
 \text{FRR}(\tau) \to 0
-\end{cases} \quad \text{(accetta tutti - sistema inutile per sicurezza)}$$
+\end{cases} \quad \text{(accetta tutti - sistema inutile per sicurezza)}
+$$
 
-$$\lim_{\tau \to \infty} \begin{cases}
+$$
+\lim_{\tau \to \infty} 
+\begin{cases}
 \text{FAR}(\tau) \to 0 \\
 \text{FRR}(\tau) \to 1
-\end{cases} \quad \text{(rifiuta tutti - sistema inutile per accesso)}$$
+\end{cases} \quad \text{(rifiuta tutti - sistema inutile per accesso)}
+$$
 
 **Visualizzazione del trade-off**:
 
@@ -1430,8 +714,6 @@ Rischio atteso per diversi punti operativi:
 - I costi possono non essere solo monetari (reputazione, rischio legale, privacy)
 - I prior possono cambiare nel tempo (attacchi mirati aumentano $\pi_I$)
 - La soglia può essere adattata dinamicamente in base a risk analysis real-time
-
----
 
 ## 3. Identificazione Open-Set
 
@@ -1864,8 +1146,6 @@ La scelta dipende da:
 | 4 | 0.2% | 95% | Moderato-alto | Basso | Verifica secondaria disponibile |
 | 5 | N/A | 100% (teorico) | Altissimo | Zero | Solo post-processing |
 
----
-
 ## 4. Identificazione Closed-Set
 
 ### 4.1 Definizione del Task
@@ -2140,8 +1420,6 @@ Sistema face recognition su stesso dataset:
 - System procurement decisions (irrealisticamente ottimistico)
 - Real-world deployments (manca detection component)
 - Security analysis (ignora false acceptances)
-
----
 
 ## 5. Metodologie di Valutazione Offline
 
