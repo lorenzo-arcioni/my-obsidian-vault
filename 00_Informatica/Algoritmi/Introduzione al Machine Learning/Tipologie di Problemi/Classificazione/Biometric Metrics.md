@@ -67,13 +67,15 @@ Le persone coinvolte non dovrebbero avere obiezioni rilevanti alla raccolta del 
 
 Un sistema biometrico è composto da diversi moduli che lavorano in sequenza per trasformare un tratto fisico o comportamentale in una decisione di autenticazione. Comprendere questa architettura è fondamentale per identificare i punti critici dove possono verificarsi errori o attacchi.
 
-```
+```{visible}
 Acquisizione → Estrazione Feature → Matching → Decisione
      ↓              ↓                  ↓           ↓
   Sensore      Template DB         Matcher    Threshold
 ```
 
 Il processo inizia con l'**acquisizione** tramite un sensore specifico (telecamera per il volto, scanner per impronte, microfono per la voce). Questo passaggio è critico: un'acquisizione di bassa qualità compromette irrimediabilmente le fasi successive. Successivamente, il modulo di **estrazione feature** analizza il campione grezzo e ne estrae le caratteristiche distintive, memorizzate come template biometrico. Il **matcher** confronta poi il template del probe (campione da verificare) con i template memorizzati nel database, producendo uno score di similarità o distanza. Infine, la **decisione** viene presa confrontando questo score con una soglia predefinita.
+
+*Nota: Il **sample** è il dato grezzo acquisito dal sensore. Le **features** sono le caratteristiche estratte dai dati grezzi. Il **template** è l'insieme delle features estratte dai dati grezzi.*
 
 #### Tipologie di Utenti
 
@@ -214,8 +216,6 @@ Combinano aspetti fisiologici e comportamentali.
 
 - **DNA**: caratteristica biometrica estremamente discriminante, utilizzata principalmente in ambito forense e non in sistemi di autenticazione in tempo reale.
 
----
-
 #### Strong Biometric Traits
 
 Sono tratti biometrici caratterizzati da **elevata unicità e persistenza nel tempo**, quindi particolarmente affidabili per il riconoscimento:
@@ -234,8 +234,6 @@ Sono tratti biometrici con **bassa unicità** o **scarsa persistenza**, ma posso
 - Altre caratteristiche fisiche generali
 
 Questi tratti possono variare nel tempo a causa di fattori come **umore, stato di salute, età o condizioni ambientali**, ma risultano utili come informazioni complementari nei sistemi biometrici complessi (ad esempio per limitare il numero di candidati in fase di identificazione).
-
----
 
 ### 1.5 Notazione e Terminologia
 
@@ -276,7 +274,9 @@ $$p(s|H_1) = p(s|\text{id}(t_1) = \text{id}(t_2))$$
 Score ottenuti confrontando template della **stessa identità**. Questa distribuzione rappresenta quanto sono simili campioni diversi della stessa persona. In un sistema ideale, tutti gli score genuine dovrebbero essere bassi (per distanze) o alti (per similarità).
 
 **Proprietà teorica**:
-In un sistema ideale: $p(s|H_0) \cap p(s|H_1) = \emptyset$
+In un sistema ideale: $supp(p(s|H_0)) \cap supp(p(s|H_1)) = \emptyset$, dove 
+
+$$supp(p) = \{x \in \mathbb{R} : p(x) > 0\}.$$
 
 In pratica, le distribuzioni si **sovrappongono**, rendendo impossibile una separazione perfetta. Questa sovrapposizione è la causa fondamentale di tutti gli errori nei sistemi biometrici.
 
@@ -289,25 +289,149 @@ La **qualità del sistema** è inversamente proporzionale all'area di sovrapposi
 
 **Interpretazione grafica**:
 
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Numero di confronti
+n_genuine  = 100_000
+n_impostor = 100_000
+
+# Distribuzione Genuine (distanze basse)
+genuine_scores = np.random.normal(
+    loc=10.0,      # media (bassa)
+    scale=1.0,    # deviazione standard
+    size=n_genuine
+)
+
+# Distribuzione Impostor (distanze alte)
+impostor_scores = np.random.normal(
+    loc=15.0,      # media (alta)
+    scale=2.0,    # deviazione standard
+    size=n_impostor
+)
+
+plt.figure()
+
+plt.hist(
+    genuine_scores,
+    bins=100,
+    density=True,
+    alpha=0.6,
+    label="Genuine"
+)
+
+plt.hist(
+    impostor_scores,
+    bins=100,
+    density=True,
+    alpha=0.6,
+    label="Impostor"
+)
+
+threshold = 12.0
+plt.axvline(threshold, linestyle="--", label="Threshold")
+
+plt.xlabel("Score (distanza)")
+plt.ylabel("Densità")
+plt.title("Distribuzioni Genuine e Impostor")
+plt.legend()
+
+plt.show()
 ```
-Densità
-  ^
-  |     Genuine          Impostor
-  |       /\              /\
-  |      /  \            /  \
-  |     /    \          /    \
-  |    /      \        /      \
-  |   /        \______/________\___
-  |  /    OVERLAP    \          \
-  | /    REGION       \          \
-  |/__________________\_________\_\___> Score (distanza)
-      ^                ^
-      |                |
-   Ideale           Problemi
-   (bassi)          (alti)
-```
+<img src="../../../../../images/distribuzioni-genuine-impostor.png" style="display: block; margin-left: auto; margin-right: auto; width: 60%;">
 
 Nella regione di overlap, è impossibile distinguere con certezza se uno score proviene da un confronto genuine o impostor. La scelta della soglia determina quanti errori di ciascun tipo commetteremo.
+
+## 1.6 Come Confrontiamo due Template?
+
+Una volta estratti i template biometrici, il passo successivo consiste nel **confrontarli** per ottenere uno **score** di similarità o distanza.  
+La scelta della metrica di confronto dipende dalla **natura del template** (vettore, istogramma, serie temporale, insieme di punti, ecc.).
+
+### 🔹 Template come vettori
+
+In molti sistemi biometrici, i template sono rappresentati come **vettori numerici** in uno spazio multidimensionale.  
+In questo caso, è possibile utilizzare metriche standard:
+
+- **Distanza Euclidea**  
+  Misura la distanza geometrica tra due vettori nello spazio.
+  👉 Vedi: [[Distanza Euclidea]]
+
+- **Similarità Coseno**  
+  Misura l’angolo tra due vettori, indipendentemente dalla loro norma.
+  👉 Vedi: [[Similarità Coseno]]
+
+Queste metriche possono essere interpretate rispettivamente come:
+- **distanza** (più piccola = più simili)
+- **similarità** (più grande = più simili)
+
+### 🔹 Correlazione
+
+Per template rappresentati come **istogrammi** o **insiemi di punti**, è possibile usare una misura di similarità basata sulla correlazione:
+
+- **Correlazione di Pearson**  
+  Valuta il grado di relazione lineare tra due rappresentazioni.
+  👉 Vedi: [[Correlazione di Pearson]]
+
+### 🔹 Confronto tra istogrammi
+
+Quando i template sono **istogrammi** (ad esempio distribuzioni di orientamenti o frequenze), esistono metriche dedicate:
+
+- **Distanza di Bhattacharyya**  
+  Misura la sovrapposizione tra due distribuzioni di probabilità.
+  👉 Vedi: [[Distanza di Bhattacharyya]]
+
+### 🔹 Serie temporali
+
+Per template che rappresentano **segnali nel tempo** (ad esempio andature, gesti, segnali biometrici dinamici):
+
+- **Dynamic Time Warping (DTW)**  
+  Allinea due serie temporali che possono avere velocità diverse ma forma simile.
+  👉 Vedi: [[Dynamic Time Warping]]
+
+Un esempio tipico è il confronto di due sequenze di camminata:  
+anche se la velocità di esecuzione varia, la traiettoria spaziale degli arti rimane simile.
+
+### 🔹 Template da modelli Deep Learning
+
+Nel caso di sistemi basati su **Deep Learning**, il confronto avviene tipicamente sulle **embedding**:
+
+- Si rimuove l’ultimo strato di classificazione (di solito un **softmax**)
+- L’output intermedio della rete viene usato come **vettore di feature**
+- Le embedding vengono confrontate usando metriche standard (es. distanza euclidea o similarità coseno)
+
+👉 Vedi: [[Embedding in Deep Learning]]
+
+### 🔹 Template strutturati complessi
+
+Alcuni template richiedono strategie di confronto più sofisticate.  
+Ad esempio, nel riconoscimento delle impronte digitali:
+
+- I template sono insiemi di **minuzie**
+- È necessario trovare il **miglior accoppiamento** tra punti prima di calcolare uno score
+
+👉 Vedi: [[Matching di Minuzie]]
+
+### Dopo il Confronto
+
+Una volta calcolato uno score di **similarità** o **distanza**, questo viene confrontato con una **soglia di accettazione**:
+
+- **Verifica** o **identificazione open-set**
+- Score ≥ soglia → accettazione (similarità)
+- Score ≤ soglia → accettazione (distanza)
+
+L’analisi delle prestazioni studia il comportamento del sistema al variare della soglia, mettendo in evidenza:
+- errori del sistema
+- compromesso tra falsi accettati e falsi rifiutati
+
+### In Sintesi
+
+- Selezionare ed estrarre **feature sufficientemente discriminative**
+- Definire una **strategia di matching appropriata**
+- Analizzare il comportamento del sistema al variare della soglia:
+  - similarità ≥ soglia
+  - distanza ≤ soglia
+
 
 ## 2. Verifica Biometrica
 
