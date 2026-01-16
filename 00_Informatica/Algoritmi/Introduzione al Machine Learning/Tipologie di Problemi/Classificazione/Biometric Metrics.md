@@ -161,13 +161,13 @@ I sistemi biometrici operano principalmente in tre modalità, ciascuna con carat
 - Decisioni: (1) il soggetto è/non è in galleria, (2) se sì, quale identità
 - Esempio pratico: Sorveglianza in aeroporto - il sistema cerca di identificare se una persona è presente in una watchlist
 
-**Watch list**:
-  - Il sistema possiede una lista di soggetti di interesse
-  - Verifica se il *probe* appartiene alla lista
+  **Watch list**:
+    - Il sistema possiede una lista di soggetti di interesse
+    - Verifica se il *probe* appartiene alla lista
 
-  Tipologie di watch list:
-  - **White list**: i soggetti presenti nella lista sono **autorizzati** e l’accesso viene consentito
-  - **Black list**: i soggetti presenti nella lista sono **non autorizzati**; il riconoscimento può generare un **allarme**
+    Tipologie di watch list:
+    - **White list**: i soggetti presenti nella lista sono **autorizzati** e l’accesso viene consentito
+    - **Black list**: i soggetti presenti nella lista sono **non autorizzati**; il riconoscimento può generare un **allarme**
 
 
 **Identificazione Closed-Set (1:N forzata)**:
@@ -484,15 +484,6 @@ Siano:
 - **FR (False Rejection)**: Utente legittimo erroneamente respinto - **impatto: usabilità, frustrazione utente**
 - **FA (False Acceptance)**: Impostore erroneamente accettato - **impatto: SICUREZZA, accesso non autorizzato**
 
-**Esempio concreto**:
-Consideriamo uno smartphone con riconoscimento facciale usato da 100 persone diverse in un giorno:
-- 10 utilizzi sono dal proprietario (genuine attempts)
-- 90 tentativi sono da altre persone che trovano il telefono (impostor attempts)
-
-Se il sistema ha FAR = 0.01 e FRR = 0.05:
-- Il proprietario verrà bloccato circa 0.5 volte (5% di 10 tentativi)
-- Circa 0.9 impostori entreranno nel telefono (1% di 90 tentativi)
-
 ### 2.3 Metriche Fondamentali
 
 #### 2.3.1 False Acceptance Rate (FAR)
@@ -531,7 +522,16 @@ $$\text{FRR}(\tau) = P(D_0 | H_1) = P(\text{Reject} | \text{genuine})$$
 
 Probabilità che un utente genuino venga erroneamente rifiutato.
 
-**Esempio pratico**: FRR = 0.05 (5%) significa che in media 1 utente legittimo su 20 viene respinto. Se un utente tenta l'accesso 10 volte al giorno, verrà bloccato circa una volta ogni due giorni, causando frustrazione.
+**Quindi**: FRR = 0.05 (5%) significa che in media 1 utente legittimo su 20 viene respinto. Se un utente tenta l'accesso 10 volte al giorno, verrà bloccato circa una volta ogni due giorni, causando frustrazione.
+
+**Esempio concreto**:
+Consideriamo uno smartphone con riconoscimento facciale usato da 100 persone diverse in un giorno:
+- 10 utilizzi sono dal proprietario (genuine attempts)
+- 90 tentativi sono da altre persone che trovano il telefono (impostor attempts)
+
+Se il sistema ha FAR = 0.01 e FRR = 0.05:
+- Il proprietario verrà bloccato circa 0.5 volte (5% di 10 tentativi)
+- Circa 0.9 impostori entreranno nel telefono (1% di 90 tentativi)
 
 **Relazione con la distribuzione**:
 $$\text{FRR}(\tau) = \int_{\tau}^{\infty} p(d|H_1) \, dd = P(d > \tau | H_1)$$
@@ -548,7 +548,7 @@ Il FRR è l'area sotto la curva della distribuzione genuine a destra della sogli
 Il GAR è la metrica complementare al FRR e misura il successo del sistema nel riconoscere utenti legittimi.
 
 **Definizione**:
-$$\text{GAR}(\tau) = 1 - \text{FRR}(\tau) = P(D_1 | H_1)$$
+$$\text{GAR}(\tau) = \frac{\text{\# Genuine Accepts}}{\text{\# Genuine Attempts}} = \frac{|\{(p,i) : \text{id}(p) = i \land d(p,i) \leq \tau\}|}{|\{(p,i) : \text{id}(p) = i\}|}= 1 - \text{FRR}(\tau) = P(D_1 | H_1)$$
 
 **Relazione complementare**:
 $$\text{GAR}(\tau) + \text{FRR}(\tau) = 1$$
@@ -564,7 +564,7 @@ Il GAR è spesso preferito nelle presentazioni perché è una metrica "positiva"
 Il GRR misura quanto efficacemente il sistema respinge impostori.
 
 **Definizione**:
-$$\text{GRR}(\tau) = 1 - \text{FAR}(\tau) = P(D_0 | H_0)$$
+$$\text{GRR}(\tau) = \frac{\text{\# Genuine Rejections}}{\text{\# Impostors Attempts}} = \frac{|\{(p,i) : \text{id}(p) \neq i \land d(p,i) > \tau\}|}{|\{(p,i) : \text{id}(p) \neq i\}|}= 1 - \text{FAR}(\tau) = P(D_0 | H_0)$$
 
 **Relazione complementare**:
 $$\text{GRR}(\tau) + \text{FAR}(\tau) = 1$$
@@ -659,27 +659,6 @@ $$
 \end{cases} \quad \text{(rifiuta tutti - sistema inutile per accesso)}
 $$
 
-**Visualizzazione del trade-off**:
-
-```
-Rate
- 1.0 |     FRR
-     |       /
-     |      /
-     |     /
-     |    /
-     |   /  
-     |  / X (EER)
-     | /   \
-     |/     \
-     |\      \
-     | \      \_____ FAR
- 0.0 |__\___________\________> Threshold
-     0              τ*       ∞
-```
-
-Il punto X rappresenta l'Equal Error Rate (EER), dove FAR = FRR. Questo è spesso usato come punto di riferimento, ma non necessariamente il punto operativo ottimale.
-
 ### 2.6 Equal Error Rate (EER)
 
 L'EER è la metrica scalare più comunemente usata per riassumere la performance di un sistema biometrico in un singolo numero.
@@ -721,6 +700,70 @@ EER ≈ 0.027 alla soglia ≈ 0.42 (interpolando tra 0.4 e 0.5)
 - Sistema B: EER = 5% - Buono
 - Sistema C: EER = 10% - Accettabile per applicazioni non critiche
 - Sistema D: EER = 20% - Scadente, non utilizzabile
+
+**Esempio**: Il seguente codice mostra un semplice esempio di calcolo e visualizzazione dell’**Equal Error Rate (EER)** a partire da valori discreti di FAR e FRR misurati a diverse soglie operative.  
+L’EER viene stimato come il punto in cui la differenza tra FAR e FRR è minima e viene rappresentato graficamente come il punto di equilibrio tra le due curve di errore.
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Soglie operative
+thresholds = np.array([
+    0.1, 0.2, 0.3, 0.4, 0.5, 0.6
+])
+
+# False Acceptance Rate (FAR)
+far = np.array([
+    0.250, 0.100, 0.050, 0.020, 0.010, 0.005
+])
+
+# False Rejection Rate (FRR)
+frr = np.array([
+    0.001, 0.005, 0.015, 0.035, 0.070, 0.150
+])
+
+# Differenza assoluta tra FAR e FRR
+difference = np.abs(far - frr)
+
+# Indice della soglia ottimale
+eer_index = np.argmin(difference)  # es: np.argmin(difference)
+
+# Soglia di EER
+eer_threshold = thresholds[eer_index]  # thresholds[eer_index]
+
+# Valore di EER
+eer = (far[eer_index] + frr[eer_index]) / 2
+
+plt.figure(figsize=(8, 5))
+
+plt.plot(thresholds, far, marker='o', label='FAR')
+plt.plot(thresholds, frr, marker='o', label='FRR')
+
+# Punto EER
+plt.scatter(
+    eer_threshold,
+    eer,
+    color='red',
+    zorder=5,
+    label=f'EER ≈ {eer:.3f}'
+)
+
+# Linee guida
+plt.axvline(eer_threshold, linestyle='--', alpha=0.6)
+plt.axhline(eer, linestyle='--', alpha=0.6)
+
+plt.xlabel('Threshold (τ)')
+plt.ylabel('Error Rate')
+plt.title('Equal Error Rate (EER)')
+plt.legend()
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+```
+
+<img src="../../../../../images/eer.png" style="display: block; margin-left: auto; margin-right: auto; width: 60%;">
 
 ### 2.7 Punti Operativi Speciali
 
@@ -809,30 +852,59 @@ $\text{AUC} = P(d_{\text{genuine}} < d_{\text{impostor}})$
 
 **Confronto tra sistemi usando ROC**:
 
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import auc  # per calcolare AUC
+
+# ============================================
+# Dati esempio: Sistema A
+# ============================================
+far_A = np.array([0.00, 0.01, 0.03, 0.08, 0.15, 0.30, 1.00])
+frr_A = np.array([1.00, 0.40, 0.20, 0.10, 0.05, 0.02, 0.00])
+gar_A = 1 - frr_A
+
+# ============================================
+# Dati esempio: Sistema B
+# ============================================
+far_B = np.array([0.00, 0.02, 0.05, 0.10, 0.20, 0.40, 1.00])
+frr_B = np.array([1.00, 0.50, 0.30, 0.15, 0.08, 0.03, 0.00])
+gar_B = 1 - frr_B
+
+# ============================================
+# Calcolo AUC
+# ============================================
+auc_A = auc(far_A, gar_A)
+auc_B = auc(far_B, gar_B)
+
+# ============================================
+# Visualizzazione ROC
+# ============================================
+plt.figure(figsize=(8, 6))
+
+# Curva ROC Sistema A
+plt.plot(far_A, gar_A, marker='o', label=f'Sistema A (AUC={auc_A:.2f})')
+
+# Curva ROC Sistema B
+plt.plot(far_B, gar_B, marker='s', label=f'Sistema B (AUC={auc_B:.2f})')
+
+# Diagonale del classificatore casuale
+plt.plot([0, 1], [0, 1], linestyle='--', alpha=0.7, label='Random classifier')
+
+plt.xlabel('False Acceptance Rate (FAR)')
+plt.ylabel('Genuine Acceptance Rate (GAR)')
+plt.title('Receiver Operating Characteristic (ROC)')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
 ```
-GAR
- 1.0|    Sistema A (migliore)
-    |      _.-'''
-    |    _/
-    |   /      Sistema B
-    | _/     _/
-    |/    _/
-    |  _/  Diagonale (casuale)
-    |_/
- 0.0|__________________ FAR
-   0.0               1.0
-```
+
+<img src="../../../../../images/roc-auc.png" style="display: block; margin-left: auto; margin-right: auto; width: 60%;">
+
+<br>
 
 Sistema A domina Sistema B: per ogni valore di FAR, Sistema A ha GAR più alto.
-
-**Esempio pratico**:
-Confronto di tre algoritmi di face recognition:
-
-| Sistema | AUC | EER | Interpretazione |
-|---------|-----|-----|-----------------|
-| Deep CNN | 0.998 | 0.5% | Stato dell'arte |
-| Traditional Features | 0.950 | 3% | Buono, ma superato |
-| Baseline | 0.850 | 8% | Accettabile per applicazioni non critiche |
 
 ### 2.9 Detection Error Tradeoff (DET)
 
@@ -862,27 +934,105 @@ Permette di distinguere $10^{-3}$ da $10^{-4}$ (cruciale in sicurezza), cosa dif
 
 **Interpretazione DET**:
 
-```
-FRR (log)
- 10%|
-    |  \
-    |   \  Sistema B (peggiore)
-    |    \
- 1% |     \
-    |   \  \ Sistema A (migliore)
-    |    \  \
-0.1%|     \  \
-    |      \  \
-0.01|_______\__\_______ FAR (log)
-    0.01  0.1  1%  10%
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Genera dati di esempio per due sistemi biometrici
+np.random.seed(42)
+
+# Sistema A (migliore) - punteggi genuini e impostori
+genuine_scores_A = np.random.normal(0.8, 0.15, 1000)
+impostor_scores_A = np.random.normal(0.3, 0.12, 1000)
+
+# Sistema B (peggiore) - punteggi genuini e impostori
+genuine_scores_B = np.random.normal(0.7, 0.20, 1000)
+impostor_scores_B = np.random.normal(0.4, 0.15, 1000)
+
+def calcola_det_curve(genuine, impostor):
+    """Calcola la curva DET (FAR vs FRR)"""
+    # Crea un range di soglie
+    thresholds = np.linspace(0, 1, 200)
+    
+    FAR = []
+    FRR = []
+    
+    for tau in thresholds:
+        # False Accept Rate: impostori accettati / totale impostori
+        fa = np.sum(impostor >= tau) / len(impostor)
+        FAR.append(fa)
+        
+        # False Reject Rate: genuini rifiutati / totale genuini
+        fr = np.sum(genuine < tau) / len(genuine)
+        FRR.append(fr)
+    
+    return np.array(FAR), np.array(FRR)
+
+# Calcola le curve DET per entrambi i sistemi
+FAR_A, FRR_A = calcola_det_curve(genuine_scores_A, impostor_scores_A)
+FAR_B, FRR_B = calcola_det_curve(genuine_scores_B, impostor_scores_B)
+
+# Visualizzazione
+plt.figure(figsize=(10, 8))
+
+# Plot delle curve DET con scala logaritmica
+plt.plot(FAR_A * 100, FRR_A * 100, 'b-', linewidth=2, label='Sistema A (migliore)')
+plt.plot(FAR_B * 100, FRR_B * 100, 'r--', linewidth=2, label='Sistema B (peggiore)')
+
+# Scala logaritmica su entrambi gli assi
+plt.xscale('log')
+plt.yscale('log')
+
+# Etichette e titolo
+plt.xlabel('False Accept Rate - FAR (%)', fontsize=12)
+plt.ylabel('False Reject Rate - FRR (%)', fontsize=12)
+plt.title('Curva DET (Detection Error Tradeoff)', fontsize=14, fontweight='bold')
+
+# Griglia
+plt.grid(True, which='both', alpha=0.3, linestyle='-')
+
+# Limiti degli assi (da 0.01% a 50%)
+plt.xlim([0.01, 150])
+plt.ylim([0.01, 150])
+
+# Legenda
+plt.legend(loc='upper right', fontsize=11)
+
+# Aggiungi annotazioni
+plt.text(0.015, 30, 'Scala logaritmica:\n- Evidenzia differenze\n  a bassi error rate\n- Curva più bassa\n  e a sinistra è migliore', 
+         fontsize=9, bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
+# Evidenzia alcuni punti operativi
+idx_1 = np.argmin(np.abs(FAR_A - 0.01))  # FAR ~ 1%
+idx_2 = np.argmin(np.abs(FAR_A - 0.001))  # FAR ~ 0.1%
+
+plt.plot(FAR_A[idx_1] * 100, FRR_A[idx_1] * 100, 'bo', markersize=8)
+plt.plot(FAR_A[idx_2] * 100, FRR_A[idx_2] * 100, 'go', markersize=8)
+
+plt.tight_layout()
+plt.show()
+
+# Stampa alcune statistiche
+print("=== Confronto Sistemi ===")
+print(f"\nSistema A (FAR=1%): FRR={FRR_A[idx_1]*100:.3f}%")
+print(f"Sistema B (FAR=1%): FRR={FRR_B[np.argmin(np.abs(FAR_B - 0.01))]*100:.3f}%")
+print(f"\nSistema A (FAR=0.1%): FRR={FRR_A[idx_2]*100:.3f}%")
+print(f"Sistema B (FAR=0.1%): FRR={FRR_B[np.argmin(np.abs(FAR_B - 0.001))]*100:.3f}%")
 ```
 
-Sistema A ha errori più bassi per tutte le soglie operative.
+<img src="../../../../../images/det.png" style="display: block; margin-left: auto; margin-right: auto; width: 60%;">
 
-**Esempio**: Sistema di riconoscimento iris:
-- Su scala lineare: differenza tra FAR=0.0001 e FAR=0.00001 invisibile
-- Su scala log DET: differenza chiaramente visibile (ordine di grandezza)
-- Critico per applicazioni ad alta sicurezza dove questi numeri contano
+<br>
+
+```{visible}
+=== Confronto Sistemi ===
+
+Sistema A (FAR=1%): FRR=6.300%
+Sistema B (FAR=1%): FRR=55.400%
+
+Sistema A (FAR=0.1%): FRR=19.800%
+Sistema B (FAR=0.1%): FRR=81.900%
+```
 
 ### 2.10 Scelta della Soglia Ottimale
 
@@ -907,7 +1057,9 @@ $\tau^* = \arg\min_\tau R(\tau)$
 **Teorema 2.2** (Soglia di Neyman-Pearson):
 *Data la loss matrix asimmetrica, la soglia ottimale soddisfa:*
 
-$\frac{p(d|\text{genuine})}{p(d|\text{impostor})} = \frac{C_{FA} \cdot \pi_I}{C_{FR} \cdot \pi_G}$
+$$
+\frac{p(d|\text{genuine})}{p(d|\text{impostor})} = \frac{C_{FA} \cdot \pi_I}{C_{FR} \cdot \pi_G}
+$$
 
 valutata in $d = \tau^*$.
 
@@ -991,32 +1143,35 @@ L'identificazione open-set è la modalità operativa più complessa e realistica
 
 **Algoritmo dettagliato**:
 
-```
-Input: 
-  - probe p (campione biometrico da identificare)
-  - gallery G = {g₁, g₂, ..., g|G|} (database template)
-  - threshold τ (soglia di decisione)
+**Input:** 
+- probe $p$ (campione biometrico da identificare)  
+- gallery $G = \{g_1, g_2, \dots, g_{|G|}\}$ (database di template)  
+- threshold $\tau$ (soglia di decisione sulle distanze)
 
-Output: 
-  - identity or "not in gallery"
+**Output:** 
+- identità di $p$ o `"not in gallery"`
 
-1. Compute all distances:
-   D = {d(p, g₁), d(p, g₂), ..., d(p, g|G|)}
+1. **Calcola tutte le distanze**:
+   $$
+   D = \{ d(p, g_1), d(p, g_2), \dots, d(p, g_{|G|}) \}
+   $$
 
-2. Sort D in ascending order:
-   d₁ ≤ d₂ ≤ ... ≤ d|G|
-   
-   Otteniamo ranked list: [(g₁, d₁), (g₂, d₂), ..., (g|G|, d|G|)]
-   dove g₁ è il template più simile a p
+2. **Ordina $D$ in ordine crescente**:
+   $$
+   d_1 \le d_2 \le \dots \le d_{|G|}
+   $$
+   Otteniamo la ranked list:
+   $$
+   [(g_1, d_1), (g_2, d_2), \dots, (g_{|G|}, d_{|G|})]
+   $$
+   dove $g_1$ è il template più simile a $p$.
 
-3. Decision logic:
-   If d₁ > τ:
-     Return "not in gallery" (no detection)
-     // Nemmeno il match migliore supera la soglia
-   Else:
-     // Detection positivo, ora verifichiamo l'identità
-     Return id(g₁)  // Identità del template con distanza minima
-```
+3. **Decisione**:
+   - Se $d_1 > \tau$ → ritorna `"not in gallery"`  
+     (nessun match supera la soglia)
+   - Altrimenti → ritorna $\text{id}(g_1)$  
+     (identità del template con distanza minima)
+
 
 **Ruolo critico della soglia**:
 - Funge da **presence detector** - decide se il probe appartiene a qualcuno in galleria
@@ -1026,7 +1181,7 @@ Output:
 - Troppo restrittiva → molte persone in galleria non vengono rilevate
 
 **Complessità computazionale**:
-- O(|G|) confronti per ogni probe
+- $O(|G|)$ confronti per ogni probe (accettabile per gallerie piccole)
 - Per gallerie grandi (milioni di template): necessari algoritmi di indicizzazione/hashing
 - Trade-off accuracy vs speed: approssimazioni (LSH, quantization) riducono accuracy ma aumentano velocità
 
@@ -1042,6 +1197,8 @@ A differenza della verifica (4 outcome), l'identificazione open-set ha outcome p
 | $d_1 \leq \tau \land \text{id}(g_1) \neq \text{id}(p)$ | Detection ✓, ID ✗ | **False Rejection** (misidentification) | Rilevato ma ID sbagliata |
 | $d_1 > \tau$ | Detection ✗ | **False Rejection** (missed detection) | Non rilevato affatto |
 
+Se facciamo vari tentativi con probe diverse che sappiamo appartenere al database, sapremo quante volte il sistema restituisce la risposat corretta (**correct rate**).  
+
 **Caso 2: Probe non-enrolled** ($p \in \mathcal{P}_N$) - Il soggetto NON è nel database
 
 | **Condizione** | **Outcome** | **Nome** | **Interpretazione** |
@@ -1052,6 +1209,8 @@ A differenza della verifica (4 outcome), l'identificazione open-set ha outcome p
 **Importante**: In open-set, FR può avvenire in **due modi**:
 1. Soggetto enrolled non rilevato affatto ($d_1 > \tau$)
 2. Soggetto enrolled rilevato ma con identità sbagliata al primo posto ($d_1 \leq \tau$ ma $\text{id}(g_1) \neq \text{id}(p)$)
+
+Se facciamo vari tentativi con probe diverse che sappiamo non appartenere al database, sapremo quante volte il sistema restituisce una risposta incorretta (**false alarm rate**).
 
 **Esempio pratico - Watchlist aeroportuale**:
 
@@ -1073,31 +1232,150 @@ Scenario C - Soglia bilanciata:
 - 100 falsi allarmi (gestibili con verifica secondaria)
 - FAR = 100/9998 ≈ 1%, FRR = 0/2 = 0%
 
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+# Dati
+pericolosi = np.random.normal(0.1, 0.03, 2)  # 2 soggetti pericolosi (distanze BASSE)
+innocenti = np.random.normal(0.4, 0.1, 9998)  # 9998 innocenti (distanze ALTE)
+
+# Tre soglie diverse
+tau_A = 0.5  # troppo permissiva
+tau_B = 0.08  # troppo restrittiva  
+tau_C = 0.18  # bilanciata
+
+# Funzione per calcolare errori
+def calcola_errori(tau):
+    rilevati_pericolosi = sum(pericolosi <= tau)
+    falsi_allarmi = sum(innocenti <= tau)
+    FRR = (2 - rilevati_pericolosi) / 2 * 100
+    FAR = falsi_allarmi / 9998 * 100
+    return FRR, FAR, falsi_allarmi
+
+# Calcola per i 3 scenari
+FRR_A, FAR_A, fa_A = calcola_errori(tau_A)
+FRR_B, FAR_B, fa_B = calcola_errori(tau_B)
+FRR_C, FAR_C, fa_C = calcola_errori(tau_C)
+
+# Visualizzazione
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Grafico 1: Distribuzione
+ax1.hist(pericolosi, bins=20, alpha=0.8, color='red', label='Pericolosi (2)')
+ax1.hist(innocenti, bins=50, alpha=0.6, color='blue', label='Innocenti (9998)')
+ax1.axvline(tau_A, color='orange', linestyle='--', label=f'A: τ={tau_A}')
+ax1.axvline(tau_B, color='green', linestyle='--', label=f'B: τ={tau_B}')
+ax1.axvline(tau_C, color='purple', linestyle='--', label=f'C: τ={tau_C}')
+ax1.set_xlabel('Distanza')
+ax1.set_title('Distribuzione Distanze')
+ax1.legend()
+ax1.grid(alpha=0.3)
+
+# Grafico 2: Trade-off
+scenarios = ['A\n(permissiva)', 'B\n(restrittiva)', 'C\n(bilanciata)']
+x = [FAR_A, FAR_B, FAR_C]
+y = [FRR_A, FRR_B, FRR_C]
+colors = ['orange', 'green', 'purple']
+
+for i, (xi, yi, c, s) in enumerate(zip(x, y, colors, scenarios)):
+    ax2.scatter(xi, yi, s=300, color=c, marker='o', edgecolors='black', linewidth=2)
+    ax2.text(xi, yi+3, s, ha='center', fontsize=10, fontweight='bold')
+
+ax2.set_xlabel('FAR - Falsi Allarmi (%)')
+ax2.set_ylabel('FRR - Pericolosi Mancati (%)')
+ax2.set_title('Trade-off FAR vs FRR')
+ax2.grid(alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# Stampa risultati
+print("\nRISULTATI:")
+print(f"A (permissiva):  FAR={FAR_A:.1f}%, FRR={FRR_A:.0f}% → {fa_A} falsi allarmi ⚠️")
+print(f"B (restrittiva): FAR={FAR_B:.1f}%, FRR={FRR_B:.0f}% → {fa_B} falsi allarmi ⚠️")
+print(f"C (bilanciata):  FAR={FAR_C:.1f}%, FRR={FRR_C:.0f}% → {fa_C} falsi allarmi ✓")
+
+# Zona ottimale
+ax4.axhspan(0, 10, alpha=0.1, color='green', label='Zona FRR accettabile')
+ax4.axvspan(0, 2, alpha=0.1, color='blue', label='Zona FAR accettabile')
+
+ax4.set_xlabel('FAR - Falsi Allarmi (%)', fontsize=11)
+ax4.set_ylabel('FRR - Pericolosi Mancati (%)', fontsize=11)
+ax4.set_title('Trade-off FAR vs FRR', fontsize=12, fontweight='bold')
+ax4.legend(fontsize=9, loc='upper right')
+ax4.grid(alpha=0.3)
+ax4.set_xlim(-0.5, max(FARs) + 1)
+ax4.set_ylim(-5, max(FRRs) + 10)
+
+plt.tight_layout()
+plt.show()
+
+# === RIEPILOGO FINALE ===
+print("\n\n" + "█" * 60)
+print("RIEPILOGO COMPARATIVO")
+print("█" * 60)
+print(f"\n{'Scenario':<20} {'FAR':<12} {'FRR':<12} {'Falsi Allarmi':<15} {'Valutazione'}")
+print("─" * 80)
+print(f"{'A (permissiva)':<20} {FAR_A:>6.2f}%    {FRR_A:>6.1f}%    {fa_A:>8}/{n_non_enrolled:<6} ⚠️  Inaccettabile")
+print(f"{'B (restrittiva)':<20} {FAR_B:>6.2f}%    {FRR_B:>6.1f}%    {fa_B:>8}/{n_non_enrolled:<6} ⚠️  Inaccettabile")
+print(f"{'C (bilanciata)':<20} {FAR_C:>6.2f}%    {FRR_C:>6.1f}%    {fa_C:>8}/{n_non_enrolled:<6} ✓  Ottimale")
+print("=" * 80)
+```
+<img src="../../../../../images/identification-errors.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">
+<br>
+
+```{visible}
+RISULTATI:
+A (permissiva):  FAR=84.1%, FRR=0% → 8405 falsi allarmi ⚠️
+B (restrittiva): FAR=0.1%, FRR=100% → 7 falsi allarmi ⚠️
+C (bilanciata):  FAR=1.3%, FRR=0% → 134 falsi allarmi ✓
+
+████████████████████████████████████████████████████████████
+RIEPILOGO COMPARATIVO
+████████████████████████████████████████████████████████████
+
+Scenario             FAR          FRR          Falsi Allarmi   Valutazione
+────────────────────────────────────────────────────────────────────────────────
+A (permissiva)        84.07%       0.0%        8405/9998   ⚠️  Inaccettabile
+B (restrittiva)        0.07%     100.0%           7/9998   ⚠️  Inaccettabile
+C (bilanciata)         1.34%       0.0%         134/9998   ✓  Ottimale
+================================================================================
+```
+
+
 ### 3.4 Metriche con Ranking
 
 In open-set, la posizione nella ranked list è fondamentale perché il sistema può restituire una short-list di candidati, non solo il top-1.
 
-#### 3.4.1 Detection and Identification Rate (DIR)
+#### 3.4.1 Detection and Identification Rate (DIR) a rank $k$
 
 **Definizione generale**:
 
-$\text{DIR}(\tau, k) = \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{rank}(\text{id}(p)) \leq k\}|}{|\mathcal{P}_G|}$
+$$
+\text{DIR}(\tau, k) = \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{rank}(\text{id}(p)) \leq k\}|}{|\mathcal{P}_G|}
+$$
 
-dove $\text{rank}(\text{id}(p))$ è la posizione della prima occorrenza dell'identità corretta nella lista ordinata.
+dove $\text{rank}(\text{id}(p))$ è la posizione della prima occorrenza (template) dell'identità corretta nella lista ordinata.
 
 **Interpretazione**: Probabilità che un probe enrolled sia:
 1. Rilevato (detection): almeno un template sotto soglia
 2. Correttamente identificato entro rank k
 
+Quindi $\text{DIR}(\tau, k)$ rappresenta la frazione dei probe presenti nella gallery che sono rilevati (distanza $≤ \tau$) e identificati correttamente entro i primi $k$ della lista ordinata.
+
 **Caso speciale - DIR a rank 1**:
-$\text{DIR}(\tau, 1) = \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{id}(g_1) = \text{id}(p)\}|}{|\mathcal{P}_G|}$
+
+$$\text{DIR}(\tau, 1) = \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{id}(g_1) = \text{id}(p)\}|}{|\mathcal{P}_G|}$$
 
 Questo è il caso più importante: identità corretta al primo posto.
 
 **Interpretazione**: Probabilità che un probe enrolled sia correttamente identificato al primo posto **e** che la distanza superi la soglia.
 
 **Proprietà di monotonicità**:
-$\text{DIR}(\tau, k_1) \leq \text{DIR}(\tau, k_2) \quad \forall k_1 < k_2$
+$$\text{DIR}(\tau, k_1) \leq \text{DIR}(\tau, k_2) \quad \forall k_1 < k_2$$
 
 All'aumentare di $k$, DIR può solo aumentare o restare costante (più posizioni = più opportunità di trovare l'identità corretta).
 
