@@ -1119,8 +1119,18 @@ L'identificazione open-set è la modalità operativa più complessa e realistica
 
 **Task di Identificazione Open-Set**: Dato un probe $p$:
 
-1. **Determinare** se $\text{id}(p) \in \mathcal{G}$ (detection/presence)
-2. **Se sì**, identificare quale identità: $\arg\min_{g \in \mathcal{G}} d(p, g)$ (identification)
+1. **Detection (presence)**  
+   Verificare se esiste almeno un template in gallery sufficientemente simile:
+   $$
+   d_1 = \min_{g \in \mathcal{G}} d(p, g)
+   $$
+   Se $d_1 > \tau$, il probe è dichiarato **“not in gallery”**.
+
+2. **Identification**  
+   Se $d_1 \le \tau$, assegnare al probe l’identità del template più vicino:
+   $$
+   \hat{\text{id}}(p) = \text{id}\!\left(\arg\min_{g \in \mathcal{G}} d(p, g)\right)
+   $$
 
 **Differenze chiave con verifica**:
 - Nessuna identità dichiarata (no claim) → sistema deve fare tutto autonomamente
@@ -1149,7 +1159,7 @@ L'identificazione open-set è la modalità operativa più complessa e realistica
 - threshold $\tau$ (soglia di decisione sulle distanze)
 
 **Output:** 
-- identità di $p$ o `"not in gallery"`
+- identità (stimata) di $p$ o `"not in gallery"`
 
 1. **Calcola tutte le distanze**:
    $$
@@ -1181,7 +1191,7 @@ L'identificazione open-set è la modalità operativa più complessa e realistica
 - Troppo restrittiva → molte persone in galleria non vengono rilevate
 
 **Complessità computazionale**:
-- $O(|G|)$ confronti per ogni probe (accettabile per gallerie piccole)
+- $O(|G|)$ confronti per ogni probe + $O(|G| \log |G|)$ per il sorting (accettabile per gallerie piccole)
 - Per gallerie grandi (milioni di template): necessari algoritmi di indicizzazione/hashing
 - Trade-off accuracy vs speed: approssimazioni (LSH, quantization) riducono accuracy ma aumentano velocità
 
@@ -1206,11 +1216,11 @@ Se facciamo vari tentativi con probe diverse che sappiamo appartenere al databas
 | $d_1 > \tau$ | Nessun detection | **Genuine Rejection** | Corretto - nessun allarme |
 | $d_1 \leq \tau$ | Detection errato | **False Acceptance** (false alarm) | Falso allarme |
 
+Se facciamo vari tentativi con probe diverse che sappiamo non appartenere al database, sapremo quante volte il sistema restituisce una risposta incorretta (**false alarm rate**).
+
 **Importante**: In open-set, FR può avvenire in **due modi**:
 1. Soggetto enrolled non rilevato affatto ($d_1 > \tau$)
 2. Soggetto enrolled rilevato ma con identità sbagliata al primo posto ($d_1 \leq \tau$ ma $\text{id}(g_1) \neq \text{id}(p)$)
-
-Se facciamo vari tentativi con probe diverse che sappiamo non appartenere al database, sapremo quante volte il sistema restituisce una risposta incorretta (**false alarm rate**).
 
 **Esempio pratico - Watchlist aeroportuale**:
 
@@ -1355,10 +1365,28 @@ In open-set, la posizione nella ranked list è fondamentale perché il sistema p
 **Definizione generale**:
 
 $$
-\text{DIR}(\tau, k) = \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{rank}(\text{id}(p)) \leq k\}|}{|\mathcal{P}_G|}
+\text{DIR}(\tau, k) =
+\frac{
+\left|
+\left\{
+p \in \mathcal{P}_G :
+d_1 \le \tau
+\;\land\;
+\text{rank}(\text{id}(p)) \le k
+\right\}
+\right|
+}{
+|\mathcal{P}_G|
+}
 $$
 
-dove $\text{rank}(\text{id}(p))$ è la posizione della prima occorrenza (template) dell'identità corretta nella lista ordinata.
+dove:
+- $d_1 = \min_{g \in G} d(p, g)$ è la distanza del miglior match,
+- $\text{rank}(\text{id}(p))$ è la posizione della **prima occorrenza (template)** dell’identità corretta nella ranked list, definita come
+$$
+\text{rank}(\text{id}(p)) =
+\min \{ j : \text{id}(g_j) = \text{id}(p) \}.
+$$
 
 **Interpretazione**: Probabilità che un probe enrolled sia:
 1. Rilevato (detection): almeno un template sotto soglia
@@ -1372,12 +1400,77 @@ $$\text{DIR}(\tau, 1) = \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text
 
 Questo è il caso più importante: identità corretta al primo posto.
 
-**Interpretazione**: Probabilità che un probe enrolled sia correttamente identificato al primo posto **e** che la distanza superi la soglia.
+**Interpretazione**: Probabilità che un probe enrolled sia correttamente identificato al primo posto **e** che la distanza non superi la soglia.
 
 **Proprietà di monotonicità**:
 $$\text{DIR}(\tau, k_1) \leq \text{DIR}(\tau, k_2) \quad \forall k_1 < k_2$$
 
 All'aumentare di $k$, DIR può solo aumentare o restare costante (più posizioni = più opportunità di trovare l'identità corretta).
+
+**Dimostrazione (Monotonicità della DIR rispetto a $k$)**
+
+Siano $k_1, k_2 \in \mathbb{N}^+$ tali che $k_1 < k_2$.
+Consideriamo i due insiemi:
+
+$$
+A_{k_1} =
+\left\{
+p \in \mathcal{P}_G :
+d_1 \le \tau
+\;\land\;
+\text{rank}(\text{id}(p)) \le k_1
+\right\}
+$$
+
+$$
+A_{k_2} =
+\left\{
+p \in \mathcal{P}_G :
+d_1 \le \tau
+\;\land\;
+\text{rank}(\text{id}(p)) \le k_2
+\right\}
+$$
+
+Poiché $k_1 < k_2$, vale l’inclusione insiemistica:
+
+$$
+\{ p : \text{rank}(\text{id}(p)) \le k_1 \}
+\subseteq
+\{ p : \text{rank}(\text{id}(p)) \le k_2 \}
+$$
+
+e quindi:
+
+$$
+A_{k_1} \subseteq A_{k_2}.
+$$
+
+Ne segue che:
+
+$$
+|A_{k_1}| \le |A_{k_2}|.
+$$
+
+Dividendo entrambi i membri per $|\mathcal{P}_G|$, otteniamo:
+
+$$
+\text{DIR}(\tau, k_1)
+=
+\frac{|A_{k_1}|}{|\mathcal{P}_G|}
+\le
+\frac{|A_{k_2}|}{|\mathcal{P}_G|}
+=
+\text{DIR}(\tau, k_2).
+$$
+
+Pertanto:
+
+$$
+\text{DIR}(\tau, k_1) \le \text{DIR}(\tau, k_2)
+\quad \forall \, k_1 < k_2.
+\qquad \square
+$$
 
 **Esempio pratico**:
 
@@ -1388,66 +1481,113 @@ Watchlist con 100 soggetti, 200 probe enrolled:
 
 Interpretazione: Per 30 probe (15%), l'identità corretta non è al primo posto ma appare entro i primi 10 candidati. In applicazioni dove un operatore umano verifica la short-list, DIR(τ, 10) è più rilevante di DIR(τ, 1).
 
-#### 3.4.2 False Rejection Rate
+## 3.4.2 Misidentification Rate (MIR)
 
 **Definizione**:
-$\text{FRR}(\tau) = 1 - \text{DIR}(\tau, 1)$
+$$
+\text{MIR}(\tau) = P(d_1 \leq \tau \land \text{id}(g_1) \neq \text{id}(p) \; | \; p \in \mathcal{P}_G) = \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{id}(g_1) \neq \text{id}(p)\}|}{|\mathcal{P}_G|}
+$$
 
-**Interpretazione**: Probabilità che un soggetto enrolled non sia correttamente identificato al primo posto.
+**Interpretazione**: Probabilità che un soggetto enrolled venga **accettato dal sistema ma associato a un'identità errata** in uno scenario **open-set**. Rappresenta la componente di misidentificazione pura della FNIR.
+
+**Relazione con FNIR**:
+$$
+\text{FNIR}(\tau) = \underbrace{P(d_1 > \tau | p \in \mathcal{P}_G)}_{\text{No Detection Rate}} + \underbrace{\text{MIR}(\tau)}_{\text{Misidentification Rate}}
+$$
+
+**Differenza chiave rispetto a FNIR**:
+- **FNIR**: misura **tutti** gli errori su probe enrolled (sia rifiuti che misidentificazioni)
+- **MIR**: misura **solo** le misidentificazioni (errori dove il sistema accetta ma sbaglia identità)
+
+## 3.4.3 False Negative Rate (FNR) o Detection Error Rate
+
+**Definizione**:
+$$
+\text{FNR}(\tau) = P(d_1 > \tau | p \in \mathcal{P}_G) = \frac{|\{p \in \mathcal{P}_G : d_1 > \tau\}|}{|\mathcal{P}_G|}
+$$
+
+**Interpretazione**: Probabilità che un soggetto enrolled venga **rifiutato dal sistema** (non viene fatta alcuna identificazione) perché la distanza minima dalla gallery supera la soglia τ.
+
+**Nomi alternativi**:
+- **False Negative Rate (FNR)**: termine più generale
+- **Detection Error Rate**: enfatizza il fallimento nella fase di detection
+- **Rejection Rate on Enrolled Probes**: descrittivo del fenomeno
+
+## 3.4.4 False Negative Identification Rate (FNIR)
+
+**Definizione**:
+$$
+\text{FNIR}(\tau) = 1 - \text{DIR}(\tau, 1)
+$$
+
+**Interpretazione**: Probabilità che un soggetto enrolled non sia correttamente identificato al primo posto in uno scenario **open-set**, dove possono presentarsi anche soggetti non presenti nella gallery.
 
 **Decomposizione**:
-$\text{FRR}(\tau) = P(\text{no detection}|p \in \mathcal{P}_G) + P(\text{misidentification}|p \in \mathcal{P}_G)$
+$$
+\text{FNIR}(\tau) = P(\text{no detection}|p \in \mathcal{P}_G) + P(\text{misidentification}|p \in \mathcal{P}_G) = \underbrace{\frac{|\{p \in \mathcal{P}_G : d_1 > \tau\}|}{|\mathcal{P}_G|}}_{\text{FNR}(\tau)} + \underbrace{\frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{id}(g_1) \neq \text{id}(p)\}|}{|\mathcal{P}_G|}}_{\text{MIR}(\tau)}
+$$
 
-$= \frac{|\{p \in \mathcal{P}_G : d_1 > \tau\}|}{|\mathcal{P}_G|} + \frac{|\{p \in \mathcal{P}_G : d_1 \leq \tau \land \text{id}(g_1) \neq \text{id}(p)\}|}{|\mathcal{P}_G|}$
+dove:
+- **Termine 1** (no detection): probe enrolled viene rifiutato perché la distanza minima supera la soglia
+- **Termine 2** (misidentification): probe enrolled viene accettato ma associato all'identità sbagliata
 
-Questa decomposizione è utile per diagnosticare problemi:
-- Se termine 1 domina: problema di detection (soglia troppo restrittiva)
-- Se termine 2 domina: problema di identification (matcher non discriminativo)
+Questa decomposizione è fondamentale per diagnosticare problemi in scenari **open-set**:
+
+- **Se termine 1 domina**: problema di **detection/thresholding** (soglia troppo restrittiva che rigetta genuine)
+- **Se termine 2 domina**: problema di **identification** (matcher non discriminativo che confonde identità enrolled)
 
 **Esempio diagnostico**:
 
-Sistema A: FRR = 10% (5% no detection + 5% misidentification)
+**Sistema A**: FNIR = 10% (5% no detection + 5% misidentification)  
 → Problema bilanciato: migliorare sia soglia che matcher
 
-Sistema B: FRR = 10% (9% no detection + 1% misidentification)
-→ Problema di detection: aumentare soglia (accettare più FAR per ridurre FRR)
+**Sistema B**: FNIR = 10% (9% no detection + 1% misidentification)  
+→ Problema di detection: rilassare soglia (accettare più FPIR per ridurre FNIR)
 
-Sistema C: FRR = 10% (1% no detection + 9% misidentification)
+**Sistema C**: FNIR = 10% (1% no detection + 9% misidentification)  
 → Problema di identification: migliorare matcher (feature extraction più discriminativa)
 
-#### 3.4.3 False Acceptance Rate (False Alarm Rate)
+**Nota**: In contesto open-set, FNIR misura solo errori su probe enrolled ($p \in \mathcal{P}_G$). Gli errori su probe non-enrolled sono catturati da FPIR (False Positive Identification Rate).
+
+#### 3.4.3 False Positive Identification Rate (FPIR)
 
 **Definizione**:
-$\text{FAR}(\tau) = \text{FPIR}(\tau) = \frac{|\{p \in \mathcal{P}_N : d_1 \leq \tau\}|}{|\mathcal{P}_N|}$
 
-FPIR = False Positive Identification Rate (terminologia alternativa, comune in letteratura)
+$$
+\text{FPIR}(\tau) = \frac{\overbrace{|\{p \in \mathcal{P}_N : d_1 \leq \tau\}|}^\text{Probe non-enrolled accettati}}{\underbrace{|\mathcal{P}_N|}_\text{Probe non-enrolled totali}} 
+$$
 
-**Interpretazione**: Probabilità che un soggetto non-enrolled produca una distanza sotto soglia (false alarm).
+dove:
+- $\mathcal{P}_N$ è l’insieme dei probe **non-enrolled** (non presenti in gallery)
+- $d_1 = \min_{g \in G} d(p, g)$ è la distanza del miglior match tra probe e gallery
 
-**Nota importante**: In open-set, la posizione nella ranked list è **irrilevante** per FA. Conta solo se $d_1 \leq \tau$. Questo perché:
-- Per probe non-enrolled, non esiste identità corretta in galleria
-- Qualsiasi detection è un errore, indipendentemente da quale identità viene restituita
-- L'identità restituita è casuale/arbitraria (dipende da chi somiglia di più al probe)
+**Interpretazione**: Probabilità che un probe non-enrolled produca un **false alarm**, cioè venga accettato erroneamente dal sistema.  
+
+**Nota importante**:  
+In open-set la posizione nella ranked list è **irrilevante** per FPIR:
+- Per probe non-enrolled non esiste identità corretta in gallery
+- Qualsiasi match sotto soglia è un errore
+- L'identità restituita è casuale/arbitraria
 
 **Differenza con verifica**:
-- Verifica: FAR richiede claim specifico
-- Open-set: FAR è detection errato di qualsiasi tipo
+- Verifica: FAR richiede claim specifico dell’identità
+- Open-set: FPIR misura solo detection erronea, indipendentemente dall’identità restituita
 
-**Impatto operativo del FAR**:
+**Impatto operativo del FPIR**:
 
-In applicazioni watchlist reali, FAR alto ha conseguenze pratiche:
-
-Esempio aeroporto con 10000 passeggeri/giorno, 100 in watchlist:
-- FAR = 1%: 99 falsi allarmi/giorno
+Esempio aeroporto con $10{,}000$ passeggeri/giorno, $100$ in watchlist:
+- Persone non in watchlist: $10{,}000 - 100 = 9{,}900$
+- Sistema con $\text{FPIR} = 1\%$
+- Falsi allarmi: $0.01 \times 9{,}900 \approx 99$ al giorno
 - Ogni falso allarme richiede:
   - Investigazione di sicurezza (15 min)
   - Potenziale interrogatorio
   - Stress per passeggero innocente
   - Costo operativo (personale)
 
-Con 99 falsi allarmi: 24.75 ore operative/giorno solo per gestire falsi positivi!
+Totale ore giornaliere per gestire falsi positivi: $99 \times 15 \text{ min} \approx 24.75$ ore
 
-→ Necessario FAR < 0.1% (< 10 falsi allarmi/giorno) per essere operativamente sostenibile.
+→ Necessario FPIR < 0.1% (< 10 falsi/giorno) per sostenibilità operativa.
 
 ### 3.5 Open-Set ROC (Watchlist ROC)
 
@@ -1464,23 +1604,40 @@ $\text{ROC}_{\text{open}}(\tau) = (\text{FAR}(\tau), \text{DIR}(\tau, 1))$
 
 **Interpretazione geometrica**:
 
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Esempio di soglie
+thresholds = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+
+# FAR simulato (stesso per entrambi i plot)
+far = np.array([0.25, 0.10, 0.05, 0.02, 0.01, 0.005])
+
+# GAR (verifica) - più alta
+gar = np.array([0.99, 0.97, 0.95, 0.90, 0.85, 0.80])
+
+# DIR (open-set, rank 1) - più bassa della GAR
+dir_rank1 = np.array([0.90, 0.85, 0.75, 0.65, 0.55, 0.45])
+
+plt.figure(figsize=(7,5))
+plt.plot(far, gar, marker='o', label='Verification ROC (GAR)')
+plt.plot(far, dir_rank1, marker='s', label='Open-set ROC (DIR rank 1)')
+
+# Evidenzio il punto EER approssimativo per DIR
+eer_index = np.argmin(np.abs(far - (1-dir_rank1)))
+plt.scatter(far[eer_index], dir_rank1[eer_index], color='red', zorder=5, label='EER approx DIR')
+
+plt.xlabel('FAR')
+plt.ylabel('GAR / DIR')
+plt.title('Confronto ROC verifica vs Open-set (watchlist)')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
 ```
-DIR
- 1.0|      Perfetto (0,1)
-    |       *
-    |      /
-    |     /  Open-set ROC
-    |    /   (più bassa)
-    |   /
-    |  /
-    | /    Verification ROC
-    |/     (più alta)
-    /
-   /  EER
-  /
- /_____________________ FAR
-0                      1.0
-```
+
+<img src="../../../../../images/roc-openset.png" style="display: block; margin-left: auto; margin-right: auto; width: 60%;">
 
 **Perché DIR < GAR (a parità di FAR)?**
 
@@ -1506,7 +1663,10 @@ Sistema con soglia τ = 0.3:
 → Stesso probe, stessa soglia: successo in verifica, fallimento in open-set
 
 **AUC-DIR** (Area Under DIR curve):
-$\text{AUC}_{\text{DIR}} = \int_0^1 \text{DIR}(t, 1) \, d(\text{FAR}(t))$
+
+$$
+\text{AUC}_{\text{DIR}} = \int_0^1 \text{DIR}(t, 1) \, d(\text{FAR}(t))
+$$
 
 Tipicamente: AUC_DIR < AUC_GAR per stesso algoritmo, perché identificazione è più difficile.
 
