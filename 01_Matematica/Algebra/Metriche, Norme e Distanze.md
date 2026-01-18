@@ -9,11 +9,14 @@ Tuttavia, quando definiamo uno **spazio vettoriale**, non facciamo alcun riferim
 ### **Definizione di Metrica**
 Una **metrica** (o **distanza**) è una funzione $d(\cdot, \cdot) : X \times X \to \mathbb{R}$ che associa a ogni coppia di punti $x, y$ in uno spazio $X$ un numero reale che rappresenta la distanza tra di essi. Per essere una metrica, la funzione $d$ deve soddisfare le seguenti proprietà:
 
-1. **Non negatività**: $d(x, y) \geq 0$ per ogni $x, y \in X$, e $d(x, y) = 0$ se e solo se $x = y$.
-2. **Simmetria**: $d(x, y) = d(y, x)$ per ogni $x, y \in X$.
-3. **Disuguaglianza triangolare**: $d(x, z) \leq d(x, y) + d(y, z)$ per ogni $x, y, z \in X$.
+1. **Non negatività**: $d(x, y) \geq 0$ per ogni $x, y \in X$
+2. **Identità**: $d(x, y) = 0$ se e solo se $x = y$.
+3. **Simmetria**: $d(x, y) = d(y, x)$ per ogni $x, y \in X$.
+4. **Disuguaglianza triangolare**: $d(x, z) \leq d(x, y) + d(y, z)$ per ogni $x, y, z \in X$.
 
 Uno spazio dotato di una metrica è chiamato **spazio metrico**.
+
+*Nota: Una funzione che soddisfa solo le prime tre proprietà, viene detta **semimetrica**.*
 
 ### **Distanza Euclidea**
 Nello spazio euclideo $\mathbb{R}^n$, la distanza più comune è la **distanza euclidea**, che è un caso particolare di una famiglia più generale di distanze chiamate **distanze $L_p$ (Minkowski)**. La distanza $L_p$ tra due vettori $x, y \in \mathbb{R}^n$ è definita come:

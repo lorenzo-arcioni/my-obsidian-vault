@@ -7,8 +7,7 @@
 3. [Identificazione Open-Set](#3-identificazione-open-set)
 4. [Identificazione Closed-Set](#4-identificazione-closed-set)
 5. [Metodologie di Valutazione Offline](#5-metodologie-di-valutazione-offline)
-6. [Confronto: Metriche Biometriche vs Machine Learning](#6-confronto-metriche-biometriche-vs-machine-learning)
-7. [Affidabilità e Qualità](#7-affidabilità-e-qualità)
+6. [Affidabilità e Qualità](#6-affidabilità-e-qualità)
 
 ## 1. Introduzione e Fondamenti
 
@@ -2016,7 +2015,7 @@ nAUC = 8.68 / 10 = 0.868
 
 | Sistema | RR (rank-1) | CMS(5) | CMS(10) | nAUC |
 |---------|-------------|--------|---------|------|
-| DeepFace | 97.4% | 99.2% | 99.8% | 0.985 |
+| DeepFace | 96.4% | 99.2% | 99.8% | 0.985 |
 | FaceNet | 95.1% | 98.7% | 99.5% | 0.972 |
 | Traditional | 78.3% | 88.9% | 94.2% | 0.891 |
 
@@ -3655,116 +3654,1452 @@ def select_representative_templates(templates, k=5, method='diversity'):
 - Dataset 10K-100K: Probe-vs-Gallery preferibile
 - Dataset > 100K: Obbligatorio Probe-vs-Gallery, considera sampling
 
-## 6. Confronto: Metriche Biometriche vs Machine Learning
+## 6. Affidabilità e Qualità
 
-### 6.1 Differenze Fondamentali
+### 6.1 Introduzione al Concetto di Affidabilità
 
-I sistemi biometrici e i classificatori di machine learning generale hanno obiettivi simili (assegnare etichette) ma contesti operativi profondamente diversi.
+Fino a questo punto abbiamo analizzato le **metriche globali** di performance dei sistemi biometrici (FAR, FRR, EER, DIR, CMC, etc.). Queste metriche forniscono una stima complessiva dell'accuratezza del sistema su un dataset di test, ma **non forniscono informazioni sulla affidabilità di una singola decisione**.
 
-**Tabella comparativa**:
+**Problema fondamentale**: Non tutte le decisioni del sistema sono ugualmente affidabili. Due probe possono ricevere lo stesso verdetto ("Accept" o "Reject"), ma con livelli di confidenza molto diversi.
 
-| **Aspetto** | **Biometria** | **ML Generale** |
-|-------------|---------------|-----------------|
-| **Task primario** | Autenticazione/Identificazione | Classificazione multi-classe |
-| **Classi** | Identità (N potenzialmente enorme) | Categorie fisse (K tipicamente piccolo) |
-| **Training** | Enrollment (no riaddestramento) | Supervised learning su dataset |
-| **Test time** | Nuove identità possibili (open-set) | Classi fisse (closed-set) |
-| **Errori critici** | FA e FR (asimmetrici) | Misclassification (simmetrico) |
-| **Soglia** | Centrale (tuning critico) | Opzionale (post-processing) |
-| **Metrica principale** | FAR, FRR, EER, DIR | Accuracy, Precision, Recall, F1 |
-| **Distribuzione errori** | Bimodale (genuine vs impostor) | Uniforme tra classi (idealmente) |
-| **Confidenza** | Score di matching continuo | Probabilità per classe |
-| **One-shot learning** | Sì (enrollment minimale) | No (serve training esteso) |
-| **Scalabilità classi** | Critica (1:N con N→∞) | Limitata (K ≤ 1000 tipicamente) |
+**Definizione**: L'**affidabilità** (reliability) di una risposta biometrica è una misura della **confidenza** che possiamo riporre in quella specifica decisione, indipendentemente dalle performance globali del sistema.
+
+**Differenza critica**:
+- **Qualità globale**: Quanto è accurato il sistema in media? (misurata da FAR, FRR, EER)
+- **Affidabilità locale**: Quanto possiamo fidarci di questa specifica decisione? (misurata per singolo probe)
 
 **Esempio illustrativo**:
 
-**Sistema biometrico** (Face recognition):
-- Enrollment: 1-5 foto per persona
-- Nuova persona registrata: sistema aggiorna gallery, no retraining
-- Test: Confronto 1:N dove N può essere 1M+
-- Errore critico: Falsa accettazione (impostor entra)
+Sistema di riconoscimento facciale con EER = 2% (eccellente performance globale):
 
-**Classificatore ML** (Image classification):
-- Training: 1000+ immagini per classe
-- Nuova classe: richiede retraining completo
-- Test: Predizione tra K classi fisse (es. K=1000)
-- Errore critico: Misclassification (simmetrico tra classi)
+**Probe A**:
+- Immagine frontale, buona illuminazione, alta risoluzione
+- Sistema restituisce: "Accept, identity = Alice"
+- Score di matching: 0.05 (molto basso, ottimo)
+- Score secondo migliore: 0.35 (molto distante)
+- **Affidabilità**: ALTA (grande separazione, condizioni ottime)
 
-### 6.2 Mapping Concettuale
+**Probe B**:
+- Immagine con occhiali da sole, ombra sul volto, blur da movimento
+- Sistema restituisce: "Accept, identity = Bob"
+- Score di matching: 0.22 (vicino alla soglia τ = 0.25)
+- Score secondo migliore: 0.24 (molto vicino al primo!)
+- **Affidabilità**: BASSA (poca separazione, condizioni degradate)
 
-Sebbene diversi, esistono corrispondenze tra concetti biometrici e ML.
+Entrambi i probe sono accettati dal sistema, ma la decisione su Probe B è molto meno affidabile. In un contesto operativo, potremmo voler:
+- Accettare Probe A immediatamente
+- Richiedere una verifica secondaria per Probe B (ri-acquisizione, controllo umano, autenticazione multi-fattore)
 
-#### Verification ↔ Binary Classification
+**Utilizzi pratici dell'affidabilità**:
 
-**Verifica biometrica**:
-- Input: (probe, claimed_identity)
-- Output: Accept/Reject
-- Ground truth: Match/Non-match
+1. **Politiche operative adattive**:
+   - Se affidabilità > soglia_alta → accettazione automatica
+   - Se soglia_bassa < affidabilità < soglia_alta → verifica secondaria
+   - Se affidabilità < soglia_bassa → rifiuto o ri-acquisizione
 
-**Binary classifier**:
-- Input: coppia (sample1, sample2)
-- Output: Same person / Different person
-- Classes: {Genuine, Impostor}
+2. **Fusione in sistemi multibiometrici**:
+   - Pesare i contributi di diversi matcher in base all'affidabilità
+   - Se face recognition ha bassa affidabilità, dare più peso a fingerprint
 
-**Mapping metriche**:
+3. **Quality control**:
+   - Scartare probe con affidabilità prevista troppo bassa
+   - Richiedere ri-acquisizione in condizioni migliori
 
-| **Biometria** | **ML Binary** | **Relazione** |
-|---------------|---------------|---------------|
-| Genuine Accept | True Positive | Correttamente classificato come Match |
-| False Reject | False Negative | Match erroneamente classificato come Non-match |
-| False Accept | False Positive | Non-match erroneamente classificato come Match |
-| Genuine Reject | True Negative | Correttamente classificato come Non-match |
-| FAR | FPR (False Positive Rate) | FAR = FP / (FP + TN) |
-| FRR | FNR (False Negative Rate) | FRR = FN / (FN + TP) |
-| GAR | TPR / Recall / Sensitivity | GAR = TP / (TP + FN) = 1 - FRR |
-| EER | Point where FPR = FNR | EER = punto FAR = FRR |
-| ROC curve | ROC curve | Identiche! |
+4. **Analisi forensi**:
+   - In investigazioni post-evento, dare priorità a match con alta affidabilità
+   - Investigare manualmente match con bassa affidabilità
 
-**Formule esatte**:
+### 6.2 Qualità del Campione Biometrico
 
-$$\text{FAR} = \frac{FP}{FP + TN} = \text{FPR} = 1 - \text{Specificity}$$
+La qualità del campione acquisito influenza direttamente l'affidabilità della decisione. **Una bassa qualità porta inevitabilmente a bassa affidabilità**, ma l'inverso non è sempre vero (alta qualità non garantisce alta affidabilità se, ad esempio, esistono individui molto simili in galleria).
 
-$$\text{FRR} = \frac{FN}{FN + TP} = \text{FNR} = 1 - \text{Recall}$$
+#### 6.2.1 Misure di Qualità Generiche
 
-$$\text{GAR} = \frac{TP}{TP + FN} = \text{TPR} = \text{Recall} = \text{Sensitivity}$$
+**Universal Image Quality Index (UIQI)**
 
-**Differenza chiave**: In ML, spesso si massimizza accuracy:
-$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}$$
+Proposto per misurare la qualità di un'immagine rispetto a un'immagine di riferimento, modellando la distorsione come combinazione di tre fattori:
 
-In biometria, accuracy è **meno rilevante** perché:
-1. Distribuzione sbilanciata (molti più impostor che genuine in watchlist)
-2. Costi asimmetrici (FA >> FR o viceversa)
+1. **Loss of correlation** (perdita di correlazione)
+2. **Luminance distortion** (distorsione di luminanza)
+3. **Contrast distortion** (distorsione di contrasto)
+
+**Definizione formale**:
+
+Siano $\mathbf{x} = 
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+\vdots \\
+x_N
+\end{bmatrix}, 
+\quad
+\mathbf{y} = 
+\begin{bmatrix}
+y_1 \\
+y_2 \\
+\vdots \\
+y_N
+\end{bmatrix}$ l'immagine originale e l'immagine di test rispettivamente (vettorizzate).
+
+Definiamo:
+- Media di $\mathbf{x}$: $\bar{x} = \frac{1}{N} \sum_{i=1}^N x_i$
+- Media di $\mathbf{y}$: $\bar{y} = \frac{1}{N} \sum_{i=1}^N y_i$
+- Varianza di $\mathbf{x}$: $\sigma_x^2 = \frac{1}{N-1} \sum_{i=1}^N (x_i - \bar{x})^2$
+- Varianza di $\mathbf{y}$: $\sigma_y^2 = \frac{1}{N-1} \sum_{i=1}^N (y_i - \bar{y})^2$
+- Covarianza: $\sigma_{xy} = \frac{1}{N-1} \sum_{i=1}^N (x_i - \bar{x})(y_i - \bar{y})$
+
+L'**UIQI** è definito come:
+
+$$
+\text{UIQI}(\mathbf{x}, \mathbf{y}) = \underbrace{\frac{\sigma_{xy}}{\sigma_x \sigma_y}}_{\text{correlazione}} \cdot \underbrace{\frac{2\bar{x}\bar{y}}{\bar{x}^2 + \bar{y}^2}}_{\text{luminanza}} \cdot \underbrace{\frac{2\sigma_x \sigma_y}{\sigma_x^2 + \sigma_y^2}}_{\text{contrasto}} = \frac{4\bar{x}\bar{y}\sigma_{xy}}{(\bar{x}^2 + \bar{y}^2)(\sigma_x^2 + \sigma_y^2)}
+$$
+
+**Range**: $\text{UIQI} \in [-1, 1]$
+
+- UIQI = 1: Massima qualità (immagini identiche)
+- UIQI = 0: Nessuna correlazione
+- UIQI < 0: Correlazione negativa (immagini "opposte")
+
+**Interpretazione dei termini**:
+
+1. **Termine di correlazione**: $\frac{\sigma_{xy}}{\sigma_x \sigma_y}$
+   - Misura quanto le due immagini sono linearmente correlate
+   - È il coefficiente di correlazione di Pearson
+   - Range: [-1, 1]
+
+2. **Termine di luminanza**: $\frac{2\bar{x}\bar{y}}{\bar{x}^2 + \bar{y}^2}$
+   - Misura quanto le medie sono simili
+   - Se $\bar{x} = \bar{y}$, il termine vale 1
+   - Penalizza differenze di luminosità media
+
+3. **Termine di contrasto**: $\frac{2\sigma_x \sigma_y}{\sigma_x^2 + \sigma_y^2}$
+   - Misura quanto le varianze sono simili
+   - Se $\sigma_x = \sigma_y$, il termine vale 1
+   - Penalizza differenze di contrasto
+
+**Utilizzo in biometria**:
+
+Per valutare la qualità di un probe face image, possiamo confrontarlo con un **template medio** (average face) costruito da tutti i volti nel dataset:
+
+```python
+def compute_uiqi(image, reference_image):
+    """
+    Calcola l'UIQI tra un'immagine e un'immagine di riferimento.
+    """
+    # Converti in vettori
+    x = image.flatten()
+    y = reference_image.flatten()
+    
+    # Statistiche
+    x_mean = np.mean(x)
+    y_mean = np.mean(y)
+    x_var = np.var(x, ddof=1)
+    y_var = np.var(y, ddof=1)
+    xy_cov = np.cov(x, y)[0, 1]
+    
+    # Termini UIQI
+    correlation = xy_cov / (np.sqrt(x_var) * np.sqrt(y_var) + 1e-10)
+    luminance = (2 * x_mean * y_mean) / (x_mean**2 + y_mean**2 + 1e-10)
+    contrast = (2 * np.sqrt(x_var) * np.sqrt(y_var)) / (x_var + y_var + 1e-10)
+    
+    uiqi = correlation * luminance * contrast
+    return uiqi
+
+# Utilizzo
+average_face = compute_average_template(all_faces)
+probe_quality = compute_uiqi(probe_face, average_face)
+
+if probe_quality < 0.5:
+    print("Bassa qualità - richiedere ri-acquisizione")
+```
+
+**Sharpness Estimation Quality Index**
+
+Stima la **nitidezza** (sharpness) di un'immagine misurando le differenze di intensità tra pixel adiacenti. Un'immagine sfocata (blurred) ha minori variazioni locali.
+
+**Definizione**:
+
+Per un'immagine $I$ di dimensione $x \times y$ pixel, lo **Sharpness Estimation (SE)** è:
+
+$$
+SE = \frac{1}{2} \left[ \frac{1}{(x-1)y} \sum_{i=1}^{x-1} \sum_{j=1}^{y} |p_{i,j} - p_{i+1,j}| + \frac{1}{(y-1)x} \sum_{i=1}^{x} \sum_{j=1}^{y-1} |p_{i,j} - p_{i,j+1}| \right]
+$$
+
+dove $p_{i,j}$ è l'intensità del pixel in posizione $(i, j)$.
+
+**Interpretazione**:
+- **Alto SE**: Molte variazioni locali → immagine nitida (sharp)
+- **Basso SE**: Poche variazioni locali → immagine sfocata (blurred)
+
+**Implementazione**:
+
+```python
+def compute_sharpness(image):
+    """
+    Calcola lo sharpness estimation index.
+    """
+    h, w = image.shape
+    
+    # Differenze orizzontali
+    horiz_diff = np.sum(np.abs(image[:, :-1] - image[:, 1:])) / (w - 1)
+    
+    # Differenze verticali
+    vert_diff = np.sum(np.abs(image[:-1, :] - image[1:, :])) / (h - 1)
+    
+    # Media
+    se = (horiz_diff + vert_diff) / 2
+    return se
+```
+
+**Utilizzo operativo**:
+
+```python
+sharpness_threshold = 15.0  # valore empirico
+
+for probe in probe_set:
+    se = compute_sharpness(probe)
+    
+    if se < sharpness_threshold:
+        # Immagine troppo sfocata
+        actions = ["Richiedi ri-acquisizione", "Applica deblurring", "Scarta probe"]
+```
+
+#### 6.2.2 Misure di Qualità Specifiche per Volti
+
+Per immagini facciali, la qualità può essere valutata considerando:
+- **Pose del volto** (deviazioni da frontale)
+- **Omogeneità dell'illuminazione**
+- **Simmetria facciale**
+
+**Score di Pose (SP)**
+
+Misura la distorsione rispetto alla posa frontale ideale, considerando tre angoli di rotazione:
+
+- **Roll** ($\alpha$): Rotazione attorno all'asse x (perpendicolare al piano facciale)
+  - Correggibile facilmente allineando gli occhi
+  
+- **Yaw** ($\beta$): Rotazione attorno all'asse y (verticale)
+  - Causa perdita di informazione (metà volto nascosta)
+  - Difficile da correggere
+  
+- **Pitch** ($\gamma$): Rotazione attorno all'asse z (orizzontale)
+  - Altera proporzioni verticali
+  - Difficile da correggire
+
+**Definizione**:
+
+$$
+SP = \alpha \cdot (1 - \text{roll}) + \beta \cdot (1 - \text{yaw}) + \gamma \cdot (1 - \text{pitch})
+$$
+
+dove $\alpha, \beta, \gamma$ sono pesi che riflettono l'importanza relativa (tipicamente $\beta, \gamma > \alpha$ perché yaw e pitch sono più critici).
+
+**Misurazione degli angoli**:
+
+1. **Roll**: Misurato dall'angolo della linea che connette i centri degli occhi rispetto all'orizzontale
+   $$\text{roll} = \arctan\left(\frac{y_{\text{right\_eye}} - y_{\text{left\_eye}}}{x_{\text{right\_eye}} - x_{\text{left\_eye}}}\right)$$
+
+2. **Yaw**: Stimato dalla asimmetria delle distanze occhi-naso
+   $$\text{yaw} \propto \left| \frac{d_{\text{left}} - d_{\text{right}}}{d_{\text{left}} + d_{\text{right}}} \right|$$
+   dove $d_{\text{left}}$ e $d_{\text{right}}$ sono le distanze dal naso tip al centro dell'occhio sinistro e destro
+
+3. **Pitch**: Stimato dal rapporto delle distanze verticali
+   $$\text{pitch} \propto \left| \frac{d_{\text{eyes\_nose}} - d_{\text{nose\_chin}}}{d_{\text{eyes\_nose}} + d_{\text{nose\_chin}}} \right|$$
+
+**Normalizzazione**: Gli angoli sono normalizzati in $[0, 1]$ dove 0 = frontale perfetto, 1 = deviazione massima.
+
+**Quindi**:
+- SP alto → posa vicina a frontale → alta qualità
+- SP basso → posa deviata → bassa qualità
+
+**Score di Illuminazione (SI)**
+
+Misura l'omogeneità dell'illuminazione analizzando la deviazione standard dei livelli di grigio in regioni facciali predefinite.
+
+**Definizione**:
+
+$$
+SI = 1 - F(\text{std}(m_c))
+$$
+
+dove:
+- $m_c$ è il vettore delle intensità medie in $c$ regioni facciali predefinite (es. fronte, guance, mento)
+- $\text{std}(m_c)$ è la deviazione standard di queste medie
+- $F(\cdot)$ è una funzione di normalizzazione (es. sigmoid o normalizzazione min-max)
+
+**Interpretazione**:
+- **Basso $\text{std}(m_c)$**: Illuminazione uniforme → SI alto → buona qualità
+- **Alto $\text{std}(m_c)$**: Illuminazione disomogenea (ombre, hotspot) → SI basso → bassa qualità
 
 **Esempio**:
-Watchlist con 99% non-enrolled:
-- Classificatore che predice sempre "not in gallery": Accuracy = 99%!
-- Ma DIR = 0% (completamente inutile per scopo del sistema)
 
-#### Identification ↔ Multi-class Classification
+```python
+def compute_illumination_score(face_image, regions):
+    """
+    Calcola score di omogeneità illuminazione.
+    
+    Args:
+        face_image: immagine del volto
+        regions: lista di coordinate (x, y, w, h) per regioni facciali
+    """
+    region_means = []
+    
+    for (x, y, w, h) in regions:
+        region = face_image[y:y+h, x:x+w]
+        region_means.append(np.mean(region))
+    
+    std_means = np.std(region_means)
+    
+    # Normalizzazione (esempio con sigmoid)
+    si = 1 - (2 / (1 + np.exp(-std_means / 10)))
+    
+    return si
+```
 
-**Closed-set identification**:
-- Input: probe
-- Output: Una tra N identità in gallery
-- Assunzione: probe sempre in gallery
+**Score di Simmetria (SY)**
 
-**Multi-class classifier**:
-- Input: sample
-- Output: Una tra K classi
-- Assunzione: sample sempre in una delle K classi
+Sfrutta la simmetria intrinseca del volto umano per valutare la qualità.
 
-**Mapping**:
+**Definizione**:
 
-| **Biometria (Closed-set)** | **ML Multi-class** |
-|----------------------------|---------------------|
-| Rank-1 Accuracy (RR) | Top-1 Accuracy |
-| CMS(k) | Top-k Accuracy |
-| CMC curve | Cumulative accuracy curve |
+$$
+SY = \sum_{(i,j) \in X} \text{sym}(P_i, P_j)
+$$
 
-**Formule**:
+dove:
+- $X$ è l'insieme di coppie di punti simmetrici rispetto all'asse verticale del volto
+- $P_i, P_j$ sono punti landmark simmetrici (es. angolo occhio sinistro vs destro)
+- $\text{sym}(P_i, P_j)$ misura la similarità (es. distanza euclidea inversa, correlazione locale)
 
-$$\text{RR} = \text{Top-1 Accuracy} = \frac{\# \text{correct at rank 1}}{|\mathcal{P}|}$$
+**Interpretazione**:
+- SY alto → volto simmetrico → buona qualità (posa frontale, nessuna occlusione)
+- SY basso → asimmetria → possibile occlusione, posa non frontale, distorsione
 
-$$\text{CMS}(k) = \text{Top-k Accuracy} = \frac{\# \text{correct within rank } k}{|\mathcal{P}|}$$
+**Score Combinato di Qualità**:
+
+In pratica, si combinano i vari score per ottenere una misura complessiva:
+
+$$
+Q_{\text{face}} = w_P \cdot SP + w_I \cdot SI + w_S \cdot SY
+$$
+
+con $w_P + w_I + w_S = 1$ (pesi che sommano a 1).
+
+### 6.3 Dal Quality Score alla Politica Operativa
+
+**Problema**: Come utilizzare gli score di qualità per migliorare le performance del sistema?
+
+#### 6.3.1 Valutazione delle Misure di Qualità
+
+Prima di implementare strategie basate sulla qualità, è fondamentale valutare l'efficacia delle misure di qualità stesse.
+
+**Test 1 - Analisi della Distribuzione**
+
+Il primo test per una misura di qualità consiste nell'analizzare come i valori di un dataset si distribuiscono rispetto ai valori restituiti dalla misura.
+
+- **Obiettivo**: Comprendere il livello medio di qualità di un dataset di volti rispetto a una specifica misura
+- **Applicazione**: Permette di decidere quali sample scartare (idealmente solo quelli con gravi distorsioni), stimando a priori l'impatto sulla dimensione finale del dataset
+
+**Confronto tra Misure**
+
+Due o più misure possono essere confrontate calcolando la correlazione dei valori restituiti rispetto alle immagini di un dato dataset.
+
+```python
+def analyze_quality_distribution(dataset, quality_measures):
+    """
+    Analizza la distribuzione di qualità per diverse misure.
+    
+    Args:
+        dataset: insieme di probe da analizzare
+        quality_measures: lista di funzioni di quality assessment
+    
+    Returns:
+        dict: statistiche per ciascuna misura
+    """
+    results = {}
+    
+    for measure_name, measure_func in quality_measures.items():
+        scores = [measure_func(probe) for probe in dataset]
+        results[measure_name] = {
+            'mean': np.mean(scores),
+            'std': np.std(scores),
+            'min': np.min(scores),
+            'max': np.max(scores),
+            'distribution': scores
+        }
+    
+    return results
+
+def compute_measure_correlation(dataset, measure1, measure2):
+    """
+    Calcola la correlazione tra due misure di qualità.
+    """
+    scores1 = [measure1(probe) for probe in dataset]
+    scores2 = [measure2(probe) for probe in dataset]
+    
+    return np.corrcoef(scores1, scores2)[0, 1]
+```
+
+**Test 2 - Impatto sull'EER**
+
+Un test ulteriore per una misura di qualità è valutare come essa influenzi le performance del sistema (EER) al variare di una soglia di tolleranza.
+
+**Criterio di Efficacia**: Una buona misura di qualità deve fornire una significativa riduzione dell'errore scartando il minor numero possibile di sample.
+
+#### 6.3.2 Strategie di Utilizzo della Qualità
+
+**Strategia 1 - Filtering a Priori**
+
+Prima del matching, scartare probe con qualità troppo bassa.
+
+```python
+def filter_by_quality(probe, quality_threshold=0.6):
+    """
+    Filtra probe basandosi su soglia di qualità.
+    
+    Args:
+        probe: campione biometrico da verificare
+        quality_threshold: soglia minima di qualità accettabile
+    
+    Returns:
+        str o result: messaggio di rifiuto o risultato del matching
+    """
+    quality = compute_quality(probe)
+    
+    if quality < quality_threshold:
+        return "REJECT_LOW_QUALITY"  # Richiedi ri-acquisizione
+    else:
+        return perform_matching(probe)
+```
+
+**Trade-off**:
+- **Pro**: Riduce errori (sia FA che FR) eliminando probe difficili
+- **Contro**: Riduce throughput del sistema (alcuni utenti legittimi vengono rifiutati)
+
+**Considerazioni Pratiche**:
+- Non sempre è possibile selezionare/riacquisire il Probe (in alcuni scenari si dispone di un solo sample)
+- Bisogna considerare il throughput del sistema: scartare troppi probe riduce drasticamente l'efficienza operativa
+
+**Analisi Sperimentale**
+
+Per valutare l'efficacia di una misura di qualità, si studia come varia l'EER al variare della soglia di qualità:
+
+```
+Quality Threshold    % Discarded    EER
+─────────────────────────────────────────
+0.0                  0%             5.0%
+0.3                  10%            4.2%
+0.5                  25%            3.0%
+0.7                  45%            1.8%
+0.9                  70%            0.8%
+```
+
+**Interpretazione**: 
+
+Una buona misura di qualità dovrebbe:
+- Ridurre significativamente l'EER con una piccola percentuale di scarto
+- **Esempio**: Con 25% di scarto, l'EER si dimezza (da 5% a 3%) → misura efficace
+- L'EER decresce per ciascuna metrica di qualità (pose, illuminazione, ecc.)
+- All'aumentare dello score richiesto per la qualità della posa, l'EER diminuisce
+
+**Strategia 2 - Adaptive Thresholding**
+
+Invece di scartare, adattare la soglia di accettazione in base alla qualità del probe.
+
+```python
+def adaptive_threshold(base_threshold, quality):
+    """
+    Soglia adattiva: più restrittiva per bassa qualità.
+    
+    Args:
+        base_threshold: soglia di base del sistema
+        quality: score di qualità del probe (0-1)
+    
+    Returns:
+        float: soglia adattata
+    
+    Logica:
+        - Qualità bassa → richiedere match molto forte (soglia più bassa)
+        - Qualità alta → accettare match più debole (soglia più alta)
+    """
+    # Fino a +10% di adjustment per bassa qualità
+    adjustment = (1 - quality) * 0.1
+    
+    # Soglia più bassa = più restrittivo
+    return base_threshold - adjustment
+```
+
+**Esempio Applicativo**:
+
+```
+Probe A: quality = 0.9 (alta)
+  → threshold = 0.25 - (1-0.9)*0.1 = 0.25 - 0.01 = 0.24
+  → leggermente più permissivo (accetta match con score > 0.24)
+
+Probe B: quality = 0.4 (bassa)
+  → threshold = 0.25 - (1-0.4)*0.1 = 0.25 - 0.06 = 0.19
+  → molto più restrittivo (richiede match con score > 0.19)
+```
+
+**Vantaggi**:
+- Mantiene alto il throughput (nessun probe viene scartato)
+- Compensa la bassa qualità richiedendo maggiore evidenza di match
+- Bilancia sicurezza e usabilità
+
+#### 6.3.3 Approccio Basato sul Margine
+
+Un approccio alternativo per misurare le performance del sistema utilizza il concetto di **margine** (Poh e Bengio, 2004).
+
+**Definizione**
+
+Le performance del sistema sono misurate in termini di:
+
+$$\text{FAR}(\tau) = \frac{\text{numero di } FA(\tau)}{\text{numero di accessi impostor}}$$
+
+$$\text{FRR}(\tau) = \frac{\text{numero di } FR(\tau)}{\text{numero di accessi genuine}}$$
+
+Il **margine** $M(\tau)$ è definito come:
+
+$$M(\tau) = |\text{FAR}(\tau) - \text{FRR}(\tau)|$$
+
+**Proprietà**:
+- $M(\tau) = 0$ quando ci si trova all'EER (Equal Error Rate)
+- Per ogni soglia $\tau$, il margine misura la differenza assoluta tra i due tipi di errore
+- Più il margine è vicino a zero, più il sistema è bilanciato
+
+**Utilizzo**
+
+Il margine può essere utilizzato per:
+- Valutare quanto il sistema è bilanciato rispetto a una data soglia
+- Identificare il punto operativo ottimale (dove $M(\tau) \approx 0$)
+- Confrontare diverse configurazioni del sistema
+
+```python
+def compute_margin(scores_genuine, scores_impostor, threshold):
+    """
+    Calcola il margine per una data soglia.
+    
+    Args:
+        scores_genuine: score dei match genuini
+        scores_impostor: score dei match impostor
+        threshold: soglia di decisione
+    
+    Returns:
+        float: valore del margine M(Δ)
+    """
+    # False Rejections (genuine scores < threshold)
+    fr_count = np.sum(scores_genuine < threshold)
+    frr = fr_count / len(scores_genuine)
+    
+    # False Acceptances (impostor scores >= threshold)
+    fa_count = np.sum(scores_impostor >= threshold)
+    far = fa_count / len(scores_impostor)
+    
+    # Margine
+    margin = abs(far - frr)
+    
+    return margin, far, frr
+```
+
+#### 6.3.4 Sintesi e Raccomandazioni
+
+**Scelta della Strategia**
+
+| Scenario | Strategia Raccomandata | Motivazione |
+|----------|------------------------|-------------|
+| Alta criticità sicurezza | Filtering a priori | Minimizza errori anche a costo del throughput |
+| Bilanciamento sicurezza/usabilità | Adaptive thresholding | Mantiene throughput adattando le soglie |
+| Sistema con riacquisizione | Filtering a priori | Possibile richiedere sample di qualità migliore |
+| Sistema single-shot | Adaptive thresholding | Impossibile rifiutare l'unico sample disponibile |
+
+**Best Practices**
+
+1. **Validare le misure di qualità**: Analizzare distribuzione e correlazione prima del deployment
+2. **Monitorare il trade-off**: Bilanciare riduzione EER e percentuale di scarto
+3. **Considerare il contesto**: La strategia ottimale dipende dai vincoli applicativi
+4. **Utilizzare metriche multiple**: Combinare diverse misure (pose, illuminazione, focus) per robustezza
+
+### 6.4 Il "Doddington Zoo": Caratterizzazione degli Utenti
+
+Doddington et al. (1998) identificarono che **la maggior parte degli errori nei sistemi biometrici è attribuibile a specifiche classi di utenti**, introducendo una classificazione metaforica basata su animali.
+
+#### 6.4.1 Classificazione Originale (Solo Score Genuine O Impostor)
+
+**Sheep (Pecore)** - L'utente ideale:
+- Produce campioni biometrici che:
+  - Matchano bene con se stessi (score genuine alti/distanze basse)
+  - Matchano male con altri (score impostor bassi/distanze alte)
+- Generano **meno FA e FR della media**
+- Comportamento normale e desiderabile
+
+**Esempio**: Persona con caratteristiche facciali distintive e stabili, che si presenta sempre con buona qualità.
+
+**Goats (Capre)** - Alta variabilità intra-classe:
+- Produce campioni biometrici che **matchano male con se stessi**
+- Score genuine bassi (o distanze alte)
+- **Causa FR**: Molti rifiuti di genuine
+- **Non causa FA**: Gli impostori matchano ancora peggio
+
+**Cause tipiche**:
+- Impronte digitali consumate da lavoro manuale
+- Difficoltà nell'enrollment (template di bassa qualità)
+- Alta variabilità comportamentale (es. cambio espressione facciale drastico)
+
+**Esempio**: Lavoratore edile con impronte usurate → ogni acquisizione produce template molto diverso.
+
+**Lambs (Agnelli)** - Facilmente impersonabili:
+- Possono essere **facilmente impersonati**
+- Quando il loro campione è confrontato con quello di un'altra persona, lo score è **più alto della media**
+- **Causa FA**: Altri vengono erroneamente accettati come Lamb
+- **Non causa FR**: I Lamb stessi vengono riconosciuti correttamente
+
+**Cause tipiche**:
+- Caratteristiche generiche molto comuni nella popolazione
+- Bambini (meno tratti distintivi sviluppati)
+
+**Esempio**: Volto giovane con caratteristiche molto "medie" (naso, occhi, bocca nella norma) → molte persone gli assomigliano.
+
+**Wolves (Lupi)** - Bravi a impersonare:
+- Sono **bravi a impersonare altri**
+- Quando presentano un campione, tendono a generare **score alto** anche confrontato con template di altri
+- **Causa FA**: Vengono erroneamente accettati come altre identità
+- **Non causa FR**: Vengono riconosciuti correttamente quando dichiarano vera identità
+
+**Cause tipiche**:
+- Caratteristiche biometriche che matchano casualmente bene con molte altre
+- Possibile "centrale" nello spazio delle feature
+
+**Esempio**: Persona con iride molto comune che produce match parziali con molti altri.
+
+#### 6.4.2 Formalizzazione Matematica (Yager e Dunstone, 2010)
+
+La classificazione originale considerava solo **una dimensione** (genuine O impostor). Yager e Dunstone estesero il framework considerando **entrambe simultaneamente**.
+
+**Notazione**:
+
+Popolazione di utenti: $P = \{u_1, u_2, \ldots, u_n\}$
+
+Per ciascun utente $k \in P$:
+
+**Insieme score genuine**:
+$$G_k = \{s(k, k)\}$$
+
+Tutti gli score ottenuti confrontando template di $k$ con altri template di $k$.
+
+**Insieme score impostor**:
+$$I_k = \{s(j, k)\} \cup \{s(k, j)\} \quad \forall j \neq k$$
+
+Tutti gli score ottenuti quando $k$ è coinvolto in confronti impostor (sia come probe che come gallery).
+
+**Statistiche**:
+
+Per ciascun utente $k$, calcoliamo:
+
+$$\mu_{G_k} = \mathbb{E}[G_k] \quad \text{(media score genuine)}$$
+
+$$\mu_{I_k} = \mathbb{E}[I_k] \quad \text{(media score impostor)}$$
+
+**Classificazione bidimensionale** nello spazio $(\mu_{I_k}, \mu_{G_k})$:
+
+```
+        μ_G (genuine scores)
+         ↑
+    Alta |
+         |  Chameleon  |   Dove
+         |             |
+         |─────────────┼──────────
+         |             |
+         |   Worm      |   Phantom
+    Bassa|
+         └──────────────────────→ μ_I (impostor scores)
+            Bassa        Alta
+```
+
+**Chameleons (Camaleonti)**:
+- **$\mu_{G_k}$ alto**: Matchano bene con se stessi
+- **$\mu_{I_k}$ alto**: Matchano bene anche con altri
+- **Comportamento**: Simili a tutti (genuine E impostor score alti)
+- **Errori**: Causano **molti FA**, pochi FR
+
+**Interpretazione**: Hanno caratteristiche biometriche **molto generiche** fortemente pesate dall'algoritmo di matching.
+
+**Esempio**: Persona con volto "generico" in un sistema che pesa molto caratteristiche comuni (es. forma ovale, occhi equidistanti).
+
+**Phantoms (Fantasmi)**:
+- **$\mu_{G_k}$ basso**: Matchano male con se stessi
+- **$\mu_{I_k}$ basso**: Matchano male anche con altri
+- **Comportamento**: Sempre score bassi (genuine E impostor)
+- **Errori**: Causano **molti FR**, pochi FA
+
+**Interpretazione**: Difficoltà nell'enrollment → feature extraction problematica.
+
+**Esempio**: Persona con pelle molto secca alle impronte digitali → sensore ha difficoltà, feature poco affidabili.
+
+**Doves (Colombe)** - L'utente ideale (estensione di Sheep):
+- **$\mu_{G_k}$ alto**: Matchano bene con se stessi
+- **$\mu_{I_k}$ basso**: Matchano male con altri
+- **Comportamento**: Massima separabilità
+- **Errori**: Raramente coinvolti in **qualsiasi errore**
+
+**Interpretazione**: Hanno caratteristiche **uniche e distintive**.
+
+**Esempio**: Persona con naso molto particolare, cicatrice distintiva, iride con pattern raro.
+
+**Worms (Vermi)** - L'utente peggiore:
+- **$\mu_{G_k}$ basso**: Matchano male con se stessi
+- **$\mu_{I_k}$ alto**: Matchano bene con altri
+- **Comportamento**: Minima separabilità (worst case)
+- **Errori**: Causano **molti errori di entrambi i tipi**
+
+**Interpretazione**: Pochissime caratteristiche distintive + alta variabilità intra-classe.
+
+**Esempio**: Potrebbe derivare da **flaw nell'algoritmo di matching** che penalizza certe caratteristiche rare.
+
+**Nota critica**: Worms sono rari in pratica e spesso indicano problemi nell'algoritmo piuttosto che nell'utente.
+
+#### 6.4.3 Implicazioni Pratiche
+
+**Distribuzione nella popolazione**:
+
+In un sistema biometrico reale:
+- **Sheep/Doves**: 70-80% (maggioranza, comportamento normale)
+- **Goats**: 10-15% (problemi intra-classe)
+- **Lambs**: 5-10% (facilmente impersonabili)
+- **Wolves**: 5-10% (impersonano facilmente)
+- **Chameleons/Phantoms/Worms**: <5% (casi estremi)
+
+**Strategie di mitigazione**:
+
+**Per Goats**:
+- Enrollment con template multipli (coverage maggiore della variabilità)
+- Soglia più permissiva per questi utenti specifici (user-specific threshold)
+- Re-enrollment periodico
+
+**Per Lambs**:
+- Autenticazione multi-fattore (aggiungere password, PIN)
+- Monitoraggio tentativi di accesso (detect impersonation patterns)
+- Biometria combinata (es. face + fingerprint)
+
+**Per Wolves**:
+- Watchlist speciale (flag questi utenti)
+- Analisi comportamentale (detect pattern di multipli tentativi)
+- Verifica secondaria più rigorosa
+
+**Per Chameleons**:
+- Soglia più restrittiva per questi utenti
+- Biometria combinata (una sola non sufficiente)
+
+**Per Phantoms**:
+- Re-enrollment con sensore migliore
+- Assistenza durante acquisizione
+- Backup authentication method
+
+**Identificazione automatica**:
+
+Durante deployment, il sistema può **auto-classificare** gli utenti analizzando storicamente i loro score:
+
+```python
+def classify_user(genuine_scores, impostor_scores):
+    """
+    Classifica utente nel Doddington Zoo.
+    """
+    mu_G = np.mean(genuine_scores)
+    mu_I = np.mean(impostor_scores)
+    
+    # Soglie (da calibrare su popolazione)
+    threshold_G = 0.7
+    threshold_I = 0.3
+    
+    if mu_G > threshold_G and mu_I < threshold_I:
+        return "Dove"
+    elif mu_G > threshold_G and mu_I > threshold_I:
+        return "Chameleon"
+    elif mu_G < threshold_G and mu_I < threshold_I:
+        return "Phantom"
+    elif mu_G < threshold_G and mu_I > threshold_I:
+        return "Worm"
+    # Casi singola dimensione
+    elif mu_G > threshold_G:
+        return "Sheep"
+    elif mu_G < threshold_G:
+        return "Goat"
+    elif mu_I > threshold_I:
+        return "Wolf"
+    elif mu_I < threshold_I:
+        return "Lamb"
+```
+
+### 6.5 System Response Reliability (SRR)
+
+Oltre alla qualità del probe (misurata **prima** del matching), possiamo valutare l'affidabilità della risposta **dopo** il matching, analizzando la struttura della ranked list.
+
+**Principio fondamentale**: 
+
+Se il candidato restituito è **ben separato** dagli altri nella ranked list, la decisione è più affidabile. Se invece ci sono molti candidati con score simile (**crowded cloud**), c'è confusione e la decisione è meno affidabile.
+
+**Differenza critica con Quality Score**:
+- **Quality Score**: Valutato **prima** del matching (basato solo sul probe)
+- **SRR**: Valutato **dopo** il matching (basato sulla ranked list risultante)
+
+Un probe può avere alta qualità ma bassa affidabilità di risposta se, ad esempio, in galleria esistono molti soggetti simili al probe.
+
+#### 6.5.1 Assunzioni e Notazione
+
+**Assunzione**: Il risultato di un'operazione di identificazione non è solo l'identità restituita, ma l'**intera galleria ordinata per distanza** dal probe (o almeno una short-list).
+
+**Notazione**:
+
+Dato un probe $p$ e un sistema $A$ con galleria $\mathcal{G}$:
+
+$\text{ranked\_list}(p) = [(g_1, d_1), (g_2, d_2), \ldots, (g_{|\mathcal{G}|}, d_{|\mathcal{G}|})]$
+
+dove:
+- $d_i = d(p, g_i)$ è la distanza tra probe e template
+- $d_1 \leq d_2 \leq \ldots \leq d_{|\mathcal{G}|}$ (ordinamento crescente per distanze)
+- $g_1$ è il template più vicino (best match)
+
+**Concetto di "cloud"**:
+
+Immaginiamo una **nuvola** (cloud) attorno al candidato restituito $g_1$:
+
+- **Cloud ristretto**: Pochi candidati con distanza simile a $d_1$ → Alta affidabilità
+- **Cloud affollato**: Molti candidati con distanza simile a $d_1$ → Bassa affidabilità
+
+#### 6.5.2 Funzione $\varphi$: Relative Distance
+
+La prima funzione di affidabilità proposta misura la **distanza relativa** tra il primo e il secondo candidato rispetto alla massima distanza nella lista.
+
+**Definizione formale**:
+
+$\varphi_{\text{RD}}(p) = \frac{F(d(p, g_2)) - F(d(p, g_1))}{F(d(p, g_{|\mathcal{G}|}))}$
+
+dove $F(\cdot)$ è una funzione di normalizzazione degli score (tipicamente identità o sigmoid).
+
+**Forma semplificata** (se $F$ è identità):
+
+$\varphi_{\text{RD}}(p) = \frac{d_2 - d_1}{d_{|\mathcal{G}|}}$
+
+**Interpretazione**:
+
+- **Numeratore**: $d_2 - d_1$ = gap tra primo e secondo candidato
+  - Grande gap → candidati ben separati → alta confidenza
+  - Piccolo gap → candidati simili → bassa confidenza
+
+- **Denominatore**: $d_{|\mathcal{G}|}$ = massima distanza osservata (normalizzazione)
+  - Rende il valore comparabile tra probe diversi
+
+**Range**: $\varphi_{\text{RD}}(p) \in [0, 1]$
+
+- $\varphi_{\text{RD}} \approx 1$: Gap quasi uguale al massimo → massima separazione → **alta affidabilità**
+- $\varphi_{\text{RD}} \approx 0$: Gap quasi nullo → $g_1$ e $g_2$ praticamente indistinguibili → **bassa affidabilità**
+
+**Implementazione**:
+
+```python
+def compute_relative_distance(probe, gallery, distance_func):
+    """
+    Calcola Relative Distance φ_RD.
+    
+    Returns:
+        φ_RD ∈ [0, 1], con valori alti = alta affidabilità
+    """
+    # Calcola distanze da probe a tutti i template
+    distances = [(g, distance_func(probe, g)) for g in gallery]
+    
+    # Ordina per distanza crescente
+    distances.sort(key=lambda x: x[1])
+    
+    d_1 = distances[0][1]  # Best match
+    d_2 = distances[1][1]  # Second best
+    d_max = distances[-1][1]  # Massimo
+    
+    # Relative Distance
+    if d_max == 0:
+        return 0  # Caso degenere
+    
+    phi_RD = (d_2 - d_1) / d_max
+    
+    return phi_RD
+```
+
+**Limitazioni**:
+
+- Considera **solo i primi due candidati** → ignora il resto della lista
+- Sensibile a outliers: Se $d_{|\mathcal{G}|}$ è molto grande (outlier), $\varphi_{\text{RD}}$ può essere sottostimato
+- Non cattura la densità complessiva attorno a $g_1$
+
+#### 6.5.3 Funzione $\varphi$: Density Ratio
+
+La seconda funzione misura la **densità** del cloud attorno al primo candidato, contando quanti template cadono entro una certa distanza.
+
+**Definizione formale**:
+
+$\varphi_{\text{DR}}(p) = 1 - \frac{|N_b|}{|\mathcal{G}| - 1}$
+
+dove l'insieme $N_b$ (neighbors) è definito come:
+
+$N_b = \{g_k \in \mathcal{G} \setminus \{g_1\} : F(d(p, g_k)) < 2 \cdot F(d(p, g_1))\}$
+
+**Interpretazione**:
+
+- $N_b$ = template con distanza dal probe **minore del doppio** della distanza del best match
+- $|N_b|$ = numero di "vicini stretti" a $g_1$
+- $|\mathcal{G}| - 1$ = numero totale di template (escluso $g_1$)
+
+**Ratio**:
+- $\frac{|N_b|}{|\mathcal{G}| - 1}$ = frazione di gallery nel cloud stretto
+  - Alto → cloud affollato → bassa affidabilità
+  - Basso → cloud ristretto → alta affidabilità
+
+**Complemento**:
+- $\varphi_{\text{DR}} = 1 - \text{ratio}$ → invertiamo per avere valori alti = alta affidabilità
+
+**Range**: $\varphi_{\text{DR}}(p) \in [0, 1]$
+
+- $\varphi_{\text{DR}} \approx 1$: Pochissimi template nel cloud → **alta affidabilità**
+- $\varphi_{\text{DR}} \approx 0$: Molti template nel cloud → **bassa affidabilità**
+
+**Implementazione**:
+
+```python
+def compute_density_ratio(probe, gallery, distance_func):
+    """
+    Calcola Density Ratio φ_DR.
+    
+    Returns:
+        φ_DR ∈ [0, 1], con valori alti = alta affidabilità
+    """
+    # Calcola distanze
+    distances = [(g, distance_func(probe, g)) for g in gallery]
+    distances.sort(key=lambda x: x[1])
+    
+    g_1, d_1 = distances[0]
+    threshold = 2 * d_1
+    
+    # Conta template nel cloud (escluso g_1)
+    N_b = [g for g, d in distances[1:] if d < threshold]
+    
+    phi_DR = 1 - len(N_b) / (len(gallery) - 1)
+    
+    return phi_DR
+```
+
+**Vantaggi rispetto a Relative Distance**:
+
+- **Meno sensibile a outliers**: Non usa $d_{\max}$
+- **Cattura la densità globale**: Considera tutti i template nel cloud, non solo $g_2$
+- **Empiricamente migliore**: In esperimenti, $\varphi_{\text{DR}}$ correla meglio con affidabilità effettiva
+
+**Svantaggi**:
+
+- **Cloud size dipende da $d_1$**: 
+  - Se $d_1$ piccolo → cloud molto stretto → può sottostimare la confusione
+  - Se $d_1$ grande → cloud molto ampio → può sovrastimare la confusione
+- **Threshold fisso (2×)**: Il fattore 2 è arbitrario (tentativi di renderlo adattivo non hanno migliorato le performance)
+
+#### 6.5.4 Soglia Critica e Normalizzazione
+
+**Problema**: Come interpretare $\varphi(p)$? Quando è "sufficientemente alto" per considerare la risposta affidabile?
+
+**Soglia critica** $\varphi_k$:
+
+Similmente all'EER, definiamo $\varphi_k$ come il valore che **minimizza le stime errate** di affidabilità:
+
+$\varphi_k = \arg\min_{\varphi} \left[ \text{FalseReliable}(\varphi) + \text{FalseUnreliable}(\varphi) \right]$
+
+dove:
+- **FalseReliable**: Risposte **errate** con $\varphi(p) > \varphi_k$ (impostors riconosciuti con alta affidabilità)
+- **FalseUnreliable**: Risposte **corrette** con $\varphi(p) < \varphi_k$ (genuine rifiutati per bassa affidabilità)
+
+**Calcolo di $\varphi_k$** (procedura empirica):
+
+1. Su dataset di validazione, calcola $\varphi(p)$ per ogni probe
+2. Etichetta le risposte:
+   - Correct: $\text{id}(g_1) = \text{id}(p)$ (per probe enrolled)
+   - Incorrect: $\text{id}(g_1) \neq \text{id}(p)$ oppure probe non-enrolled ma accettato
+3. Per ogni possibile valore $\varphi_{\text{test}}$:
+   - Conta FalseReliable: incorrect con $\varphi > \varphi_{\text{test}}$
+   - Conta FalseUnreliable: correct con $\varphi < \varphi_{\text{test}}$
+4. $\varphi_k$ = valore che minimizza la somma
+
+**Funzione di separazione** $S(\varphi(p), \varphi_k)$:
+
+Per normalizzare la distanza di $\varphi(p)$ da $\varphi_k$, definiamo:
+
+$S(\varphi(p), \varphi_k) = \begin{cases}
+1 - \varphi_k & \text{se } \varphi(p) > \varphi_k \\
+\varphi_k & \text{altrimenti}
+\end{cases}$
+
+**Interpretazione**:
+
+- Se $\varphi(p) > \varphi_k$: Siamo sopra la soglia critica → normalizziamo rispetto al massimo raggiungibile $(1 - \varphi_k)$
+- Se $\varphi(p) \leq \varphi_k$: Siamo sotto la soglia critica → normalizziamo rispetto a $\varphi_k$ stesso
+
+$S(\varphi(p), \varphi_k)$ rappresenta la **larghezza del sotto-intervallo** da $\varphi_k$ all'estremo appropriato di $[0, 1]$.
+
+**System Response Reliability (SRR) finale**:
+
+$\text{SRR}(p) = \frac{\varphi(p) - \varphi_k}{S(\varphi(p), \varphi_k)}$
+
+**Interpretazione**:
+
+- **Numeratore**: Distanza signed da $\varphi_k$
+  - Positivo se $\varphi(p) > \varphi_k$ (sopra critico → affidabile)
+  - Negativo se $\varphi(p) < \varphi_k$ (sotto critico → non affidabile)
+
+- **Denominatore**: Normalizzazione rispetto al massimo possibile nella direzione
+
+**Range**: $\text{SRR}(p) \in [-1, 1]$
+
+- SRR > 0: Risposta sopra soglia critica → tendenzialmente affidabile
+- SRR < 0: Risposta sotto soglia critica → tendenzialmente non affidabile
+- |SRR| grande: Molto distante da $\varphi_k$ → decisione più chiara
+- |SRR| piccolo: Vicino a $\varphi_k$ → zona di incertezza
+
+La quantità $\varphi(p) - \varphi_k$ misura lo scostamento **assoluto** della risposta dalla soglia critica di affidabilità $\varphi_k$.
+Sebbene tale differenza appartenga già all’intervallo $[-1,1]$, **non è direttamente interpretabile**, poiché lo stesso scostamento numerico può corrispondere a livelli di affidabilità molto diversi.
+
+Infatti, l’ampiezza dell’intervallo disponibile sopra e sotto la soglia dipende dalla posizione di $\varphi_k$:
+$$
+\varphi(p) \in [0,1], \quad
+\text{spazio sotto} = \varphi_k, \quad
+\text{spazio sopra} = 1 - \varphi_k
+$$
+
+**Caso $\varphi(p) < \varphi_k$**:
+```
+ Normalizziamo
+ ________________
+|                |
+0 -------|-------|----------- 1
+         p       k
+```
+
+**Caso $\varphi(p) > \varphi_k$**:
+```
+ Normalizziamo
+                 _____________
+                |             |
+0 --------------|------|----- 1
+                k      p
+```
+
+Per ottenere una misura **relativa e confrontabile**, lo scostamento viene normalizzato rispetto al massimo valore raggiungibile nella direzione considerata.
+
+Questa normalizzazione consente di interpretare la SRR come la **frazione dello spazio disponibile coperta rispetto alla soglia critica**, garantendo coerenza semantica e confrontabilità tra risposte e sistemi differenti.
+
+**Esempio numerico completo**:
+
+Supponiamo $\varphi_k = 0.4$ (calibrato su validation set).
+
+**Caso A**:
+```
+φ(p_A) = 0.8  (alto, ben sopra critico)
+
+Poiché φ(p_A) > φ_k:
+  S(φ(p_A), φ_k) = 1 - φ_k = 1 - 0.4 = 0.6
+
+SRR(p_A) = (0.8 - 0.4) / 0.6 = 0.4 / 0.6 = 0.67
+
+Interpretazione: Affidabilità alta e positiva
+```
+
+**Caso B**:
+```
+φ(p_B) = 0.42  (appena sopra critico)
+
+Poiché φ(p_B) > φ_k:
+  S(φ(p_B), φ_k) = 1 - 0.4 = 0.6
+
+SRR(p_B) = (0.42 - 0.4) / 0.6 = 0.02 / 0.6 = 0.03
+
+Interpretazione: Affidabilità marginalmente positiva, vicino a critico
+```
+
+**Caso C**:
+```
+φ(p_C) = 0.15  (basso, sotto critico)
+
+Poiché φ(p_C) ≤ φ_k:
+  S(φ(p_C), φ_k) = φ_k = 0.4
+
+SRR(p_C) = (0.15 - 0.4) / 0.4 = -0.25 / 0.4 = -0.625
+
+Interpretazione: Affidabilità negativa, risposta poco affidabile
+```
+
+**Implementazione completa**:
+
+```python
+def compute_SRR(phi_p, phi_k):
+    """
+    Calcola System Response Reliability.
+    
+    Args:
+        phi_p: valore φ(p) per il probe
+        phi_k: soglia critica (calibrata su validation)
+    
+    Returns:
+        SRR ∈ [-1, 1]
+    """
+    if phi_p > phi_k:
+        S = 1 - phi_k
+    else:
+        S = phi_k
+    
+    srr = (phi_p - phi_k) / S
+    
+    return srr
+
+# Utilizzo completo
+def evaluate_identification_with_reliability(probe, gallery, phi_k=0.4):
+    """
+    Identificazione con valutazione di affidabilità.
+    """
+    # Matching
+    ranked_list = perform_matching(probe, gallery)
+    best_match = ranked_list[0]
+    
+    # Calcola φ (usando Density Ratio)
+    phi_DR = compute_density_ratio(probe, gallery, distance_func)
+    
+    # Calcola SRR
+    srr = compute_SRR(phi_DR, phi_k)
+    
+    # Decisione basata su affidabilità
+    if srr > 0.5:
+        action = "ACCEPT_HIGH_CONFIDENCE"
+    elif 0 < srr <= 0.5:
+        action = "ACCEPT_LOW_CONFIDENCE (verifica secondaria consigliata)"
+    elif -0.5 < srr <= 0:
+        action = "UNCERTAIN (richiedi controllo umano)"
+    else:  # srr <= -0.5
+        action = "REJECT_LOW_RELIABILITY (ri-acquisizione)"
+    
+    return {
+        'identity': best_match.id,
+        'phi': phi_DR,
+        'srr': srr,
+        'action': action
+    }
+```
+
+#### 6.5.5 Visualizzazione e Analisi
+
+**Distribuzione di φ per Genuine vs Impostor**:
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Simula dati
+genuine_phi = np.random.beta(8, 2, 1000)  # Concentrati su valori alti
+impostor_phi = np.random.beta(2, 5, 5000)  # Concentrati su valori bassi
+
+plt.figure(figsize=(10, 6))
+plt.hist(impostor_phi, bins=50, alpha=0.6, label='Impostor', density=True)
+plt.hist(genuine_phi, bins=50, alpha=0.6, label='Genuine', density=True)
+
+# Soglia critica
+phi_k = 0.4
+plt.axvline(phi_k, color='red', linestyle='--', linewidth=2, label=f'φ_k = {phi_k}')
+
+plt.xlabel('φ (Density Ratio)')
+plt.ylabel('Densità')
+plt.title('Distribuzione φ per Genuine e Impostor')
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+**Analisi degli errori**:
+
+```
+                 φ < φ_k    |    φ ≥ φ_k
+                            |
+Genuine      False Unreliable |  Correct Reliable
+  (correct)      (FU)         |      (GA con alta φ)
+─────────────────────────────┼──────────────────────
+Impostor     Correct Reject   |  False Reliable
+  (incorrect)   (GR con bassa φ)|     (FA con alta φ)
+```
+
+**Obiettivo**: Minimizzare False Unreliable + False Reliable scegliendo $\varphi_k$ ottimale.
+
+#### 6.5.6 Stima Automatica della Soglia di Affidabilità
+
+In deployment, possiamo **adattare dinamicamente** la soglia di affidabilità basandoci su osservazioni successive.
+
+**Approccio**: Dopo $M$ osservazioni, stimiamo una soglia che garantisca:
+- **Alta media** di SRR (sistema generalmente affidabile)
+- **Bassa varianza** di SRR (sistema stabile)
+
+**Formula proposta**:
+
+$\text{th}_i = \left|\frac{\mathbb{E}[\bar{S}_i]^2 - \sigma[\bar{S}_i]}{\mathbb{E}[\bar{S}_i]}\right|$
+
+dove:
+- $\bar{S}_i$ = media mobile di SRR nelle ultime $M$ osservazioni
+- $\mathbb{E}[\bar{S}_i]$ = aspettazione (media delle medie)
+- $\sigma[\bar{S}_i]$ = deviazione standard delle medie
+
+**Interpretazione**:
+
+- **Numeratore**: $\mathbb{E}[\bar{S}_i]^2 - \sigma[\bar{S}_i]$
+  - Penalizza alta varianza (instabilità)
+  - Premia alta media (generale affidabilità)
+
+- **Denominatore**: $\mathbb{E}[\bar{S}_i]$
+  - Normalizzazione
 
 **Esempio**:
+
+```python
+def adaptive_reliability_threshold(srr_history, window=100):
+    """
+    Stima threshold adattivo basato su storia.
+    
+    Args:
+        srr_history: lista di valori SRR storici
+        window: finestra per media mobile
+    """
+    if len(srr_history) < window:
+        return 0.0  # Default iniziale
+    
+    # Media mobile
+    moving_avgs = []
+    for i in range(window, len(srr_history)):
+        window_data = srr_history[i-window:i]
+        moving_avgs.append(np.mean(window_data))
+    
+    # Statistiche sulle medie mobili
+    E_S = np.mean(moving_avgs)
+    sigma_S = np.std(moving_avgs)
+    
+    # Threshold adattivo
+    th = (E_S**2 - sigma_S) / (E_S + 1e-10)
+    
+    return max(0, min(1, th))  # Clamp in [0, 1]
+
+# Utilizzo
+srr_history = []
+
+for probe in probe_stream:
+    result = evaluate_identification_with_reliability(probe, gallery)
+    srr_history.append(result['srr'])
+    
+    # Aggiorna threshold periodicamente
+    if len(srr_history) % 100 == 0:
+        new_threshold = adaptive_reliability_threshold(srr_history)
+        print(f"Nuovo threshold affidabilità: {new_threshold:.3f}")
+```
+
+### 6.6 Integrazione: Qualità e Affidabilità nel Workflow
+
+**Pipeline completa** con quality control e reliability assessment:
+
+```
+┌─────────────────┐
+│  Acquisizione   │
+│     Probe       │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Quality Check   │◄─── SP, SI, SY, UIQI, Sharpness
+│  (pre-matching) │
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │ Q > th? │
+    └────┬────┘
+         │ NO → REJECT (ri-acquisizione)
+         │ YES
+         ▼
+┌─────────────────┐
+│    Matching     │
+│  (1:N gallery)  │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Ranked List     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Reliability     │◄─── φ_RD o φ_DR
+│  Assessment     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Calcola SRR    │
+└────────┬────────┘
+         │
+    ┌────┴────────┐
+    │ SRR > th?   │
+    └────┬────────┘
+         │
+    ┌────┴────────────┐
+    │                 │
+  YES (high)      YES (medium)        NO
+    │                 │                │
+    ▼                 ▼                ▼
+┌─────────┐    ┌──────────────┐  ┌──────────┐
+│ ACCEPT  │    │ ACCEPT +     │  │  REJECT  │
+│ (auto)  │    │ Secondary    │  │    o     │
+│         │    │ Verification │  │Re-acquire│
+└─────────┘    └──────────────┘  └──────────┘
+```
+
+**Implementazione workflow**:
+
+```python
+class BiometricSystemWithQualityReliability:
+    def __init__(self, gallery, quality_threshold=0.6, 
+                 phi_k=0.4, srr_threshold_high=0.5, 
+                 srr_threshold_low=0.0):
+        self.gallery = gallery
+        self.quality_threshold = quality_threshold
+        self.phi_k = phi_k
+        self.srr_threshold_high = srr_threshold_high
+        self.srr_threshold_low = srr_threshold_low
+    
+    def process_probe(self, probe):
+        """
+        Pipeline completa con quality e reliability.
+        """
+        # Step 1: Quality Assessment
+        quality = self.assess_quality(probe)
+        
+        if quality < self.quality_threshold:
+            return {
+                'status': 'REJECTED_LOW_QUALITY',
+                'quality': quality,
+                'action': 'Re-acquisition required'
+            }
+        
+        # Step 2: Matching
+        ranked_list = self.perform_matching(probe)
+        best_match = ranked_list[0]
+        
+        # Step 3: Reliability Assessment
+        phi = self.compute_phi_density_ratio(probe, ranked_list)
+        srr = self.compute_srr(phi)
+        
+        # Step 4: Decision
+        if srr > self.srr_threshold_high:
+            status = 'ACCEPTED_HIGH_CONFIDENCE'
+            action = 'Automatic acceptance'
+        elif self.srr_threshold_low < srr <= self.srr_threshold_high:
+            status = 'ACCEPTED_LOW_CONFIDENCE'
+            action = 'Secondary verification recommended'
+        else:
+            status = 'REJECTED_LOW_RELIABILITY'
+            action = 'Re-acquisition or manual review'
+        
+        return {
+            'status': status,
+            'identity': best_match.id,
+            'quality': quality,
+            'phi': phi,
+            'srr': srr,
+            'action': action,
+            'ranked_list': ranked_list[:5]  # Top-5
+        }
+    
+    def assess_quality(self, probe):
+        """Combina diverse misure di qualità."""
+        sp = compute_pose_score(probe)
+        si = compute_illumination_score(probe)
+        sy = compute_symmetry_score(probe)
+        sharpness = compute_sharpness(probe)
+        
+        # Weighted combination
+        quality = 0.3*sp + 0.3*si + 0.2*sy + 0.2*sharpness
+        return quality
+    
+    def compute_phi_density_ratio(self, probe, ranked_list):
+        """Calcola φ usando Density Ratio."""
+        d_1 = ranked_list[0].distance
+        threshold = 2 * d_1
+        
+        N_b = sum(1 for item in ranked_list[1:] 
+                  if item.distance < threshold)
+        
+        phi = 1 - N_b / (len(ranked_list) - 1)
+        return phi
+    
+    def compute_srr(self, phi):
+        """Calcola SRR da φ."""
+        if phi > self.phi_k:
+            S = 1 - self.phi_k
+        else:
+            S = self.phi_k
+        
+        srr = (phi - self.phi_k) / S
+        return srr
+```
+
+### 6.6 Template Updating come strategia per aumentare qualità e affidabilità
+
+Una delle principali strategie per migliorare la **qualità** e la **affidabilità** di un sistema biometrico nel tempo è il **Template Updating**.
+
+#### Concetto di Template
+
+Le **feature** estratte da un campione biometrico e associate all’identità dell’individuo costituiscono il **template biometrico**.
+
+Caratteristiche fondamentali del template:
+- Il **matching** viene eseguito sui template, non sui campioni biometrici grezzi
+- Un template **non dovrebbe permettere la ricostruzione** di un campione biometrico valido
+- I template hanno **dimensioni ridotte**, facilitando codifica, trasmissione e memorizzazione su più dispositivi
+- Ogni acquisizione biometrica può generare **un template diverso**, a causa di rumore, condizioni di acquisizione e variabilità intra-classe
+
+#### Motivazione del Template Updating
+
+Durante il funzionamento del sistema, diventano progressivamente disponibili **nuovi dati biometrici**, acquisiti nel tempo durante l’uso reale del sistema.
+
+Questi dati possono essere sfruttati per aggiornare i template presenti in galleria al fine di:
+- **Template ageing**: contrastare il degrado delle prestazioni dovuto a cambiamenti fisiologici o comportamentali (età, espressioni, condizioni della pelle, ecc.)
+- **Template enhancing**: migliorare la rappresentatività del template includendo nuove variazioni dell’individuo
+
+Il Template Updating agisce quindi **a monte del matching**, migliorando indirettamente:
+- la qualità dei template
+- la separabilità genuine / impostor
+- l’affidabilità delle decisioni di riconoscimento
+
+### 6.6.1 Assegnazione delle etichette (Label Assignment)
+
+L’aggiornamento dei template richiede una strategia per assegnare correttamente le **etichette di identità** ai nuovi dati acquisiti.
+
+#### Sistemi supervisionati
+- Richiedono un **supervisore umano** per assegnare l’identità ai nuovi campioni
+- Elevata affidabilità delle etichette
+- Tipicamente operano **offline**
+- Costi elevati e scarsa scalabilità
+
+#### Sistemi semi-supervisionati
+- Utilizzano una combinazione di **dati etichettati e non etichettati**
+- Possono operare sia **online** che **offline**
+- Compromesso tra accuratezza e scalabilità
+- Spesso sfruttano la confidenza del sistema (es. SRR elevata) per aggiornamenti automatici
+
+### 6.6.2 Selezione dei template rappresentativi
+
+Non tutti i campioni acquisiti sono adatti all’aggiornamento del template. È quindi necessario selezionare i **template più rappresentativi**.
+
+#### Aggiornamento online
+- La selezione avviene **immediatamente** dopo l’acquisizione di un nuovo campione
+- Adatto a sistemi real-time
+- Più sensibile a errori di etichettatura
+
+#### Aggiornamento offline
+- La selezione avviene **dopo aver accumulato** un certo numero di campioni
+- Consente analisi statistiche più robuste
+- Riduce il rischio di contaminazione del template
+
+**Osservazione chiave**:  
+Il Template Updating migliora la qualità della rappresentazione biometrica nel tempo, mentre metriche come **$\varphi$** e **SRR** valutano l’affidabilità della decisione **a valle del matching**.  
+Le due strategie sono **complementari** e operano su livelli diversi del sistema biometrico.
