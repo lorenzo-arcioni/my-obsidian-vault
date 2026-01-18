@@ -1889,16 +1889,17 @@ Ranked list dopo matching:
 → rank(p) = 2 (Alice è al secondo posto)
 
 **Cumulative Match Score (CMS)**:
-$\text{CMS}(k) = \frac{|\{p \in \mathcal{P} : \text{rank}(p) \leq k\}|}{|\mathcal{P}|}$
+
+$$\text{CMS}(k) = \frac{|\{p \in \mathcal{P} : \text{rank}(p) \leq k\}|}{|\mathcal{P}|}$$
 
 **Interpretazione**: Probabilità che l'identità corretta appaia entro le prime $k$ posizioni.
 
-Equivalentemente: percentuale di probe per cui l'identità corretta è al rank ≤ k.
+Equivalentemente: percentuale di probe per cui l'identità corretta è tra le prime $k$.
 
 **Casi speciali**:
 
-**CMS(1)** = **Recognition Rate (RR)** = **Rank-1 Accuracy**:
-$\text{RR} = \text{CMS}(1) = \frac{|\{p \in \mathcal{P} : \text{rank}(p) = 1\}|}{|\mathcal{P}|}$
+**CMS(1)**:
+$$\text{Recognition Rate (RR)} = \text{Rank-1 Accuracy} = \text{CMS}(1) = \frac{|\{p \in \mathcal{P} : \text{rank}(p) = 1\}|}{|\mathcal{P}|}$$
 
 Metrica più importante in closed-set. Sistema con RR < 90% considerato scadente.
 
@@ -1908,10 +1909,10 @@ Metrica più importante in closed-set. Sistema con RR < 90% considerato scadente
   → Utile per sistemi con human-in-the-loop (operatore verifica top-5)
 
 **CMS($|\mathcal{G}|$) = 1**: Sempre, per definizione di closed-set
-  → L'identità corretta è sempre da qualche parte nella lista
+  → L'identità corretta è sempre da qualche parte nella lista.
 
 **Proprietà di monotonicità**:
-$\text{CMS}(k_1) \leq \text{CMS}(k_2) \quad \forall k_1 < k_2$
+$$\text{CMS}(k_1) \leq \text{CMS}(k_2) \quad \forall k_1 < k_2$$
 
 La funzione è monotona non-decrescente (logico: più posizioni consideriamo, più probe hanno identità corretta inclusa).
 
@@ -1942,12 +1943,13 @@ Sistema valutazione:
 
 ### 4.3 Cumulative Match Characteristic (CMC)
 
-La curva CMC è la visualizzazione grafica della funzione CMS, strumento standard per presentare risultati closed-set.
+La curva CMC è la rappresentazione grafica della **Cumulative Match Score (CMS)**,
+utilizzata come metrica standard per l’identificazione **closed-set**.
 
-**Definizione**:
+**Curva CMC**:
 
-La curva CMC è la funzione:
-$\text{CMC}(k) = \text{CMS}(k), \quad k = 1, 2, \ldots, |\mathcal{G}|$
+La curva CMC è il grafico della funzione $\text{CMS}(k)$ per $k = 1, 2, \ldots, |\mathcal{G}|.
+$
 
 **Coordinate**:
 - **Asse X**: Rank $k$ (scala lineare, tipicamente 1-20 o log-scale per gallerie grandi)
@@ -1986,7 +1988,8 @@ Sistema B: RR=85%, sale moderatamente → buono
 Sistema C: RR=70%, sale lentamente → scadente
 
 **Area Under CMC (AUC-CMC)**:
-$\text{AUC}_{\text{CMC}} = \sum_{k=1}^{|\mathcal{G}|} \text{CMS}(k)$
+
+$$\text{AUC}_{\text{CMC}} = \sum_{k=1}^{|\mathcal{G}|} \text{CMS}(k)$$
 
 **Range**: $[0, |\mathcal{G}|]$
 
@@ -2047,20 +2050,23 @@ Riassunto comparativo delle tre modalità operative principali.
 | **Metrica primaria** | FAR, FRR, EER | DIR, FAR, EER | CMS(k), RR |
 | **Curva principale** | ROC (GAR vs FAR) | Open-Set ROC (DIR vs FAR) | CMC (CMS vs rank) |
 | **Realismo applicativo** | Alto | Alto | Basso |
-| **Complessità computazionale** | Bassa O(1) | Alta O(N) | Alta O(N) |
+| **Complessità computazionale** | Bassa O(1) | Alta O(N) + O(n log n) | Alta O(N) + O(n log n) |
 | **Uso principale** | Accesso personale | Watchlist, sorveglianza | Ricerca, benchmark |
 
 **Relazioni di difficoltà**:
 
 Per stesso matcher e dataset:
-$\text{Accuracy}_{\text{closed-set}} \geq \text{Accuracy}_{\text{open-set}} \geq \text{Accuracy}_{\text{verification}}$
+$\text{Accuracy}_{\text{verification}} \geq \text{Accuracy}_{\text{closed-set}} \geq \text{Accuracy}_{\text{open-set}}$
 
 (in termini di successo relativo)
 
 Perché:
-- Closed-set: nessuna detection, identità sempre presente
-- Open-set: detection richiesta, ma 1:N confronto
-- Verification: deve anche gestire claim checking, ma 1:1 facilita
+
+- **Verifica (1:1)** è il compito più semplice: il sistema confronta il probe con **un solo template** dell’identità dichiarata e deve solo decidere se accettare o rifiutare.
+- **Identificazione closed-set (1:N)** è più difficile: l’identità corretta è garantita in galleria, ma deve risultare **la migliore tra molte** (competizione tra template).
+- **Identificazione open-set** è la più complessa: il sistema deve prima **rilevare** se l’identità è presente (detection oltre la soglia) e solo poi **identificare** (il migliore oltre la soglia), con la possibilità che il probe **non sia enrolled**.
+
+Ogni passaggio aggiunge vincoli e possibilità di errore, riducendo il tasso di successo complessivo.
 
 **In termini di EER** (quando comparabile):
 $\text{EER}_{\text{closed-set}} \leq \text{EER}_{\text{open-set}}$
@@ -2213,7 +2219,7 @@ Partizionamento interno al test set, specifico per modalità operative biometric
 **Regola**: 
 $\mathcal{G} \cap \mathcal{P} = \emptyset \quad \text{(per i template, non per le identità)}$
 
-Stesso soggetto può avere template in galleria E probe nel probe set, ma **template diversi**.
+Stesso soggetto può avere template in galleria e probe nel probe set, ma **template diversi**.
 
 **Composizione della Gallery**:
 
@@ -2230,3 +2236,1535 @@ Stesso soggetto può avere template in galleria E probe nel probe set, ma **temp
 - Esempio: frontal + profile, indoor + outdoor per ogni ID
 - Pro: performance migliori
 - Contro: può sovrastimare performance operative (enrollment reale è mono-condition)
+
+**Strategia 3 - Mixed quality**:
+- Template con qualità variabile (simula acquisizioni reali)
+- Alcuni template high-quality, altri low-quality per stessa identità
+- Pro: massimo realismo
+- Contro: performance più basse ma più rappresentative
+
+**Composizione del Probe Set**:
+
+Il probe set dovrebbe:
+1. **Rappresentare condizioni operative reali**
+   - Se il sistema sarà usato outdoor → probe con illuminazione naturale
+   - Se il sistema sarà usato in movimento → probe con blur da motion
+   
+2. **Includere variabilità temporale**
+   - Probe acquisiti settimane/mesi dopo enrollment
+   - Simula invecchiamento, cambiamenti di aspetto
+   
+3. **Bilanciare enrolled vs non-enrolled** (per open-set)
+   - Ratio realistico per applicazione target
+   - Esempio watchlist: 99% non-enrolled, 1% enrolled
+   - Esempio access control: 95% enrolled, 5% non-enrolled
+
+**Violazione comune**: Usare stesso template in G e P → sovrastima performance (data leakage).
+
+### 5.3 Cross-Validation e Ripetizione degli Esperimenti
+
+La valutazione su un singolo partizionamento può essere biased (sfortunata scelta di train/test). La cross-validation risolve questo problema.
+
+#### K-Fold Cross-Validation
+
+**Procedura**:
+1. Dividi dataset in K subset (fold) di dimensione approssimativamente uguale
+2. Per i = 1 to K:
+   - Usa fold i come test set
+   - Usa rimanenti K-1 fold come training set
+   - Addestra modello e calcola performance su fold i
+3. Performance finale = media delle K performance
+
+**Vantaggi**:
+- Ogni campione viene testato **esattamente una volta**
+- Ogni campione viene usato per training **K-1 volte**
+- Riduce sia **bias** (usiamo quasi tutti i dati per training) che **variance** (mediamo su K esperimenti)
+- Produce intervalli di confidenza (deviazione standard tra fold)
+
+**Scelta di K**:
+- **K = 5**: Compromesso comune, buon bilanciamento bias-variance
+- **K = 10**: Standard in machine learning, più computazionalmente intensivo
+- **K = N** (Leave-One-Out): Massima riduzione bias, ma molto costoso
+
+**Subject-based vs Sample-based K-fold**:
+
+**Subject-based** (preferito):
+- K fold contengono identità diverse (no overlap)
+- Valuta generalizzazione a nuove persone
+- Più realistico ma richiede dataset con molte identità
+
+**Sample-based**:
+- K fold contengono campioni diversi della stessa identità
+- Meno robusto (rischio overfitting alle identità)
+- Utilizzabile quando identità scarse ma campioni abbondanti
+
+#### Stratified K-Fold
+
+Estensione di K-fold che preserva la distribuzione delle classi in ogni fold.
+
+**Utilità in biometria**:
+- Garantisce ratio enrolled/non-enrolled costante in ogni fold (per open-set)
+- Bilancia attributi demografici (età, gender, etnia) in ogni fold
+- Evita fold con solo identità "facili" o solo "difficili"
+
+### 5.4 Matrice di Distanze Probe-vs-Gallery
+
+La **distance matrix** (o similarity matrix) rappresenta la struttura dati fondamentale per la valutazione offline efficiente dei sistemi biometrici. Questa matrice memorizza tutte le distanze tra i probe (campioni da riconoscere) e i template della gallery (campioni di riferimento), permettendo di condurre esperimenti multipli senza dover ricalcolare continuamente le stesse distanze.
+
+#### Definizione Formale
+
+$$\mathbf{D} \in \mathbb{R}^{|\mathcal{P}| \times |\mathcal{G}|}$$
+
+dove ogni elemento è definito come:
+
+$$D_{ij} = d(p_i, g_j)$$
+
+Qui $D_{ij}$ rappresenta la distanza tra l'$i$-esimo probe e il $j$-esimo template della gallery.
+
+#### Proprietà Fondamentali
+
+La matrice di distanze offre diversi vantaggi critici per la valutazione:
+
+- **Calcolo one-time**: La matrice viene computata una sola volta e poi riutilizzata per molteplici esperimenti
+- **Flessibilità operativa**: La stessa matrice può essere usata per verifica, identificazione open-set e closed-set
+- **Efficienza computazionale**: Evita ricalcoli di confronti già effettuati
+- **Trade-off memoria**: Per dataset grandi può richiedere notevole memoria (es. 10K probe × 100K gallery = 1 miliardo di valori float)
+
+#### Esempio Visivo
+
+Consideriamo una matrice semplificata dove mostriamo solo l'ordine relativo delle distanze:
+
+```
+       g₁   g₂   g₃   g₄   g₅  (Gallery templates)
+    ┌─────────────────────────┐
+p₁  │ 0.15 0.45 0.32 0.67 0.89│  id(p₁) = A
+p₂  │ 0.52 0.18 0.41 0.28 0.73│  id(p₂) = D
+p₃  │ 0.38 0.29 0.19 0.51 0.62│  id(p₃) = E (non in G)
+    └─────────────────────────┘
+     id(g) = A    B    C    D    E
+
+Nota: id(E) = g₅ ma questo template NON sarà in gallery 
+      per esperimenti open-set (E è impostor)
+```
+
+#### Interpretazione delle Righe
+
+Ogni riga della matrice rappresenta un tentativo di riconoscimento completo:
+
+- **Riga 1**: probe $p_1$ confrontato con tutta la gallery → ranking: $g_1$(0.15), $g_3$(0.32), $g_2$(0.45), ...
+- **Riga 2**: probe $p_2$ confrontato con tutta la gallery → ranking: $g_2$(0.18), $g_4$(0.28), $g_3$(0.41), ...
+- **Riga 3**: probe $p_3$ confrontato con tutta la gallery → ranking: $g_3$(0.19), $g_2$(0.29), $g_1$(0.38), ...
+
+### Utilizzo della Matrice per Verification
+
+Nella modalità di verifica, ogni probe dichiara un'identità e il sistema deve decidere se accettare o rifiutare il claim. Solo i template della gallery che corrispondono all'identità dichiarata vengono confrontati con il probe.
+
+#### Verification con Template Singolo
+
+Vediamo un esempio pratico con identità A, B, C, D nella gallery ed E, F come impostori:
+
+```
+       A₁   B₁   C₁   D₁  (Gallery - un template per identità)
+    ┌─────────────────────┐
+P₁  │  1    4    2    3   │  id(P₁) = A, claim = A (genuine)
+P₂  │  4    1    5    2   │  id(P₂) = D, claim = C (impostor)
+P₃  │  3    2    1    4   │  id(P₃) = E, claim = D (impostor)
+    └─────────────────────┘
+```
+
+I numeri rappresentano l'ordine crescente delle distanze (1 = più vicino).
+
+**Analisi delle decisioni**:
+
+- **P₁** (genuine claim A → A): distanza con A₁ = 1 (minima). Se τ ≥ 1 → Genuine Accept, altrimenti False Reject
+- **P₂** (impostor claim D → C): deve confrontare con C₁, distanza = 5. Se τ < 5 → Genuine Reject, altrimenti False Accept
+- **P₃** (impostor claim E → D): deve confrontare con D₁, distanza = 4. Stesso ragionamento di P₂
+
+```python
+def evaluate_verification(D, probe_ids, gallery_ids, claimed_ids, tau):
+    """
+    Valuta performance di verification usando la distance matrix.
+    
+    Args:
+        D: matrice di distanze (|P| × |G|)
+        probe_ids: identità vere dei probe
+        gallery_ids: identità dei template in gallery
+        claimed_ids: identità dichiarate per ciascun probe
+        tau: soglia di accettazione
+    
+    Returns:
+        FAR, FRR: tassi di errore
+    """
+    FA, FR = 0, 0
+    n_genuine, n_impostor = 0, 0
+    
+    for i, (probe_id, claimed_id) in enumerate(zip(probe_ids, claimed_ids)):
+        # Trova template in gallery con identità dichiarata
+        claimed_templates = [j for j, gid in enumerate(gallery_ids) 
+                             if gid == claimed_id]
+        
+        if not claimed_templates:
+            continue  # Skip se claimed identity non in gallery
+        
+        # Prendi migliore match con claimed identity
+        best_dist = min(D[i, j] for j in claimed_templates)
+        
+        if probe_id == claimed_id:  # Genuine attempt
+            n_genuine += 1
+            if best_dist > tau:
+                FR += 1  # False Rejection
+        else:  # Impostor attempt
+            n_impostor += 1
+            if best_dist <= tau:
+                FA += 1  # False Acceptance
+    
+    FAR = FA / n_impostor if n_impostor > 0 else 0
+    FRR = FR / n_genuine if n_genuine > 0 else 0
+    return FAR, FRR
+```
+
+#### Verification con Template Multipli
+
+Quando la gallery contiene più template per identità, usiamo la strategia **best-match**: prendiamo la distanza minima tra il probe e tutti i template di quell'identità.
+
+```
+       A₁   A₂   B₁   B₂   C₁   C₂   D₁   D₂
+    ┌─────────────────────────────────────────┐
+P₁  │  2    1    8    4    3    7    5    6   │  id(P₁) = A, claim = A
+P₂  │  7    6    2    1    5    8    3    4   │  id(P₂) = D, claim = C
+P₃  │  7    5    2    8    6    1    3    4   │  id(P₃) = E, claim = D
+    └─────────────────────────────────────────┘
+```
+
+**Analisi**:
+
+- **P₁** claim A: best match = min(2, 1) = 1 (A₂). Se τ ≥ 1 → GA, altrimenti FR
+- **P₂** claim C: best match = min(5, 8) = 5 (C₁). Decisione basata su τ vs 5
+- **P₃** claim D: best match = min(3, 4) = 3 (D₁). Decisione basata su τ vs 3
+
+Nota come P₁ beneficia del template multiplo: se avessimo solo A₁ con distanza 2, la soglia dovrebbe essere più permissiva.
+
+### Utilizzo per Open-Set Identification
+
+Nell'identificazione open-set, il probe potrebbe non appartenere a nessuna identità nella gallery. Il sistema deve:
+1. Determinare se il probe appartiene a qualcuno in gallery (detection)
+2. Se sì, identificare chi (identification)
+
+#### Open-Set con Template Singolo
+
+```
+       A₁   B₁   C₁   D₁  (Gallery)
+    ┌─────────────────────┐
+P₁  │  1    4    2    3   │  id(P₁) = A (enrolled)
+P₂  │  1    2    3    4   │  id(P₂) = D (enrolled)
+P₃  │  1    2    3    4   │  id(P₃) = E (NOT enrolled - impostor)
+    └─────────────────────┘
+```
+
+**Analisi**:
+
+- **P₁** (id = A): lista ordinata = [A₁, C₁, D₁, B₁]. Se d(A₁) ≤ τ → Detection + Identification rank-1 ✓
+- **P₂** (id = D): lista ordinata = [B₁, D₁, C₁, A₁]. Anche se d(D₁) ≤ τ, D è in rank-2 → contribuisce a DIR(τ, 2) ma non DIR(τ, 1)
+- **P₃** (id = E, non enrolled): lista ordinata = [C₁, B₁, D₁, A₁]. Se d(C₁) ≤ τ → False Accept, altrimenti Genuine Reject
+
+```python
+def evaluate_openset(D, probe_ids, gallery_ids, tau):
+    """
+    Valuta identificazione open-set.
+    
+    Args:
+        D: matrice di distanze (|P| × |G|)
+        probe_ids: identità vere dei probe
+        gallery_ids: identità dei template in gallery
+        tau: soglia di detection
+    
+    Returns:
+        DIR: Detection and Identification Rate at rank-1
+        FPIR: False Positive Identification Rate
+    """
+    correct_detect_id = 0  # DIR rank-1
+    false_accept = 0       # FPIR
+    n_enrolled = sum(1 for pid in probe_ids if pid in set(gallery_ids))
+    n_not_enrolled = len(probe_ids) - n_enrolled
+    
+    for i, probe_id in enumerate(probe_ids):
+        # Trova distanza minima e identità corrispondente
+        min_idx = D[i, :].argmin()
+        min_dist = D[i, min_idx]
+        returned_id = gallery_ids[min_idx]
+        
+        if probe_id in set(gallery_ids):  # Enrolled probe
+            if min_dist <= tau and returned_id == probe_id:
+                correct_detect_id += 1  # Correct detection + identification
+            # Altrimenti: FR (missed o misidentified)
+        else:  # Non-enrolled probe
+            if min_dist <= tau:
+                false_accept += 1  # False alarm
+    
+    DIR = correct_detect_id / n_enrolled if n_enrolled > 0 else 0
+    FPIR = false_accept / n_not_enrolled if n_not_enrolled > 0 else 0
+    return DIR, FPIR
+```
+
+#### Open-Set con Template Multipli
+
+Con template multipli, la situazione diventa più interessante:
+
+```
+       A₁   A₂   B₁   B₂   C₁   C₂   D₁   D₂
+    ┌─────────────────────────────────────────┐
+P₁  │  2    1    8    4    3    7    5    6   │  id = A (enrolled)
+P₂  │  2    1    5    8    3    4    7    6   │  id = D (enrolled)
+P₃  │  7    6    2    8    1    5    3    4   │  id = E (NOT enrolled)
+    └─────────────────────────────────────────┘
+```
+
+**Lista ordinata per identità (best match)**:
+- P₁: A(1), C(3), B(4), D(5) → se τ ≥ 1: DIR(τ,1)++
+- P₂: B(1), D(3), C(4), A(2) → B in prima posizione! Anche se τ ≥ 3, non conta per DIR(τ,1), ma per DIR(τ,3)
+- P₃: C(1), B(2), D(3), A(6) → se τ ≥ 1: False Accept
+
+Notare come P₂ soffre perché B₂ è più vicino dei template di D.
+
+### Utilizzo per Closed-Set Identification
+
+Nel closed-set, tutti i probe appartengono a identità nella gallery. Non c'è soglia, solo ranking.
+
+```
+       A₁   B₁   C₁   D₁   E₁   F₁
+    ┌──────────────────────────────┐
+P₁  │  1    4    2    3    6    5  │  id = A
+P₂  │  6    1    4    2    3    5  │  id = D
+P₃  │  5    2    1    3    4    6  │  id = E
+    └──────────────────────────────┘
+```
+
+**Analisi**:
+- **P₁**: lista = [A₁, C₁, D₁, B₁, F₁, E₁] → A in rank-1 → contribuisce a CMS(1) e tutti i rank superiori
+- **P₂**: lista = [B₁, D₁, E₁, C₁, F₁, A₁] → D in rank-2 → contribuisce a CMS(2) e superiori, NON a CMS(1)
+- **P₃**: lista = [C₁, B₁, D₁, E₁, A₁, F₁] → E in rank-4 → contribuisce a CMS(4) e superiori
+
+```python
+def evaluate_closedset(D, probe_ids, gallery_ids):
+    """
+    Valuta identificazione closed-set (nessuna soglia).
+    Assunzione: tutti i probe sono in gallery.
+    
+    Args:
+        D: matrice di distanze (|P| × |G|)
+        probe_ids: identità vere dei probe
+        gallery_ids: identità dei template in gallery
+    
+    Returns:
+        cms: Cumulative Match Score a vari rank
+        ranks: rank della corretta identità per ogni probe
+    """
+    ranks = []
+    
+    for i, probe_id in enumerate(probe_ids):
+        # Ordina indici per distanza crescente
+        sorted_indices = D[i, :].argsort()
+        
+        # Trova rank della prima occorrenza dell'identità corretta
+        for rank, idx in enumerate(sorted_indices, start=1):
+            if gallery_ids[idx] == probe_id:
+                ranks.append(rank)
+                break
+    
+    # Calcola CMS
+    max_rank = max(len(gallery_ids), max(ranks) if ranks else 1)
+    cms = []
+    for k in range(1, max_rank + 1):
+        cms_k = sum(1 for r in ranks if r <= k) / len(ranks)
+        cms.append(cms_k)
+    
+    return cms, ranks
+```
+
+### 5.5 All-vs-All Distance Matrix
+
+La matrice all-vs-all rappresenta un'estensione potente: confronta **tutti i template con tutti**, non solo probe contro gallery.
+
+#### Definizione
+
+$$\mathbf{D}_{\text{all}} \in \mathbb{R}^{N \times N}$$
+
+dove $N$ = numero totale di template nel dataset, e:
+
+$$D_{ij} = d(t_i, t_j) \quad \forall i \neq j$$
+
+**Regola critica**: $D_{ii}$ viene sempre esclusa (auto-confronto triviale).
+
+#### Simmetria
+
+Se la metrica di distanza è simmetrica:
+
+$$D_{ij} = D_{ji}$$
+
+Quindi serve computare solo il triangolo superiore: $\frac{N(N-1)}{2}$ confronti.
+
+#### Esempio All-vs-All
+
+```
+        T₁   T₂   T₃   T₄   T₅   T₆
+      ┌──────────────────────────────┐
+  T₁  │  --   2    5    1    6    4  │  id(T₁) = A
+  T₂  │  2   --    3    4    5    1  │  id(T₂) = A
+  T₃  │  5    3   --    6    2    4  │  id(T₃) = B
+  T₄  │  1    4    6   --    3    5  │  id(T₄) = A
+  T₅  │  6    5    2    3   --    1  │  id(T₅) = B
+  T₆  │  4    1    4    5    1   --  │  id(T₆) = C
+      └──────────────────────────────┘
+```
+
+#### Flessibilità Sperimentale
+
+Dalla all-vs-all matrix, si possono **simulare infiniti esperimenti** cambiando quali righe/colonne sono probe/gallery.
+
+**Esempio con 1000 template, 100 identità** (10 template/identità):
+
+All-vs-All matrix: 1000 × 1000 = 1M celle (esclusa diagonale = 999K confronti)
+
+**Esperimento 1** (Closed-set):
+- Gallery: primi 5 template per identità (500 template)
+- Probe: ultimi 5 template per identità (500 template)
+- Estrai sub-matrix D[500:1000, 0:500]
+
+**Esperimento 2** (Open-set):
+- Gallery: 80 identità × 10 template = 800 template
+- Probe enrolled: 80 identità × 5 template = 400 template
+- Probe non-enrolled: 20 identità × 10 template = 200 template
+- Estrai sub-matrix appropriata
+
+**Esperimento 3** (Verification):
+- Ogni template è probe una volta
+- Per ogni riga $i$:
+  - Genuine scores: $D[i, j]$ dove $\text{id}(i) = \text{id}(j)$
+  - Impostor scores: $D[i, j]$ dove $\text{id}(i) \neq \text{id}(j)$
+
+#### Estrazione Score per Verification
+
+Ogni riga della matrice genera **multipli tentativi di verifica**:
+
+```python
+def extract_verification_scores_from_all_vs_all(D_all, template_ids):
+    """
+    Estrae genuine e impostor scores da matrice all-vs-all.
+    
+    Args:
+        D_all: matrice all-vs-all (N × N)
+        template_ids: identità di ogni template
+    
+    Returns:
+        genuine_scores: lista di distanze genuine
+        impostor_scores: lista di distanze impostor
+    """
+    genuine_scores = []
+    impostor_scores = []
+    
+    N = len(D_all)
+    for i in range(N):
+        for j in range(N):
+            if i == j:
+                continue  # Skip self-comparison
+            
+            if template_ids[i] == template_ids[j]:
+                genuine_scores.append(D_all[i, j])
+            else:
+                impostor_scores.append(D_all[i, j])
+    
+    return genuine_scores, impostor_scores
+```
+
+Questo approccio genera un numero enorme di score:
+- Se $N = 1000$ template, $K = 100$ identità, 10 template/identità
+- Genuine comparisons ≈ $100 \times \binom{10}{2} = 4,500$
+- Impostor comparisons ≈ $100 \times 99 \times 10 \times 10 = 990,000$
+
+#### Verification All-vs-All: Single Template Strategy
+
+Ogni riga rappresenta **multipli esperimenti**: ogni template può fungere da probe e dichiarare ogni possibile identità.
+
+**Per ogni riga $i$**:
+- $S-1$ genuine attempts (template stessa identità, escludendo se stesso)
+- $(N-1) \times S$ impostor attempts (tutte le altre identità)
+
+**Totali**:
+- Total Genuine: $TG = |G| \times (S-1)$
+- Total Impostor: $TI = |G| \times (N-1) \times S$
+
+```python
+def verification_all_vs_all_single(M, labels, tau):
+    """
+    Valuta verification con all-vs-all, single template strategy.
+    
+    Args:
+        M: matrice all-vs-all (N × N)
+        labels: identità di ogni template
+        tau: soglia
+    
+    Returns:
+        GAR, FAR, FRR, GRR
+    """
+    N = len(M)
+    GA, FA, FR, GR = 0, 0, 0, 0
+    
+    for i in range(N):
+        for j in range(N):
+            if i == j:
+                continue  # Skip diagonal
+            
+            dist = M[i, j]
+            
+            if dist <= tau:
+                if labels[i] == labels[j]:
+                    GA += 1  # Genuine Accept
+                else:
+                    FA += 1  # False Accept
+            else:
+                if labels[i] == labels[j]:
+                    FR += 1  # False Reject
+                else:
+                    GR += 1  # Genuine Reject
+    
+    # Calcola statistics (assumendo S template per identità)
+    # TG e TI vanno calcolati separatamente basandosi su S e N
+    return GA, FA, FR, GR
+```
+
+#### Verification All-vs-All: Multiple Template Strategy
+
+In questo caso, ogni riga rappresenta $N$ esperimenti (uno per ogni possibile identità dichiarata).
+
+**Per ogni riga $i$**:
+- 1 genuine attempt (dichiara propria identità)
+- $N-1$ impostor attempts (dichiara altre identità)
+
+**Totali**:
+- Total Genuine: $TG = |G|$
+- Total Impostor: $TI = |G| \times (N-1)$
+
+```python
+def verification_all_vs_all_multi(M, labels, N_subjects, tau):
+    """
+    Valuta verification all-vs-all con multiple template strategy.
+    
+    Args:
+        M: matrice all-vs-all
+        labels: identità di ogni template
+        N_subjects: numero di identità uniche
+        tau: soglia
+    """
+    N = len(M)
+    GA, FA, FR, GR = 0, 0, 0, 0
+    
+    for i in range(N):
+        # Per ogni possibile identità dichiarata
+        for claimed_id in range(1, N_subjects + 1):
+            # Trova tutti i template di claimed_id
+            claimed_indices = [j for j in range(N) 
+                              if labels[j] == claimed_id and j != i]
+            
+            if not claimed_indices:
+                continue
+            
+            # Best match con claimed identity
+            min_dist = min(M[i, j] for j in claimed_indices)
+            
+            is_genuine = (labels[i] == claimed_id)
+            
+            if min_dist <= tau:
+                if is_genuine:
+                    GA += 1
+                else:
+                    FA += 1
+            else:
+                if is_genuine:
+                    FR += 1
+                else:
+                    GR += 1
+    
+    TG = N
+    TI = N * (N_subjects - 1)
+    
+    GAR = GA / TG if TG > 0 else 0
+    FAR = FA / TI if TI > 0 else 0
+    FRR = FR / TG if TG > 0 else 0
+    GRR = GR / TI if TI > 0 else 0
+    
+    return GAR, FAR, FRR, GRR
+```
+
+#### Open-Set All-vs-All
+
+Ogni riga rappresenta **2 esperimenti** in parallelo:
+1. Assumere che il probe sia enrolled (genuine)
+2. Assumere che il probe non sia enrolled (impostor)
+
+```python
+def openset_all_vs_all(M, labels, tau):
+    """
+    Valuta open-set identification con all-vs-all.
+    """
+    N = len(M)
+    DI_rank1, FA, GR = 0, 0, 0
+    
+    for i in range(N):
+        # Crea lista ordinata escludendo i
+        distances = [(M[i, j], labels[j]) for j in range(N) if j != i]
+        distances.sort(key=lambda x: x[0])
+        
+        # Caso 1: probe i è enrolled
+        if distances[0][0] <= tau:
+            if distances[0][1] == labels[i]:
+                DI_rank1 += 1  # Correct detection + identification
+        
+        # Caso 2: probe i non è enrolled (simula rimuovendo suoi template)
+        # Trova primo template con label diversa
+        first_different = None
+        for dist, label in distances:
+            if label != labels[i]:
+                first_different = dist
+                break
+        
+        if first_different is not None and first_different <= tau:
+            FA += 1  # False accept
+        else:
+            GR += 1  # Genuine reject
+    
+    DIR = DI_rank1 / N
+    FPIR = FA / N
+    
+    return DIR, FPIR
+```
+
+#### Closed-Set All-vs-All
+
+Nel closed-set, la valutazione è più semplice perché:
+- Non ci sono impostori (tutti i probe appartengono a identità in gallery)
+- Non c'è soglia di accettazione
+- Valutiamo solo il **rank** della corretta identità
+
+**Caratteristiche**:
+- Ogni riga rappresenta **1 operazione** di identificazione
+- Ogni riga contiene 1 (o $S-1$ nel caso di template multipli) genuine attempt
+- Total Attempts: $TA = |G|$ (o $S-1 + S(N-1)$ nel caso di template multipli)
+- Nessun impostor attempt
+- Nessuna soglia
+
+```python
+def closedset_all_vs_all(M, labels):
+    """
+    Closed-set identification con all-vs-all matrix.
+    
+    Args:
+        M: matrice all-vs-all (N × N)
+        labels: identità ground truth di ogni template
+    
+    Returns:
+        cms: Cumulative Match Score per ogni rank
+        ranks: rank della corretta identità per ogni probe
+    """
+    N = len(M)
+    ranks = []
+    
+    for i in range(N):
+        # Crea lista ordinata escludendo auto-confronto
+        distances_with_idx = [(M[i, j], labels[j], j) 
+                              for j in range(N) if j != i]
+        distances_with_idx.sort(key=lambda x: x[0])
+        
+        # Trova rank della prima occorrenza dell'identità corretta
+        for rank, (dist, label, idx) in enumerate(distances_with_idx, start=1):
+            if label == labels[i]:
+                ranks.append(rank)
+                break
+    
+    # Calcola CMS (Cumulative Match Score)
+    max_rank = max(ranks) if ranks else 1
+    cms = []
+    for k in range(1, max_rank + 1):
+        cms_k = sum(1 for r in ranks if r <= k) / len(ranks)
+        cms.append(cms_k)
+    
+    return cms, ranks
+```
+
+**Esempio con template multipli**:
+
+```
+All-vs-All matrix (6×6):
+        T₁   T₂   T₃   T₄   T₅   T₆
+      ┌──────────────────────────────┐
+  T₁  │  --   2    8    4    3    7  │  id = A
+  T₂  │  2   --    1    3    7    5  │  id = A
+  T₃  │  8    1   --    7    5    6  │  id = B
+  T₄  │  4    3    7   --    2    1  │  id = A
+  T₅  │  3    7    5    2   --    4  │  id = B
+  T₆  │  7    5    6    1    4   --  │  id = C
+      └──────────────────────────────┘
+
+Analisi per T₁ (id = A):
+Lista ordinata (escl. T₁): T₂(2), T₅(3), T₄(4), T₆(7), T₃(8)
+Identità: A, B, A, C, B
+Prima A in posizione 1 → rank = 1 ✓
+
+Analisi per T₂ (id = A):
+Lista ordinata (escl. T₂): T₃(1), T₄(3), T₆(5), T₅(7), T₁(8)
+Identità: B, A, C, B, A
+Prima A in posizione 2 → rank = 2
+
+Analisi per T₃ (id = B):
+Lista ordinata (escl. T₃): T₂(1), T₅(5), T₆(6), T₄(7), T₁(8)
+Identità: A, B, C, A, A
+Prima B in posizione 2 → rank = 2
+
+CMS(1) = 1/6 = 16.7% (solo T₁ riconosciuto correttamente al rank-1)
+CMS(2) = 3/6 = 50% (T₁, T₂, T₃)
+...
+```
+
+**Nota importante**: Con template multipli per identità, il sistema ha più opportunità di trovare la corretta identità, quindi CMS tende a migliorare. Nell'esempio sopra, T₁ beneficia del fatto che T₂ (stesso soggetto A) è il più vicino.
+
+### 5.6 Template Multipli per Soggetto
+
+Molti sistemi biometrici memorizzano **multipli template per identità** per migliorare robustezza e affidabilità.
+
+#### Strategie di Enrollment
+
+**1. Best-of-N**: Acquisire $N$ campioni, memorizzare il migliore basandosi su quality score
+```python
+def enroll_best_of_n(samples, quality_scores, n=5):
+    """Memorizza solo il campione con qualità massima."""
+    best_idx = quality_scores.argmax()
+    return samples[best_idx]
+```
+
+**2. Average template**: Memorizzare media o mediana delle features
+```python
+def enroll_average(samples):
+    """Memorizza template medio."""
+    return np.mean(samples, axis=0)
+```
+
+**3. Template set**: Memorizzare tutti i template (memoria intensivo ma robusto)
+```python
+def enroll_all(samples):
+    """Memorizza tutti i template."""
+    return samples  # Lista completa
+```
+
+#### Best-Match Strategy
+
+La strategia più comune con template multipli è il **best-match**:
+
+$$d(p, \text{id}) = \min_{g \in \mathcal{G}_{\text{id}}} d(p, g)$$
+
+dove $\mathcal{G}_{\text{id}}$ è l'insieme dei template dell'identità `id` in gallery.
+
+**Esempio numerico**:
+
+```
+Gallery:
+- ID_A: [template_A1, template_A2, template_A3]
+- ID_B: [template_B1, template_B2]
+
+Probe p (id vero = A):
+
+d(p, template_A1) = 0.25
+d(p, template_A2) = 0.18  ← minimum
+d(p, template_A3) = 0.31
+
+d(p, ID_A) = min(0.25, 0.18, 0.31) = 0.18
+
+Confronto con B:
+d(p, template_B1) = 0.42
+d(p, template_B2) = 0.38
+
+d(p, ID_B) = min(0.42, 0.38) = 0.38
+
+Se tau = 0.20:
+- d(p, ID_A) = 0.18 ≤ 0.20 → ACCEPT (corretto!)
+- Se avessimo usato solo template_A1 o A3: REJECT (errore!)
+```
+
+#### Impatto su Performance
+
+**Vantaggi** (template multipli):
+
+- **Riduce FRR significativamente**: Più opportunità di match con genuine
+  - Esempio: Con 1 template, FRR = 5%; con 3 template, FRR ≈ 2%
+  - Modello teorico: $\text{FRR}_N \approx \text{FRR}_1^N$ (approssimativo)
+  
+- **Robustezza a variabilità intra-classe**: Copre più condizioni (pose diverse, illuminazione variabile, espressioni)
+  
+- **Tolleranza a degradazione temporale**: Se un template invecchia o si degrada, altri ancora validi
+
+**Svantaggi**:
+
+- **Aumenta FAR leggermente**: Più template → più "tentativi" per impostor di trovare match casuale
+  - Esempio: Con 1 template, FAR = 0.1%; con 3 template, FAR ≈ 0.15%
+  
+- **Storage**: Spazio richiesto × numero template
+  
+- **Computation**: Tempo matching × numero template (mitigabile con ottimizzazioni)
+
+#### Trade-off Ottimale
+
+Empiricamente, **2-5 template per identità** è il sweet spot per molti sistemi:
+- 2 template: bilancia costi e benefici
+- 3-5 template: ottimo per applicazioni critiche
+- >5 template: rendimenti decrescenti
+
+**Esempio numerico comparativo**:
+
+```
+Sistema face recognition, soglia fissa τ = 0.25
+
+Single template per identità:
+- FAR = 0.5%
+- FRR = 3.0%
+- EER = 1.8%
+- Storage = 1× base
+
+Three templates per identità (best-match):
+- FAR = 0.8% (+60% relativo, ma ancora basso)
+- FRR = 1.2% (-60% relativo, miglioramento significativo)
+- EER = 1.0% (miglioramento complessivo)
+- Storage = 3× base
+- Computation = 3× base
+
+Conclusione: Il trade-off è favorevole per applicazioni 
+dove FRR è più critico di FAR (es. smartphone unlock)
+```
+
+#### Implementazione Verification con Template Multipli
+
+```python
+def verify_multi_template(probe, gallery_templates_claimed_id, tau):
+    """
+    Verification con template multipli usando best-match.
+    
+    Args:
+        probe: feature vector del probe
+        gallery_templates_claimed_id: lista di template per identità dichiarata
+        tau: soglia di accettazione
+    
+    Returns:
+        "ACCEPT" o "REJECT"
+    """
+    # Calcola distanza da ogni template della claimed identity
+    distances = [compute_distance(probe, t) for t in gallery_templates_claimed_id]
+    
+    # Best-match strategy: prendi la minima distanza
+    min_distance = min(distances)
+    
+    # Decision based on threshold
+    if min_distance <= tau:
+        return "ACCEPT"
+    else:
+        return "REJECT"
+```
+
+#### Implementazione Open-Set con Template Multipli
+
+```python
+def identify_openset_multi_template(probe, gallery_dict, tau):
+    """
+    Identificazione open-set con template multipli per identità.
+    
+    Args:
+        probe: feature vector del probe
+        gallery_dict: dizionario {identity_id: [template1, template2, ...]}
+        tau: soglia di detection
+    
+    Returns:
+        identity_id se riconosciuto, "NOT_IN_GALLERY" altrimenti
+    """
+    best_distance = float('inf')
+    best_identity = None
+    
+    # Per ogni identità in gallery
+    for identity_id, templates in gallery_dict.items():
+        # Calcola distanza minima da questa identità (best-match)
+        distances = [compute_distance(probe, t) for t in templates]
+        id_min_distance = min(distances)
+        
+        # Aggiorna best se migliore
+        if id_min_distance < best_distance:
+            best_distance = id_min_distance
+            best_identity = identity_id
+    
+    # Detection + Identification
+    if best_distance <= tau:
+        return best_identity  # Accettato e identificato
+    else:
+        return "NOT_IN_GALLERY"  # Rifiutato (non detected)
+```
+
+#### Influenza su Metriche Dettagliata
+
+Con $N$ template per identità, l'impatto sulle metriche può essere modellato:
+
+**FRR Reduction**:
+
+Se assumiamo che i failure di template diversi siano indipendenti (approssimazione ottimistica):
+
+$\text{FRR}_N \approx \text{FRR}_1^N$
+
+Esempio: Se FRR singolo template = 10% = 0.1
+- Con 2 template: $\text{FRR}_2 \approx 0.1^2 = 0.01 = 1\%$
+- Con 3 template: $\text{FRR}_3 \approx 0.1^3 = 0.001 = 0.1\%$
+
+In realtà, i template dello stesso soggetto sono correlati, quindi il miglioramento è meno drammatico ma comunque significativo.
+
+**FAR Increase**:
+
+Per FAR, il modello è più complesso. Con best-match, un impostor ha più "opportunità":
+
+$\text{FAR}_N \approx 1 - (1 - \text{FAR}_1)^N$
+
+Esempio: Se FAR singolo = 0.1% = 0.001
+- Con 2 template: $\text{FAR}_2 \approx 1 - (0.999)^2 = 0.002 = 0.2\%$ (raddoppia circa)
+- Con 3 template: $\text{FAR}_3 \approx 1 - (0.999)^3 = 0.003 = 0.3\%$
+
+L'aumento è modesto perché FAR è già molto basso.
+
+### 5.7 Probe-vs-Gallery con Sessioni Separate
+
+Quando il dataset ha una **chiara suddivisione in sessioni temporali**, è più appropriato usare probe e gallery da sessioni diverse piuttosto che All-vs-All.
+
+#### Motivazione
+
+Campioni acquisiti nella **stessa sessione** tendono ad essere più simili tra loro rispetto a campioni di sessioni diverse, a causa di:
+
+- **Variazioni temporali**: Cambiamenti facciali, crescita barba, invecchiamento
+- **Condizioni ambientali**: Illuminazione diversa, background diverso
+- **Performance del sensore**: Sporcizia depositata, calibrazione diversa
+
+Usare All-vs-All in questo caso **sovrastimerebbe le performance** rispetto a uno scenario reale.
+
+#### Strategia Probe-vs-Gallery Ottimizzata
+
+**Setup**:
+- Sessione 1 → Gallery (tutti i template)
+- Sessione 2 → Probe (tutti i template)
+- Poi invertire i ruoli e mediare i risultati
+
+**Vantaggi**:
+- Performance più realistica
+- Valuta robustezza temporale
+- Usa tutti i dati disponibili
+
+**Esempio**:
+```
+Dataset: 100 soggetti, 2 sessioni, 5 template per soggetto/sessione
+
+Configurazione 1:
+- Gallery: Sessione 1 (500 template)
+- Probe: Sessione 2 (500 template)
+- Calcola metriche → Performance_1
+
+Configurazione 2:
+- Gallery: Sessione 2 (500 template)
+- Probe: Sessione 1 (500 template)
+- Calcola metriche → Performance_2
+
+Performance finale = media(Performance_1, Performance_2)
+```
+
+#### Notazione per Probe-vs-Gallery
+
+- $N$ = numero totale di soggetti
+- $|G|$ = cardinalità gallery (numero di colonne nella matrice)
+- $|P|$ = cardinalità probe (numero di righe nella matrice)
+- $S$ = template per soggetto (assumiamo stesso numero in probe e gallery per semplicità)
+- $|G| = |P| = S \times N$
+
+Importante: **Nessun overlap** tra probe e gallery (no stessi template in entrambi).
+
+#### Verification Probe-vs-Gallery: Single Template
+
+Ogni riga rappresenta $|G|$ operazioni:
+
+**Per ogni riga $i$**:
+- $S$ genuine attempts (quando probe dichiara vera identità, confrontato con $S$ template di quella identità in gallery)
+- $(N-1) \times S$ impostor attempts (quando dichiara altre $N-1$ identità)
+
+**Totali**:
+- $TG = |P| \times S$
+- $TI = |P| \times (N-1) \times S$
+
+```python
+def verification_probe_gallery_single(M, probe_labels, gallery_labels, tau):
+    """
+    Verification con probe-vs-gallery, single template in gallery per identità.
+    
+    Args:
+        M: matrice probe-vs-gallery (|P| × |G|)
+        probe_labels: identità dei probe (righe)
+        gallery_labels: identità dei template in gallery (colonne)
+        tau: soglia
+    """
+    n_probe, n_gallery = M.shape
+    GA, FA, FR, GR = 0, 0, 0, 0
+    
+    for i in range(n_probe):
+        for j in range(n_gallery):
+            dist = M[i, j]
+            
+            if dist <= tau:
+                if probe_labels[i] == gallery_labels[j]:
+                    GA += 1
+                else:
+                    FA += 1
+            else:
+                if probe_labels[i] == gallery_labels[j]:
+                    FR += 1
+                else:
+                    GR += 1
+    
+    # Calcola rates (assumendo S template per soggetto)
+    # TG = n_probe * S
+    # TI = n_probe * (N-1) * S
+    # Dove N = numero soggetti unici
+    
+    return GA, FA, FR, GR
+```
+
+#### Verification Probe-vs-Gallery: Multiple Template
+
+Ogni riga rappresenta $N$ operazioni (uno per ogni possibile identità dichiarata):
+
+**Per ogni riga $i$**:
+- 1 genuine attempt (dichiara propria identità, confrontato con tutti i suoi template)
+- $N-1$ impostor attempts (dichiara altre identità)
+
+**Totali**:
+- $TG = |P|$
+- $TI = |P| \times (N-1)$
+
+```python
+def verification_probe_gallery_multi(M, probe_labels, gallery_labels, N_subjects, tau):
+    """
+    Verification probe-vs-gallery con multiple template strategy.
+    
+    Args:
+        M: matrice probe-vs-gallery
+        probe_labels: identità probe
+        gallery_labels: identità gallery
+        N_subjects: numero identità uniche
+        tau: soglia
+    """
+    n_probe = len(probe_labels)
+    GA, FA, FR, GR = 0, 0, 0, 0
+    
+    for i in range(n_probe):
+        # Per ogni possibile identità dichiarata
+        for claimed_id in range(1, N_subjects + 1):
+            # Trova tutti i template di claimed_id in gallery
+            claimed_indices = [j for j, label in enumerate(gallery_labels)
+                              if label == claimed_id]
+            
+            if not claimed_indices:
+                continue
+            
+            # Best match con claimed identity
+            min_dist = min(M[i, j] for j in claimed_indices)
+            
+            is_genuine = (probe_labels[i] == claimed_id)
+            
+            if min_dist <= tau:
+                if is_genuine:
+                    GA += 1
+                else:
+                    FA += 1
+            else:
+                if is_genuine:
+                    FR += 1
+                else:
+                    GR += 1
+    
+    TG = n_probe
+    TI = n_probe * (N_subjects - 1)
+    
+    GAR = GA / TG if TG > 0 else 0
+    FAR = FA / TI if TI > 0 else 0
+    FRR = FR / TG if TG > 0 else 0
+    GRR = GR / TI if TI > 0 else 0
+    
+    return GAR, FAR, FRR, GRR
+```
+
+#### Open-Set Probe-vs-Gallery
+
+Ogni riga rappresenta **2 esperimenti** in parallelo:
+
+**Per ogni riga $i$**:
+- 1 genuine attempt (assumere probe enrolled)
+- 1 impostor attempt (assumere probe non enrolled)
+
+**Totali**:
+- $TG = |P|$
+- $TI = |P|$
+
+```python
+def openset_probe_gallery(M, probe_labels, gallery_labels, tau):
+    """
+    Open-set identification con probe-vs-gallery.
+    """
+    n_probe = len(probe_labels)
+    unique_gallery_ids = set(gallery_labels)
+    
+    DI_rank1, FA, GR = 0, 0, 0
+    
+    for i in range(n_probe):
+        # Crea lista ordinata di (distanza, label)
+        distances = [(M[i, j], gallery_labels[j]) for j in range(len(gallery_labels))]
+        distances.sort(key=lambda x: x[0])
+        
+        # Caso 1: probe i è enrolled
+        if probe_labels[i] in unique_gallery_ids:
+            if distances[0][0] <= tau and distances[0][1] == probe_labels[i]:
+                DI_rank1 += 1  # Correct detection + identification at rank-1
+        
+        # Caso 2: probe i non è enrolled (simula)
+        # In questo caso consideriamo solo il primo match
+        if probe_labels[i] not in unique_gallery_ids:
+            if distances[0][0] <= tau:
+                FA += 1  # False accept
+            else:
+                GR += 1  # Genuine reject
+    
+    n_enrolled = sum(1 for label in probe_labels if label in unique_gallery_ids)
+    n_not_enrolled = n_probe - n_enrolled
+    
+    DIR = DI_rank1 / n_enrolled if n_enrolled > 0 else 0
+    FPIR = FA / n_not_enrolled if n_not_enrolled > 0 else 0
+    
+    return DIR, FPIR
+```
+
+#### Closed-Set Probe-vs-Gallery
+
+Ogni riga rappresenta **1 operazione** di identificazione:
+
+**Totali**:
+- $TA = |P|$ (Total Attempts)
+
+```python
+def closedset_probe_gallery(M, probe_labels, gallery_labels):
+    """
+    Closed-set identification con probe-vs-gallery.
+    """
+    n_probe = len(probe_labels)
+    ranks = []
+    
+    for i in range(n_probe):
+        # Crea lista ordinata per distanza crescente
+        sorted_indices = M[i, :].argsort()
+        
+        # Trova rank del primo template con identità corretta
+        for rank, idx in enumerate(sorted_indices, start=1):
+            if gallery_labels[idx] == probe_labels[i]:
+                ranks.append(rank)
+                break
+    
+    # Calcola CMS
+    max_rank = max(ranks) if ranks else 1
+    cms = []
+    for k in range(1, max_rank + 1):
+        cms_k = sum(1 for r in ranks if r <= k) / len(ranks)
+        cms.append(cms_k)
+    
+    return cms, ranks
+```
+
+### 5.8 Confronto: All-vs-All vs Probe-vs-Gallery
+
+Vediamo un confronto sistematico delle due strategie:
+
+| **Aspetto** | **All-vs-All** | **Probe-vs-Gallery** |
+|-------------|----------------|----------------------|
+| **Flessibilità** | Massima: infiniti esperimenti | Media: fissa G e P |
+| **Memoria** | $O(N^2)$ | $O(\|P\| \times \|G\|)$ |
+| **Calcolo** | $O(N^2)$ comparazioni | $O(\|P\| \times \|G\|)$ |
+| **Riusabilità** | Totale per varie configurazioni | Limitata a G fissa |
+| **Realismo** | Può sovrastimare con sessioni | Alto se sessioni separate |
+| **Programmazione** | Media complessità | Più semplice |
+
+**Quando usare All-vs-All**:
+- Dataset piccolo/medio (N < 10K)
+- Nessuna struttura temporale chiara
+- Massima esplorazione sperimentale richiesta
+- Storage non è problema
+
+**Quando usare Probe-vs-Gallery**:
+- Dataset grande (N > 100K)
+- Sessioni temporali ben definite
+- Valutazione realistica richiesta
+- Limiti di memoria
+
+### 5.9 Importanza del Calcolo Corretto del Rate
+
+Un errore comune è calcolare le rate rispetto al totale dei probe invece che rispetto alle categorie corrette. Vediamo perché questo è **critico**.
+
+#### Esempio Problematico
+
+**Scenario**: 100 probe totali, 10 errori FA, 10 errori FR
+
+**Calcolo SBAGLIATO**:
+$\text{FAR} = \text{FRR} = \frac{10}{100} = 10\%$
+
+Questo sembra indicare performance simili. Ma cosa manca?
+
+#### Distribuzione Reale Caso 1
+
+```
+100 probe:
+- 90 genuine
+- 10 impostor
+
+Errori:
+- 10 False Reject (su 90 genuine)
+- 10 False Accept (su 10 impostor)
+
+Calcolo CORRETTO:
+FRR = 10/90 = 11.1%
+FAR = 10/10 = 100% (!!!)
+```
+
+**Interpretazione**: Il sistema **rifiuta correttamente solo l'11% dei genuine**, ma **accetta TUTTI gli impostori**! Sistema completamente inadeguato per sicurezza.
+
+#### Distribuzione Reale Caso 2
+
+```
+100 probe:
+- 50 genuine
+- 50 impostor
+
+Errori:
+- 10 False Reject (su 50 genuine)
+- 10 False Accept (su 50 impostor)
+
+Calcolo CORRETTO:
+FRR = 10/50 = 20%
+FAR = 10/50 = 20%
+```
+
+**Interpretazione**: Performance bilanciate ma non eccellenti.
+
+#### Distribuzione Reale Caso 3
+
+```
+100 probe:
+- 10 genuine
+- 90 impostor
+
+Errori:
+- 10 False Reject (su 10 genuine)
+- 10 False Accept (su 90 impostor)
+
+Calcolo CORRETTO:
+FRR = 10/10 = 100% (!!!)
+FAR = 10/90 = 11.1%
+```
+
+**Interpretazione**: Il sistema **rifiuta TUTTI i genuine**, ma **accetta solo l'11% degli impostori**! Sistema inutile per usabilità.
+
+#### Tabella Comparativa
+
+| Probe Tot | Genuine | Impostor | FR | FA | FRR | FAR | Interpretazione |
+|-----------|---------|----------|----|----|-----|-----|-----------------|
+| 100 | 90 | 10 | 10 | 10 | 11.1% | **100%** | Insicuro |
+| 100 | 50 | 50 | 10 | 10 | 20% | 20% | Bilanciato |
+| 100 | 10 | 90 | 10 | 10 | **100%** | 11.1% | Inutilizzabile |
+
+**Nota critica**: In TUTTI i casi, l'Accuracy sarebbe:
+
+$\text{Accuracy} = \frac{80}{100} = 80\%$
+
+Ma le situazioni sono **drammaticamente diverse**! Per questo l'Accuracy da sola è **inadeguata** per sistemi biometrici.
+
+#### Formule Corrette
+
+**Verification**:
+$\text{FAR} = \frac{\text{False Accepts}}{\text{Total Impostor Attempts}}$
+$\text{FRR} = \frac{\text{False Rejects}}{\text{Total Genuine Attempts}}$
+
+**Open-Set**:
+$\text{FPIR} = \frac{\text{False Accepts}}{\text{Total Non-Enrolled Probes}}$
+$\text{DIR} = \frac{\text{Correct Detections + IDs}}{\text{Total Enrolled Probes}}$
+
+**Closed-Set**:
+$\text{CMS}(k) = \frac{\text{Correct IDs at rank} \leq k}{\text{Total Probes}}$
+
+### 5.10 Template Update e Manutenzione Gallery
+
+Nel tempo, la gallery può degradarsi o diventare obsoleta. Il **template update** è essenziale per mantenere performance.
+
+#### Motivazioni per Update
+
+1. **Aging biologico**: Volti invecchiano, impronte si consumano
+2. **Variazioni intra-classe**: Nuove pose, espressioni, accessori
+3. **Upgrade tecnologico**: Nuovo sensore con risoluzione migliore
+4. **Accumulo esperienza**: Più template = maggiore coverage
+
+#### Strategie di Update
+
+**Supervised Update**:
+```python
+def supervised_update(gallery, new_probe, true_identity, supervisor_approval):
+    """
+    Update supervisionato: operatore umano approva.
+    """
+    if supervisor_approval:
+        gallery[true_identity].append(new_probe)
+        
+        # Eventualmente rimuovi template più vecchi
+        if len(gallery[true_identity]) > MAX_TEMPLATES:
+            gallery[true_identity] = gallery[true_identity][-MAX_TEMPLATES:]
+    
+    return gallery
+```
+
+**Semi-Supervised Update**:
+```python
+def semi_supervised_update(gallery, new_probe, recognized_id, confidence_score, threshold):
+    """
+    Update semi-supervisionato: basato su confidence.
+    """
+    if confidence_score > threshold:
+        # Alta confidenza → aggiungi automaticamente
+        gallery[recognized_id].append(new_probe)
+        
+        # Quality-based pruning: rimuovi template peggiore se troppi
+        if len(gallery[recognized_id]) > MAX_TEMPLATES:
+            qualities = [compute_quality(t) for t in gallery[recognized_id]]
+            worst_idx = qualities.index(min(qualities))
+            del gallery[recognized_id][worst_idx]
+    
+    return gallery
+```
+
+**Online vs Offline Update**:
+
+- **Online**: Update immediato quando nuovo probe arriva
+  - Pro: Gallery sempre aggiornata
+  - Contro: Rischio errori propagati
+  
+- **Offline**: Batch update periodico
+  - Pro: Più controllo, analisi statistica
+  - Contro: Gallery può diventare obsoleta
+
+#### Selezione Template Rappresentativi
+
+Quando accumuliamo troppi template, dobbiamo selezionare i più rappresentativi:
+
+```python
+def select_representative_templates(templates, k=5, method='diversity'):
+    """
+    Seleziona k template più rappresentativi.
+    
+    Args:
+        templates: lista di template
+        k: numero template da mantenere
+        method: 'quality', 'diversity', 'coverage'
+    """
+    if method == 'quality':
+        # Mantieni k template con quality score più alto
+        qualities = [compute_quality(t) for t in templates]
+        top_k_idx = sorted(range(len(qualities)), 
+                          key=lambda i: qualities[i], 
+                          reverse=True)[:k]
+        return [templates[i] for i in top_k_idx]
+    
+    elif method == 'diversity':
+        # Mantieni template che massimizzano diversity intra-classe
+        selected = [templates[0]]  # Inizia con primo
+        
+        for _ in range(k - 1):
+            # Trova template più distante da quelli già selezionati
+            max_min_dist = -1
+            best_template = None
+            
+            for t in templates:
+                if t in selected:
+                    continue
+                
+                # Minima distanza da template già selezionati
+                min_dist = min(compute_distance(t, s) for s in selected)
+                
+                if min_dist > max_min_dist:
+                    max_min_dist = min_dist
+                    best_template = t
+            
+            selected.append(best_template)
+        
+        return selected
+    
+    elif method == 'coverage':
+        # Clustering e prendi centroidi
+        from sklearn.cluster import KMeans
+        
+        features = np.array([t.features for t in templates])
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans.fit(features)
+        
+        # Per ogni cluster, prendi template più vicino al centroide
+        selected = []
+        for i in range(k):
+            cluster_members = [t for j, t in enumerate(templates) 
+                             if kmeans.labels_[j] == i]
+            centroid = kmeans.cluster_centers_[i]
+            
+            # Template più vicino a centroide
+            distances = [np.linalg.norm(t.features - centroid) 
+                        for t in cluster_members]
+            best_idx = distances.index(min(distances))
+            selected.append(cluster_members[best_idx])
+        
+        return selected
+```
+
+---
+
+### 5.11 Conclusioni e Best Practices
+
+#### Raccomandazioni Generali
+
+**Per Evaluation**:
+1. Calcola **sempre** matrice di distanze beforehand
+2. Usa rate corrette (FAR su impostori, FRR su genuine)
+3. Riporta curve complete (ROC, DET, CMC), non solo singoli punti
+4. Specifica chiaramente configurazione (probe/gallery split, template per soggetto)
+
+**Per Template Management**:
+1. Inizia con 2-3 template per identità
+2. Implementa quality check all'enrollment
+3. Pianifica strategia di update (supervised per alta sicurezza, semi-supervised per usabilità)
+4. Monitora performance nel tempo
+
+**Per Dataset con Sessioni**:
+1. Usa **sempre** Probe-vs-Gallery con sessioni separate
+2. Valuta performance cross-session oltre che within-session
+3. Riporta entrambe per completezza
+
+**Scalabilità**:
+- Dataset < 10K: All-vs-All fattibile
+- Dataset 10K-100K: Probe-vs-Gallery preferibile
+- Dataset > 100K: Obbligatorio Probe-vs-Gallery, considera sampling
+
+## 6. Confronto: Metriche Biometriche vs Machine Learning
+
+### 6.1 Differenze Fondamentali
+
+I sistemi biometrici e i classificatori di machine learning generale hanno obiettivi simili (assegnare etichette) ma contesti operativi profondamente diversi.
+
+**Tabella comparativa**:
+
+| **Aspetto** | **Biometria** | **ML Generale** |
+|-------------|---------------|-----------------|
+| **Task primario** | Autenticazione/Identificazione | Classificazione multi-classe |
+| **Classi** | Identità (N potenzialmente enorme) | Categorie fisse (K tipicamente piccolo) |
+| **Training** | Enrollment (no riaddestramento) | Supervised learning su dataset |
+| **Test time** | Nuove identità possibili (open-set) | Classi fisse (closed-set) |
+| **Errori critici** | FA e FR (asimmetrici) | Misclassification (simmetrico) |
+| **Soglia** | Centrale (tuning critico) | Opzionale (post-processing) |
+| **Metrica principale** | FAR, FRR, EER, DIR | Accuracy, Precision, Recall, F1 |
+| **Distribuzione errori** | Bimodale (genuine vs impostor) | Uniforme tra classi (idealmente) |
+| **Confidenza** | Score di matching continuo | Probabilità per classe |
+| **One-shot learning** | Sì (enrollment minimale) | No (serve training esteso) |
+| **Scalabilità classi** | Critica (1:N con N→∞) | Limitata (K ≤ 1000 tipicamente) |
+
+**Esempio illustrativo**:
+
+**Sistema biometrico** (Face recognition):
+- Enrollment: 1-5 foto per persona
+- Nuova persona registrata: sistema aggiorna gallery, no retraining
+- Test: Confronto 1:N dove N può essere 1M+
+- Errore critico: Falsa accettazione (impostor entra)
+
+**Classificatore ML** (Image classification):
+- Training: 1000+ immagini per classe
+- Nuova classe: richiede retraining completo
+- Test: Predizione tra K classi fisse (es. K=1000)
+- Errore critico: Misclassification (simmetrico tra classi)
+
+### 6.2 Mapping Concettuale
+
+Sebbene diversi, esistono corrispondenze tra concetti biometrici e ML.
+
+#### Verification ↔ Binary Classification
+
+**Verifica biometrica**:
+- Input: (probe, claimed_identity)
+- Output: Accept/Reject
+- Ground truth: Match/Non-match
+
+**Binary classifier**:
+- Input: coppia (sample1, sample2)
+- Output: Same person / Different person
+- Classes: {Genuine, Impostor}
+
+**Mapping metriche**:
+
+| **Biometria** | **ML Binary** | **Relazione** |
+|---------------|---------------|---------------|
+| Genuine Accept | True Positive | Correttamente classificato come Match |
+| False Reject | False Negative | Match erroneamente classificato come Non-match |
+| False Accept | False Positive | Non-match erroneamente classificato come Match |
+| Genuine Reject | True Negative | Correttamente classificato come Non-match |
+| FAR | FPR (False Positive Rate) | FAR = FP / (FP + TN) |
+| FRR | FNR (False Negative Rate) | FRR = FN / (FN + TP) |
+| GAR | TPR / Recall / Sensitivity | GAR = TP / (TP + FN) = 1 - FRR |
+| EER | Point where FPR = FNR | EER = punto FAR = FRR |
+| ROC curve | ROC curve | Identiche! |
+
+**Formule esatte**:
+
+$$\text{FAR} = \frac{FP}{FP + TN} = \text{FPR} = 1 - \text{Specificity}$$
+
+$$\text{FRR} = \frac{FN}{FN + TP} = \text{FNR} = 1 - \text{Recall}$$
+
+$$\text{GAR} = \frac{TP}{TP + FN} = \text{TPR} = \text{Recall} = \text{Sensitivity}$$
+
+**Differenza chiave**: In ML, spesso si massimizza accuracy:
+$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}$$
+
+In biometria, accuracy è **meno rilevante** perché:
+1. Distribuzione sbilanciata (molti più impostor che genuine in watchlist)
+2. Costi asimmetrici (FA >> FR o viceversa)
+
+**Esempio**:
+Watchlist con 99% non-enrolled:
+- Classificatore che predice sempre "not in gallery": Accuracy = 99%!
+- Ma DIR = 0% (completamente inutile per scopo del sistema)
+
+#### Identification ↔ Multi-class Classification
+
+**Closed-set identification**:
+- Input: probe
+- Output: Una tra N identità in gallery
+- Assunzione: probe sempre in gallery
+
+**Multi-class classifier**:
+- Input: sample
+- Output: Una tra K classi
+- Assunzione: sample sempre in una delle K classi
+
+**Mapping**:
+
+| **Biometria (Closed-set)** | **ML Multi-class** |
+|----------------------------|---------------------|
+| Rank-1 Accuracy (RR) | Top-1 Accuracy |
+| CMS(k) | Top-k Accuracy |
+| CMC curve | Cumulative accuracy curve |
+
+**Formule**:
+
+$$\text{RR} = \text{Top-1 Accuracy} = \frac{\# \text{correct at rank 1}}{|\mathcal{P}|}$$
+
+$$\text{CMS}(k) = \text{Top-k Accuracy} = \frac{\# \text{correct within rank } k}{|\mathcal{P}|}$$
+
+**Esempio**:
